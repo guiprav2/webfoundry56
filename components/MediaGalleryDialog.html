@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+
+    <link
+      class="wf-nf-link"
+      rel="stylesheet"
+      href="https://www.nerdfonts.com/assets/css/webfont.css"
+    />
+    <script
+      class="wf-tw-script"
+      src="https://cdn.tailwindcss.com?plugins=typography"
+    ></script>
+    <script class="wf-tw-setup">
+      tailwind.config = {
+        darkMode: location.href.includes('/preview/') ? 'media' : 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: 'hsl(222.2, 47.4%, 11.2%)',
+                foreground: 'hsl(210, 40%, 98%)',
+              },
+              secondary: {
+                DEFAULT: 'hsl(210, 40%, 96.1%)',
+                foreground: 'hsl(222.2, 47.4%, 11.2%)',
+              },
+              muted: {
+                DEFAULT: 'hsl(210, 40%, 96.1%)',
+                foreground: 'hsl(215.4, 16.3%, 46.9%)',
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <script class="wf-gfonts-script">
+      let observer = new MutationObserver(muts => {
+        let gfonts = [];
+        for (let mut of muts) {
+          if (mut.type === 'childList') {
+            for (let x of mut.addedNodes) {
+              if (x.nodeType !== 1) {
+                continue;
+              }
+              for (let y of [x, ...x.querySelectorAll('*')]) {
+                gfonts.push(
+                  ...[...y.classList]
+                    .filter(x => x.match(/^gfont-\[.+?\]$/))
+                    .map(x => x.slice('gfont-['.length, -1)),
+                );
+              }
+            }
+          } else if (mut.type === 'attributes') {
+            gfonts.push(
+              ...[...mut.target.classList]
+                .filter(x => x.match(/^gfont-\[.+?\]$/))
+                .map(x => x.slice('gfont-['.length, -1)),
+            );
+          }
+        }
+
+        for (let x of gfonts) {
+          let id = `gfont-[${x}]`;
+          let style = document.getElementById(id);
+          if (style) {
+            continue;
+          }
+          style = document.createElement('style');
+          style.id = id;
+          style.textContent = `
+          @import url('https://fonts.googleapis.com/css2?family=${x.replace(/_/g, '+')}:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+          .gfont-\\[${x}\\] { font-family: "${x.replace(/_/g, ' ')}" }
+        `;
+          document.head.append(style);
+        }
+      });
+
+      observer.observe(document, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+    </script>
+    <style class="wf-preflight">
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        display: flow-root;
+      }
+      :empty {
+        min-height: 16px;
+      }
+    </style>
+    <style class="wf-component-preflight">
+      body {
+        background-color: #06c;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.2) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.2) 2px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size:
+          100px 100px,
+          100px 100px,
+          20px 20px,
+          20px 20px;
+        background-position:
+          -2px -2px,
+          -2px -2px,
+          -1px -1px,
+          -1px -1px;
+      }
+    </style>
+  </head>
+  <body class="flex justify-center items-center min-h-screen">
+    <dialog
+      class="outline-none rounded shadow-xl text-neutral-100 bg-[#091017] {{this.media.length_&amp;&amp;_'w-[70vw]'}}"
+      open=""
+    >
+      <form
+        method="dialog"
+        wf-onkeydown="this.keytoggle(event)"
+        wf-onkeyup="this.keytoggle(event)"
+        wf-onsubmit="this.submit(event)"
+      >
+        <div class="flex items-center gap-3 px-3">
+          <div>Media Gallery:</div>
+          <select
+            class="outline-none bg-transparent *:bg-[#121212] *:text-neutral-100"
+          >
+            <option
+              wf-map="x of this.folders"
+              value="{{x}}"
+              wf-selected="this.selectedFolder === x"
+            >
+              {{x}}
+            </option>
+          </select>
+          <div class="flex">
+            <button
+              type="button"
+              class="nf nf-fa-cloud_upload text-2xl hover:bg-black/70 outline-none rounded-b px-3 pt-1 pb-2"
+              wf-onclick="this.upload(event)"
+              wf-if="this.media.length"
+            ></button>
+            <button
+              type="button"
+              class="text-2xl hover:bg-black/70 outline-none rounded-b px-3 pt-1 pb-2"
+              wf-onclick="this.ai(event)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="1em"
+                height="1em"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill="currentColor"
+                  d="m9 4l2.5 5.5L17 12l-5.5 2.5L9 20l-2.5-5.5L1 12l5.5-2.5zm0 4.83L8 11l-2.17 1L8 13l1 2.17L10 13l2.17-1L10 11zM19 9l-1.26-2.74L15 5l2.74-1.25L19 1l1.25 2.75L23 5l-2.75 1.26zm0 14l-1.26-2.74L15 19l2.74-1.25L19 15l1.25 2.75L23 19l-2.75 1.26z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <a
+          href="#"
+          class="flex-1 flex flex-col justify-center items-center gap-4 p-24"
+          wf-if="!this.media.length"
+          wf-onclick="this.upload(event)"
+          wf-ondrop="this.drop(event)"
+          wf-ondragover="event.preventDefault()"
+        >
+          <i class="nf nf-fa-cloud_upload text-5xl"></i>
+          <div class="italic">
+            Folder empty. Select a different folder or upload a media file here.
+          </div>
+        </a>
+        <div
+          class="overflow-auto grid grid-cols-4 gap-6 px-4 pt-3 pb-1"
+          wf-if="this.media.length"
+        >
+          <div wf-map="x of this.media">
+            <a
+              href="#"
+              class="aspect-square flex justify-center items-center outline rounded overflow-hidden bg-black/80"
+              wf-onclick="((!event.ctrlKey && event.preventDefault()), this.selected = x), d.update()"
+              wf-class="{{this.selected === x &amp;&amp; 'outline-4 outline-blue-500'}} {{!(this.selected === x) &amp;&amp; 'outline-2_outline-neutral-500'}}"
+            >
+              <img
+                wf-if="this.typeFor(x) === 'image'"
+                wf-src="this.srcFor(x)"
+                class="border border-transparent max-h-full"
+              />
+              <audio
+                wf-if="this.typeFor(x) === 'audio'"
+                wf-src="this.srcFor(x)"
+                wf-class="{{!this.ctrlKey && 'pointer-events-none'}}"
+                class="border border-transparent max-h-full"
+                controls
+              ></audio>
+              <video
+                wf-if="this.typeFor(x) === 'video'"
+                wf-src="this.srcFor(x)"
+                wf-onclick="this.audiovisualClick(event)"
+                wf-class="{{!this.ctrlKey && 'pointer-events-none'}}"
+                class="border border-transparent max-h-full"
+                controls
+              ></video>
+              <div class="hidden"></div>
+            </a>
+            <div class="truncate text-center px-3 pt-2 pb-1">
+              {{x.split('/').at(-1)}}
+            </div>
+          </div>
+        </div>
+        <!-- Footer: Cancel and OK buttons -->
+        <div class="flex gap-1.5 justify-end p-3">
+          <button
+            value="cancel"
+            class="outline-none rounded px-8 py-1 bg-[#121d2b] hover:bg-[#1a2a40] transition-colors disabled:hover:bg-[#121d2b] disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            value="ok"
+            class="outline-none rounded px-8 py-1 bg-[#0071b2] hover:bg-[#008ad9] transition-colors disabled:hover:bg-[#0071b2] disabled:opacity-50"
+            wf-disabled="!this.selected"
+          >
+            OK
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

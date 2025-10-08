@@ -1,0 +1,3164 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <script type="module" src="../webfoundry/head.js"></script>
+    <style class="wf-scrollbar-style">
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+        box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: grey;
+        border-radius: 4px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #b0b0b0;
+      }
+      ::-webkit-scrollbar-thumb:horizontal {
+        background-clip: padding-box;
+      }
+      ::-webkit-scrollbar-thumb:vertical {
+        background-clip: padding-box;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen overflow-hidden" style="display: none">
+    <div
+      class="App flex relative h-screen w-screen bg-[#060a0f] overflow-hidden"
+      wf-onattach="post('app.init')"
+    >
+      <style>
+        dialog::backdrop {
+          background-color: rgba(0, 0, 0, 0.8);
+        }
+      </style>
+
+      <div
+        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0"
+      >
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
+          wf-if="!loadman.busy()"
+        >
+          wf</button
+        ><button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] relative flex justify-center IconsSidebar-spinner items-center"
+          wf-if="loadman.busy()"
+          hidden=""
+        >
+          <img src="../media/loading.svg" class="w-12" />
+          <div
+            class="flex justify-center items-center text-xs absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[55%] truncate w-8"
+            wf-if="loadman.busy() &gt; 1"
+          ></div>
+        </button>
+
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-projectsBtn nf-fa-sitemap"
+          wf-class="{{state.app.panel === 'projects' &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('app.selectPanel', 'projects')"
+        ></button>
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-filesBtn nf-fa-folder"
+          wf-class="{{state.app.panel === 'files' &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('app.selectPanel', 'files')"
+          wf-if="state.projects.current &amp;&amp; !loadman.ops['files.load']?.length"
+        ></button>
+
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-stylesBtn nf-fa-paint_brush"
+          wf-class="{{state.app.panel === 'styles' &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('app.selectPanel', 'styles')"
+          wf-if="state.designer.open"
+        ></button>
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-oct-command_palette IconsSidebar-shellBtn"
+          wf-class="{{state.shell.open &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('shell.toggle')"
+          wf-if="/^connected|auth_fail$/.test(state.companion.client?.status) || state.shell.list.length"
+        ></button>
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-playBtn nf-fa-play"
+          wf-if="state.designer.open &amp;&amp; !state.designer.current?.preview"
+          wf-onclick="post('designer.togglePreview')"
+        ></button>
+
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-fa-pause IconsSidebar-pauseBtn"
+          wf-if="state.designer.open &amp;&amp; state.designer.current?.preview"
+          wf-onclick="post('designer.togglePreview')"
+        ></button>
+
+        <button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-md-dots_vertical_circle IconsSidebar-settingsBtn"
+          wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('app.selectPanel', 'settings')"
+        ></button
+        ><button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-closeBtn nf-oct-x"
+          wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('app.selectPanel', null)"
+          wf-if="state.app.panel"
+        ></button>
+      </div>
+
+      <div class="flex-1 flex flex-col min-w-0 basis-0">
+        <div
+          class="text-neutral-100 text-center bg-[#091017] py-3.5 border-b border-black/50"
+          wf-if="state.projects.current"
+        >
+          {{state.projects.current?.split?.(':')?.[0]}}
+        </div>
+
+        <div
+          wf-if="state.settings.options?.toolbar &amp;&amp; state.files.current?.endsWith('.html') &amp;&amp; !state.designer.preview"
+        >
+          <div
+            class="text-neutral-100 bg-[#091017] border-b border-black/50 flex px-4 items-center py-3 gap-4"
+            wf-if="state.designer.toolbar === 'manipulation'"
+          >
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-36"
+              >
+                <span class="text-sm">Manipulation</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 w-44 *:hover:bg-[#091020]"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toolbar', 'manipulation')"
+                  >
+                    <div>Manipulation</div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toolbar', 'tw')"
+                  >
+                    <div>Tailwind</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between w-24 py-1"
+              >
+                <span class="text-sm">History</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="w-40 rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091020]"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.undo')"
+                  >
+                    <div>Undo</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-z</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.redo')"
+                  >
+                    <div>Redo</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-y</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between w-24 py-1"
+              >
+                <span class="text-sm">Cursor</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="w-40 rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017]"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.selectParentElement')"
+                  >
+                    <div>Parent</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      h
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.selectNextSibling')"
+                  >
+                    <div>Next</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      j
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.selectPrevSibling')"
+                  >
+                    <div>Previous</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      k
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.selectFirstChild')"
+                  >
+                    <div>First Child</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      l
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.selectLastChild')"
+                  >
+                    <div>Last Child</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      L
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between w-24 py-1"
+              >
+                <span class="text-sm">Create</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="w-40 rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017]"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.createFirstChild')"
+                  >
+                    <div>Inside</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      i
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.createLastChild')"
+                  >
+                    <div>Inside (last)</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      I
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.createNextSibling')"
+                  >
+                    <div>After</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      a
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.createPrevSibling')"
+                  >
+                    <div>Before</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      A
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.wrap')"
+                  >
+                    <div>Wrap</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      w
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.unwrap')"
+                  >
+                    <div>Unwrap</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      W
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div
+              class="relative inline-block group"
+              wf-if="localStorage.getItem('webfoundry.copy')"
+            >
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between w-24 py-1"
+              >
+                <span class="text-sm">Paste</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="w-40 rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017]"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.pasteNextSibling')"
+                  >
+                    <div>After</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      p
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.pastePrevSibling')"
+                  >
+                    <div>Before</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      P
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.pasteLastChild')"
+                  >
+                    <div>Last Child</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      o
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.pasteFirstChild')"
+                  >
+                    <div>First Child</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      O
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Element</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-64"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementId')"
+                  >
+                    <div>ID</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-I</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag')"
+                  >
+                    <div>Tag</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      e
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeHtml')"
+                  >
+                    <div>HTML</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      m
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeInnerHtml')"
+                  >
+                    <div>Inner HTML</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      M
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeInputPlaceholder')"
+                  >
+                    <div>Placeholder</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-p</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeFormMethod')"
+                  >
+                    <div>Form Method</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-M</div>
+                    </div>
+                  </button>
+
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleHidden')"
+                  >
+                    <div>Toggle hidden</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      x
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.normalizeStylesUnion')"
+                  >
+                    <div>Normalize (union)</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-u</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.normalizeStylesIntersect')"
+                  >
+                    <div>Normalize (intersect)</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-U</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-36"
+              >
+                <span class="text-sm">Text &amp; Media</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-52"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.replaceTextContent')"
+                  >
+                    <div>Single line</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      t
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.replaceMultilineTextContent')"
+                  >
+                    <div>Multiline</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      T
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeLinkUrl')"
+                  >
+                    <div>Link URL</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      H
+                    </div>
+                  </button>
+
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeMediaSrc')"
+                  >
+                    <div>Media URL</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      s
+                    </div>
+                  </button>
+
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeMediaFromGallery')"
+                  >
+                    <div>Media Gallery</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded w-5 h-5 flex justify-center items-center font-mono bg-[#0071b2]"
+                    >
+                      S
+                    </div>
+                  </button>
+
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeBackgroundUrl')"
+                  >
+                    <div>Background URL</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      b
+                    </div>
+                  </button>
+
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeBackgroundFromGallery')"
+                  >
+                    <div>Background Gallery</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      B
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">JavaScript</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-52"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setIfExpression')"
+                  >
+                    <div>Conditional</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-i</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setMapExpression')"
+                  >
+                    <div>Map</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-m</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setEventHandlers')"
+                  >
+                    <div>Event Handlers</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-o</div>
+                    </div>
+                  </button>
+
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setDisabledExpression')"
+                  >
+                    <div>Disabled</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-D</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.evalJavaScript')"
+                  >
+                    <div>Evaluate</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                    >
+                      <div class="relative top-[1px]">Ctrl-x</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm truncate">{{state.designer.tagLabel}}</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-52 max-h-96 overflow-auto"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master')"
+                  >
+                    &lt;custom&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'div')"
+                  >
+                    &lt;div&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'span')"
+                  >
+                    &lt;span&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'a')"
+                  >
+                    &lt;a&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'p')"
+                  >
+                    &lt;p&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'button')"
+                  >
+                    &lt;button&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'input')"
+                  >
+                    &lt;input&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'form')"
+                  >
+                    &lt;form&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'label')"
+                  >
+                    &lt;label&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'textarea')"
+                  >
+                    &lt;textarea&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'ul')"
+                  >
+                    &lt;ul&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'ol')"
+                  >
+                    &lt;ol&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'li')"
+                  >
+                    &lt;li&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'img')"
+                  >
+                    &lt;img&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'section')"
+                  >
+                    &lt;section&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'article')"
+                  >
+                    &lt;article&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'header')"
+                  >
+                    &lt;header&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'footer')"
+                  >
+                    &lt;footer&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'nav')"
+                  >
+                    &lt;nav&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'main')"
+                  >
+                    &lt;main&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'h1')"
+                  >
+                    &lt;h1&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'h2')"
+                  >
+                    &lt;h2&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'h3')"
+                  >
+                    &lt;h3&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'h4')"
+                  >
+                    &lt;h4&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'h5')"
+                  >
+                    &lt;h5&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'h6')"
+                  >
+                    &lt;h6&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'br')"
+                  >
+                    &lt;br&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'hr')"
+                  >
+                    &lt;hr&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'table')"
+                  >
+                    &lt;table&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'thead')"
+                  >
+                    &lt;thead&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'tbody')"
+                  >
+                    &lt;tbody&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'tr')"
+                  >
+                    &lt;tr&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'td')"
+                  >
+                    &lt;td&gt;
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.changeElementTag', 'master', 'th')"
+                  >
+                    &lt;th&gt;
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-1">
+              <button
+                class="nf outline-none nf-md-refresh p-1.5"
+                wf-onclick="post('designer.refresh')"
+              ></button>
+
+              <button
+                class="nf nf-fa-clone outline-none p-1.5"
+                wf-onclick="post('designer.copySelected')"
+              ></button>
+              <button
+                class="nf nf-oct-x outline-none p-1.5"
+                wf-onclick="post('designer.deleteSelected')"
+              ></button>
+            </div>
+          </div>
+
+          <div
+            class="text-neutral-100 bg-[#091017] border-b border-black/50 flex px-4 items-center py-3 gap-4"
+            wf-if="state.designer.toolbar === 'tw'"
+          >
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-26"
+              >
+                <span class="text-sm">Tailwind</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 w-44 *:hover:bg-[#091020]"
+                  wf-onclick="document.activeElement.blur()"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toolbar', 'manipulation')"
+                  >
+                    <div>Manipulation</div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toolbar', 'tw')"
+                  >
+                    <div>Tailwind</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+                id="GFontFocus"
+              >
+                <span class="text-sm">Font Family</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 w-64"
+                  wf-ondetach="post('designer.gfontCategory', null)"
+                >
+                  <div
+                    wf-if="!state.designer.gfontCategory"
+                    class="*:hover:bg-[#091017]"
+                  >
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleCssClass', 'master', 'tw', null)"
+                    >
+                      <div>Unset</div></button
+                    ><button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.gfontCategory', 'Serif')"
+                    >
+                      <div>Serif</div></button
+                    ><button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.gfontCategory', 'Sans-serif')"
+                    >
+                      <div>Sans-serif</div></button
+                    ><button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.gfontCategory', 'Monospace')"
+                    >
+                      <div>Monospace</div></button
+                    ><button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.gfontCategory', 'Display')"
+                    >
+                      <div>Display</div></button
+                    ><button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.gfontCategory', 'Handwriting')"
+                    >
+                      <div>Handwriting</div>
+                    </button>
+                  </div>
+                  <div
+                    wf-if="state.designer.gfontCategory"
+                    class="*:hover:bg-[#091017]"
+                  >
+                    <button
+                      class="w-full text-left px-3 py-2 flex items-center gap-2 outline-none"
+                      wf-onclick="post('designer.gfontCategory', null)"
+                    >
+                      <div class="nf nf-md-chevron_left relative top-0.5"></div>
+                      <div>{{state.designer.gfontCategory}}</div></button
+                    ><button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-if="!/display|handwriting/i.test(state.designer.gfontCategory)"
+                      wf-onclick="post('designer.toggleCssClass', 'master', 'tw', { 'Sans-serif': 'font-sans', Serif: 'font-serif', Monospace: 'font-mono' }[state.designer.gfontCategory])"
+                    >
+                      <div>Use default</div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass({ 'Sans-serif': 'font-sans', Serif: 'font-serif', Monospace: 'font-mono' }[state.designer.gfontCategory])"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div></button
+                    ><input
+                      class="w-full bg-transparent outline-none px-3 py-2"
+                      placeholder="Search fonts..."
+                      wf-onkeyup="post('designer.gfontKeyUp', event)"
+                    />
+                  </div>
+                  <div class="max-h-96 overflow-auto *:hover:bg-[#091017]">
+                    <button
+                      class="w-full text-left flex justify-between items-center p-3 text-lg outline-none"
+                      wf-map="x of state.designer.gfonts || []"
+                      wf-onattach="post('designer.gfontSample', _1, x.name)"
+                      wf-onclick="post('designer.toggleCssClass', 'master', 'gf', `gfont-[${x.name.replaceAll(' ', '_')}]`)"
+                    >
+                      <div>{{x.name}}</div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(`gfont-[${x.name.replaceAll(' ', '_')}]`)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Text Size</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-52"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-xs')"
+                  >
+                    <div>Extra Small</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-xs')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-sm')"
+                  >
+                    <div>Small</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-sm')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-base')"
+                  >
+                    <div>Base</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-base')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-md')"
+                  >
+                    <div>Medium</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-md')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-lg')"
+                  >
+                    <div>Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-lg')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-xl')"
+                  >
+                    <div>Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-2xl')"
+                  >
+                    <div>2 Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-2xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-3xl')"
+                  >
+                    <div>3 Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-3xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-4xl')"
+                  >
+                    <div>4 Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-4xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-5xl')"
+                  >
+                    <div>5 Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-5xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-6xl')"
+                  >
+                    <div>6 Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-6xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'text-7xl')"
+                  >
+                    <div>7 Extra Large</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('text-7xl')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Font Style</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-52"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-thin')"
+                  >
+                    <div>Thin</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-thin')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-extralight')"
+                  >
+                    <div>Extra Light</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-extralight')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-light')"
+                  >
+                    <div>Light</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-light')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-normal')"
+                  >
+                    <div>Normal</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-normal')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-medium')"
+                  >
+                    <div>Medium</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-medium')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-semibold')"
+                  >
+                    <div>Semibold</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-semibold')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'font-bold')"
+                  >
+                    <div>Bold</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('font-bold')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'italic')"
+                  >
+                    <div>Italic</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('italic')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'not-italic')"
+                  >
+                    <div>Not Italic</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('not-italic')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'underline')"
+                  >
+                    <div>Underline</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('underline')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div></button
+                  ><button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'line-through')"
+                  >
+                    <div>Line Through</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('line-through')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-28"
+              >
+                <span class="text-sm">Tracking</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-52"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'tracking-tighter')"
+                  >
+                    <div>Tighter</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('tracking-tighter')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'tracking-tight')"
+                  >
+                    <div>Tight</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('tracking-tight')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'tracking-normal')"
+                  >
+                    <div>Normal</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('tracking-normal')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'tracking-wide')"
+                  >
+                    <div>Wide</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('tracking-wide')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'tracking-wider')"
+                  >
+                    <div>Wider</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('tracking-wider')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.toggleCssClass', 'master', 'tw', 'tracking-widest')"
+                  >
+                    <div>Widest</div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass('tracking-widest')"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Text Color</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 w-52"
+                >
+                  <div class="max-h-96 overflow-auto *:hover:bg-[#091017]">
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'red')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-red-500 min-h-0"></div>
+                        <div class="">Red</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-red-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'orange')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-orange-500 min-h-0"
+                        ></div>
+                        <div class="">Orange</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-orange-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'amber')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-amber-500 min-h-0"></div>
+                        <div class="">Amber</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-amber-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'yellow')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-yellow-500 min-h-0"
+                        ></div>
+                        <div class="">Yellow</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-yellow-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'lime')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-lime-500 min-h-0"></div>
+                        <div class="">Lime</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-lime-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'green')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-green-500 min-h-0"></div>
+                        <div class="">Green</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-green-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'emerald')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-emerald-500 min-h-0"
+                        ></div>
+                        <div class="">Emerald</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-emerald-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'teal')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-teal-500 min-h-0"></div>
+                        <div class="">Teal</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-teal-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'cyan')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-cyan-500 min-h-0"></div>
+                        <div class="">Cyan</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-cyan-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'sky')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-sky-500 min-h-0"></div>
+                        <div class="">Sky</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-sky-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'blue')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-blue-500 min-h-0"></div>
+                        <div class="">Blue</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-blue-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'indigo')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-indigo-500 min-h-0"
+                        ></div>
+                        <div class="">Indigo</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-indigo-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'violet')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-violet-500 min-h-0"
+                        ></div>
+                        <div class="">Violet</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-violet-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'purple')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-purple-500 min-h-0"
+                        ></div>
+                        <div class="">Purple</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-purple-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'fuchsia')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-fuchsia-500 min-h-0"
+                        ></div>
+                        <div class="">Fuchsia</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-fuchsia-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'pink')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-pink-500 min-h-0"></div>
+                        <div class="">Pink</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-pink-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'rose')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-rose-500 min-h-0"></div>
+                        <div class="">Rose</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-rose-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'slate')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-slate-500 min-h-0"></div>
+                        <div class="">Slate</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-slate-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'gray')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-gray-500 min-h-0"></div>
+                        <div class="">Gray</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-gray-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'zinc')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-zinc-500 min-h-0"></div>
+                        <div class="">Zinc</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-zinc-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'neutral')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-neutral-500 min-h-0"
+                        ></div>
+                        <div class="">Neutral</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-neutral-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleHue', 'master', 'stone')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-stone-500 min-h-0"></div>
+                        <div class="">Stone</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^text-stone-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="relative inline-block group"
+              wf-if="state.designer.selClass(/^text-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-/)"
+            >
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Text Shade</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-36"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 50)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-50"
+                        wf-class="{{replaces bg-red-50: `bg-${state.designer.selHue}-50`}}"
+                      ></div>
+                      <div class="">50</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-50$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 100)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-100"
+                        wf-class="{{replaces bg-red-100: `bg-${state.designer.selHue}-100`}}"
+                      ></div>
+                      <div class="">100</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-100$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 200)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-200"
+                        wf-class="{{replaces bg-red-200: `bg-${state.designer.selHue}-200`}}"
+                      ></div>
+                      <div class="">200</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-200$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 300)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-300"
+                        wf-class="{{replaces bg-red-300: `bg-${state.designer.selHue}-300`}}"
+                      ></div>
+                      <div class="">300</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-300$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 400)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-400"
+                        wf-class="{{replaces bg-red-400: `bg-${state.designer.selHue}-400`}}"
+                      ></div>
+                      <div class="">400</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-400$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 500)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-500"
+                        wf-class="{{replaces bg-red-500: `bg-${state.designer.selHue}-500`}}"
+                      ></div>
+                      <div class="">500</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-500$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 600)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-600"
+                        wf-class="{{replaces bg-red-600: `bg-${state.designer.selHue}-600`}}"
+                      ></div>
+                      <div class="">600</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-600$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 700)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-700"
+                        wf-class="{{replaces bg-red-700: `bg-${state.designer.selHue}-700`}}"
+                      ></div>
+                      <div class="">700</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-700$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 800)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-800"
+                        wf-class="{{replaces bg-red-800: `bg-${state.designer.selHue}-800`}}"
+                      ></div>
+                      <div class="">800</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-800$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 900)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-900"
+                        wf-class="{{replaces bg-red-900: `bg-${state.designer.selHue}-900`}}"
+                      ></div>
+                      <div class="">900</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-900$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setShade', 'master', 950)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-950"
+                        wf-class="{{replaces bg-red-950: `bg-${state.designer.selHue}-950`}}"
+                      ></div>
+                      <div class="">950</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^text-\S+-950$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="relative inline-block group">
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Back Color</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 w-52"
+                >
+                  <div class="max-h-96 overflow-auto *:hover:bg-[#091017]">
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none *:hover:bg-[#091017]"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'red')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-red-500 min-h-0"></div>
+                        <div class="">Red</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-red-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'orange')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-orange-500 min-h-0"
+                        ></div>
+                        <div class="">Orange</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-orange-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'amber')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-amber-500 min-h-0"></div>
+                        <div class="">Amber</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-amber-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'yellow')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-yellow-500 min-h-0"
+                        ></div>
+                        <div class="">Yellow</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-yellow-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'lime')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-lime-500 min-h-0"></div>
+                        <div class="">Lime</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-lime-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'green')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-green-500 min-h-0"></div>
+                        <div class="">Green</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-green-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'emerald')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-emerald-500 min-h-0"
+                        ></div>
+                        <div class="">Emerald</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-emerald-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'teal')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-teal-500 min-h-0"></div>
+                        <div class="">Teal</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-teal-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'cyan')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-cyan-500 min-h-0"></div>
+                        <div class="">Cyan</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-cyan-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'sky')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-sky-500 min-h-0"></div>
+                        <div class="">Sky</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-sky-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'blue')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-blue-500 min-h-0"></div>
+                        <div class="">Blue</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-blue-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'indigo')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-indigo-500 min-h-0"
+                        ></div>
+                        <div class="">Indigo</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-indigo-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'violet')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-violet-500 min-h-0"
+                        ></div>
+                        <div class="">Violet</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-violet-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'purple')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-purple-500 min-h-0"
+                        ></div>
+                        <div class="">Purple</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-purple-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'fuchsia')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-fuchsia-500 min-h-0"
+                        ></div>
+                        <div class="">Fuchsia</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-fuchsia-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'pink')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-pink-500 min-h-0"></div>
+                        <div class="">Pink</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-pink-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'rose')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-rose-500 min-h-0"></div>
+                        <div class="">rose</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-rose-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'slate')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-slate-500 min-h-0"></div>
+                        <div class="">Slate</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-slate-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'gray')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-gray-500 min-h-0"></div>
+                        <div class="">Gray</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-gray-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'zinc')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-zinc-500 min-h-0"></div>
+                        <div class="">Zinc</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-zinc-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'neutral')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-3 h-3 rounded bg-neutral-500 min-h-0"
+                        ></div>
+                        <div class="">Neutral</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-neutral-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                    <button
+                      class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                      wf-onclick="post('designer.toggleBgHue', 'master', 'stone')"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded bg-stone-500 min-h-0"></div>
+                        <div class="">Stone</div>
+                      </div>
+                      <div
+                        class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                        wf-if="state.designer.selClass(/^bg-stone-/)"
+                      >
+                        <div class="relative top-[2px]">Set</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="relative inline-block group"
+              wf-if="state.designer.selClass(/^bg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-/)"
+            >
+              <button
+                class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
+              >
+                <span class="text-sm">Back Shade</span
+                ><span class="nf nf-fa-angle_down relative top-0.5"></span>
+              </button>
+              <div class="absolute hidden group-hover:block pt-2 z-10">
+                <div
+                  class="rounded shadow-sm border transition text-sm overflow-hidden border-black/50 bg-[#060a0f] text-neutral-100 *:hover:bg-[#091017] w-36"
+                >
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 50)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-50"
+                        wf-class="{{replaces bg-red-50: `bg-${state.designer.selBgHue}-50`}}"
+                      ></div>
+                      <div class="">50</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-50$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 100)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-100"
+                        wf-class="{{replaces bg-red-100: `bg-${state.designer.selBgHue}-100`}}"
+                      ></div>
+                      <div class="">100</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-100$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 200)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-200"
+                        wf-class="{{replaces bg-red-200: `bg-${state.designer.selBgHue}-200`}}"
+                      ></div>
+                      <div class="">200</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-200$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 300)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-300"
+                        wf-class="{{replaces bg-red-300: `bg-${state.designer.selBgHue}-300`}}"
+                      ></div>
+                      <div class="">300</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-300$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 400)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-400"
+                        wf-class="{{replaces bg-red-400: `bg-${state.designer.selBgHue}-400`}}"
+                      ></div>
+                      <div class="">400</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-400$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 500)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-500"
+                        wf-class="{{replaces bg-red-500: `bg-${state.designer.selBgHue}-500`}}"
+                      ></div>
+                      <div class="">500</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-500$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 600)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-600"
+                        wf-class="{{replaces bg-red-600: `bg-${state.designer.selBgHue}-600`}}"
+                      ></div>
+                      <div class="">600</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-600$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 700)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-700"
+                        wf-class="{{replaces bg-red-700: `bg-${state.designer.selBgHue}-700`}}"
+                      ></div>
+                      <div class="">700</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-700$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 800)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-800"
+                        wf-class="{{replaces bg-red-800: `bg-${state.designer.selBgHue}-800`}}"
+                      ></div>
+                      <div class="">800</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-800$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 900)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-900"
+                        wf-class="{{replaces bg-red-900: `bg-${state.designer.selBgHue}-900`}}"
+                      ></div>
+                      <div class="">900</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-900$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                  <button
+                    class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-onclick="post('designer.setBgShade', 'master', 950)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-3 h-3 rounded min-h-0 bg-red-950"
+                        wf-class="{{replaces bg-red-950: `bg-${state.designer.selBgHue}-950`}}"
+                      ></div>
+                      <div class="">950</div>
+                    </div>
+                    <div
+                      class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
+                      wf-if="state.designer.selClass(/^bg-\S+-950$/)"
+                    >
+                      <div class="relative top-[2px]">Set</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hidden">HELLO</div>
+        </div>
+
+        <div class="flex flex-1 min-w-0 basis-0 overflow-auto">
+          <div
+            class="ProjectsPanel flex flex-col bg-[#091017] text-neutral-100 w-96 border-r border-black/50 select-none shrink-0"
+            wf-if="state.app.panel === 'projects'"
+          >
+            <button
+              class="ProjectsPanel-createBtn outline-none border-b border-black/50 transition-all h-12 text-xl transition-colors shrink-0 hover:bg-[#008ad9] bg-[#0071b2]"
+              wf-onclick="post('projects.create')"
+            >
+              Create
+            </button>
+            <div
+              class="ProjectsPanel-projectList flex flex-col gap-2 p-4 overflow-auto min-h-0 basis-0 flex-1"
+            >
+              <div class="italic mb-1" wf-if="!state.projects.list.length">
+                Click the button above to create your first project.
+              </div>
+
+              <a
+                href="#"
+                class="ProjectsPanel-project flex items-center gap-3 rounded outline-none py-1 justify-between px-2"
+                wf-map="x of state.projects.list"
+                wf-disabled="loadman.busy()"
+                wf-onclick="post('projects.select', x)"
+                wf-class="{{state.projects.current === x &amp;&amp; 'bg-black/50'}}"
+              >
+                <div class="flex items-center gap-3">
+                  <div>
+                    <div class="nf nf-fa-sitemap p-2"></div>
+                  </div>
+                  <div class="ProjectsPanel-projectName">
+                    {{x.split(':')[0]}}
+                  </div>
+                </div>
+                <div class="flex">
+                  <button
+                    class="ProjectsPanel-renameBtn outline-none nf nf-fa-pencil p-2"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('projects.mv', x)"
+                  ></button>
+                  <button
+                    class="ProjectsPanel-deleteBtn outline-none nf nf-fa-trash p-2"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('projects.rm', x)"
+                  ></button>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div
+            class="FilesPanel flex flex-col bg-[#091017] text-neutral-100 w-96 border-r border-black/50 select-none shrink-0"
+            wf-if="state.app.panel === 'files'"
+          >
+            <button
+              class="FilesPanel-createBtn outline-none border-b border-black/50 transition-all h-12 text-xl transition-colors hover:bg-[#008ad9] shrink-0 bg-[#0071b2]"
+              wf-onclick="event.preventDefault(), post('files.create')"
+            >
+              Create
+            </button>
+            <div
+              class="FilesPanel-fileList flex flex-col gap-2 p-4 overflow-auto min-h-0 basis-0 flex-1"
+              wf-class="{{state.files.dropTarget === '/' &amp;&amp; 'bg-black/50'}}"
+              wf-ondragover="post('files.dragover', event, '/')"
+              wf-ondrop="post('files.drop', event, '/')"
+            >
+              <div
+                class="italic mb-1"
+                wf-if="!state.files.list.length &amp;&amp; loadman.ops['files.load']?.length"
+              >
+                Loading files, please wait...
+              </div>
+
+              <a
+                href="#"
+                class="FilesPanel-file flex items-center gap-3 rounded outline-none py-1 justify-between px-2 ml-[0rem]"
+                draggable="true"
+                wf-map="x of state.files.list"
+                wf-class="{{`ml-[${(x[1].split('/').length - 1) * 1.25}rem]`}} {{(state.files.current === x[1] + x[0] || state.files.dropTarget === x[1] + x[0]) &amp;&amp; 'bg-black/50'}} {{!state.files.expanded(x[1]) &amp;&amp; 'hidden'}}"
+                wf-onclick="post('files.select', joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
+                wf-ondragstart="post('files.dragstart', event, joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
+                wf-ondragover="post('files.dragover', event, x[1] + x[0] + (x[2] ? '/' : ''))"
+                wf-ondrop="post('files.drop', event, joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
+                wf-ondragend="post('files.dragend')"
+              >
+                <div class="max-w-[calc(100%_-_5rem)] flex items-center gap-3">
+                  <div
+                    class="nf p-2 nf-fa-folder"
+                    wf-class="{{replaces nf-fa-folder: `nf-fa-${x[2] ? (state.files.expanded(x[1] + x[0] + '/.keep') ? 'folder_open' : 'folder') : 'file'}`}}"
+                  ></div>
+                  <div
+                    class="FilesPanel-fileName overflow-hidden text-ellipsis"
+                  >
+                    {{x[0]}}
+                  </div>
+                </div>
+                <div class="flex">
+                  <button
+                    class="FilesPanel-createInsideBtn outline-none nf p-2 nf-fa-plus"
+                    wf-if="x[2]"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('files.create', joinPath(x[1], x[0]), x[2])"
+                  ></button
+                  ><button
+                    class="outline-none nf p-2 nf-fa-pencil"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('files.mv', joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
+                    wf-if="!state.files.protected(x[1] + x[0])"
+                  ></button
+                  ><button
+                    class="outline-none nf p-2 nf-fa-trash"
+                    wf-if="!state.files.protected(x[1] + x[0])"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('files.rm', joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
+                  ></button>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div
+            class="StylesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 shrink-0 bg-[#091017]"
+            wf-if="state.app.panel === 'styles'"
+          >
+            <div
+              class="StylesPanel-styleList flex flex-col gap-2 p-4 overflow-auto min-h-0 basis-0 flex-1"
+            >
+              <div
+                class="italic mb-1"
+                wf-if="!state.designer.current.cursors.master?.length"
+              >
+                There are currently no selected elements. Select some to see and
+                edit their styles here.
+              </div>
+
+              <div
+                class="italic mb-1"
+                wf-if="state.designer.current.cursors.master?.length &amp;&amp; !state.styles.list.length"
+              >
+                The currently selected elements have no styles. Add some here or
+                through the
+                <strong>Tailwind</strong> toolbar above!
+              </div>
+
+              <div
+                class="StylesPanel-style flex items-center gap-3 rounded outline-none py-1 justify-between px-2"
+                wf-map="x of state.styles.list"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="nf p-2 nf-fa-paint_brush"></div>
+                  <div
+                    class="ProjectsPanel-styleName"
+                    wf-if="state.styles.replacing !== x"
+                  >
+                    {{x}}
+                  </div>
+                  <input
+                    class="w-full bg-transparent outline-none"
+                    wf-if="state.styles.replacing === x"
+                    hidden=""
+                    wf-onattach="_1.value = x, _1.select()"
+                    wf-onkeydown="post('styles.replaceKeyDown', event)"
+                    wf-onblur="post('styles.replaceBlur', event)"
+                  />
+                </div>
+                <div class="flex">
+                  <button
+                    class="StylesPanel-editBtn outline-none nf p-2 nf-fa-pencil"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('styles.edit', x)"
+                  ></button>
+                  <button
+                    class="StylesPanel-deleteBtn outline-none nf p-2 nf-fa-trash"
+                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('styles.rm', x)"
+                  ></button>
+                </div>
+              </div>
+              <div
+                class="StylesPanel-addStyle flex items-center gap-3 rounded outline-none py-1 px-2"
+                wf-if="state.designer.current.cursors.master?.length"
+              >
+                <div class="nf p-2 nf-fa-plus"></div>
+                <input
+                  class="StylesPanel-addStyleInput outline-none w-full placeholder:text-inherit bg-transparent"
+                  placeholder="add class"
+                  wf-onkeyup="post('styles.addKeyUp', event)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 bg-[#091017] overflow-auto"
+            wf-if="state.app.panel === 'settings'"
+          >
+            <div>Settings &amp; More</div>
+            <div class="ml-3">
+              <div class="flex flex-col gap-2">
+                <div
+                  class="flex items-center gap-3"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">App Title:</div>
+                  <input
+                    class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
+                    value="{{state.projects.currentProject.title}}"
+                    wf-disabled="loadman.busy()"
+                    wf-onkeyup="event.preventDefault(), post('project.titleKeyDown')"
+                  />
+                </div>
+                <div
+                  class="flex items-center gap-3"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">Page Title:</div>
+                  <input
+                    class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
+                    value=""
+                    wf-disabled="loadman.busy()"
+                    wf-onkeyup="event.preventDefault(), post('app.projectTitleKeyDown')"
+                  />
+                </div>
+              </div>
+              <div class="space-y-2 mt-2 -ml-3">
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">Enable NerdFonts</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="state.settings.popt.nerdfonts"
+                      wf-onclick="event.preventDefault(), post('settings.projectOption', 'nerdfonts')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">Enable Tailwind</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="state.settings.popt.tailwind"
+                      wf-onclick="event.preventDefault(), post('settings.projectOption', 'tailwind')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">Better Chrome scrollbars</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="state.settings.popt.betterscroll"
+                      wf-onclick="event.preventDefault(), post('settings.projectOption', 'betterscroll')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                >
+                  <div class="shrink-0">Hide toolbar</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="!state.settings.opt.toolbar"
+                      wf-onclick="event.preventDefault(), post('settings.option', 'toolbar')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer SettingsPanel-companionBtn"
+                >
+                  <div class="shrink-0">Enable Companion</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="(state.settings.opt.companion)"
+                      wf-onclick="event.preventDefault(), event.stopPropagation(), post('settings.option', 'companion')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">Enable Companion FS</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="state.settings.popt.storage === 'cfs'"
+                      wf-onclick="event.preventDefault(), post('settings.projectOption', 'storage', state.settings.popt.storage === 'cfs' ? 'local' : 'cfs')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-if="state.projects.current"
+                >
+                  <div class="shrink-0">Enable Peacock</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="state.settings.popt.peacock"
+                      wf-onclick="event.preventDefault(), post('settings.projectOption', 'peacock')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-onclick="post('companion.copyKey', event)"
+                  wf-if="state.settings.opt.companion"
+                >
+                  <div>Copy companion key</div>
+                  <div class="text-sm text-green-400 hidden">Copied!</div>
+                </button>
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none disabled:opacity-50"
+                  wf-if="!state.assistant.session"
+                  wf-onclick="event.preventDefault(), post('assistant.start')"
+                  wf-disabled="state.assistant.initializing"
+                >
+                  <div>Voice assistant</div>
+                  <div
+                    class="text-sm text-green-400"
+                    wf-if="state.assistant.initializing"
+                  >
+                    Connecting...
+                  </div>
+                </button>
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-if="state.assistant.session"
+                  wf-onclick="event.preventDefault(), post('assistant.stop')"
+                >
+                  <div>Disable assistant</div></button
+                ><button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-disabled="loadman.busy()"
+                  wf-onclick="event.preventDefault(), post('collab.setup')"
+                  wf-if="!state.collab.rtc &amp;&amp; state.projects.current"
+                >
+                  <div>Collaborate</div>
+                </button>
+
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-disabled="loadman.busy()"
+                  wf-onclick="event.preventDefault(), post('collab.stop')"
+                  wf-if="state.collab.rtc &amp;&amp; state.projects.current"
+                >
+                  <div>Stop collaboration</div>
+                </button>
+
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-disabled="loadman.busy()"
+                  wf-onclick="event.preventDefault(), post('files.importZip')"
+                  wf-if="state.projects.current"
+                >
+                  <div>Import ZIP</div>
+                </button>
+
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-disabled="loadman.busy()"
+                  wf-onclick="event.preventDefault(), post('files.exportZip')"
+                  wf-if="state.projects.current"
+                >
+                  <div>Export ZIP</div>
+                </button>
+
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-disabled="loadman.busy()"
+                  wf-onclick="event.preventDefault(), post('files.deploy')"
+                  wf-if="state.projects.current"
+                >
+                  <div>Deploy to Netlify</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-1" id="Canvas">
+            <div
+              class="flex justify-center items-center px-16 flex-1 select-none"
+              wf-class="{{!state.app.brandCanvas &amp;&amp; 'hidden'}}"
+            >
+              <div class="gfont-[Pacifico] text-6xl text-black/70">
+                Webfoundry
+              </div>
+            </div>
+
+            <div
+              class="flex flex-1 min-w-96 bg-white"
+              wf-map="x of state.designer.list"
+              wf-class="{{!state.designer.frameVisible(x.path) &amp;&amp; 'hidden'}}"
+            >
+              <iframe
+                class="flex-1"
+                wf-src="state.designer.src(x.path)"
+                wf-onattach="post('designer.frameAttach', x.path, _1)"
+                wf-onload="post('designer.frameReady', x.path)"
+                wf-onerror="post('designer.frameReady', x.path, event)"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+        <div
+          class="border-t border-black/50 flex"
+          id="DockedShellWrapper"
+          wf-class="{{!state.shell.open &amp;&amp; 'hidden'}}"
+          wf-if="state.shell.open &amp;&amp; !state.shell.expand"
+          hidden=""
+        >
+          <div
+            class="flex flex-col flex-1 text-neutral-100 max-w-full ShellWrapper"
+            id="ShellWrapper"
+          >
+            <div
+              class="text-sm px-4 py-3 flex text-neutral-100 items-center gap-3"
+              wf-if="state.companion.client?.status === 'auth_fail'"
+            >
+              <button
+                class="px-3 py-0.5 bg-[#0071b2] hover:bg-[#008ad9] h-7 outline-none"
+                wf-onclick="post('companion.poll')"
+              >
+                Retry
+              </button>
+              <div class="text-red-500">
+                Invalid key. Please reconfigure your companion app with a fresh
+                key from the settings menu.
+              </div>
+            </div>
+            <div class="flex text-sm border-b border-black/50 items-center">
+              <a
+                class="px-3 py-1 flex items-center gap-1 border-r border-black/40 cursor-pointer hover:bg-black/70 transition-colors ShellWrapper-tab"
+                wf-map="x of state.shell.list"
+                wf-class="{{replaces hover:bg-black/70: state.shell.current === x.session &amp;&amp; 'bg-[#0071b2] hover:bg-[#008ad9]'}}"
+                wf-onclick="post('shell.select', x.session)"
+                ><div>{{x.label || 'unknown'}}</div>
+
+                <button
+                  class="nf nf-oct-x relative top-[2px] outline-none ShellWrapper-tabCloseBtn"
+                  wf-onclick="event.stopPropagation(), post('shell.close', x.session)"
+                ></button>
+              </a>
+
+              <button
+                class="nf nf-fa-plus w-8 text-xs outline-none min-h-7 ShellWrapper-createTabBtn"
+                wf-onclick="post('shell.spawn')"
+                wf-if="state.shell.list.length"
+              ></button>
+            </div>
+            <div
+              class="p-3 bg-black flex flex-col overflow-hidden flex-1 Shell"
+              wf-map="x of state.shell.list"
+              wf-class="{{state.shell.current !== x.session &amp;&amp; 'hidden'}}"
+            >
+              <div
+                wf-onattach="post('shell.attach', x.session, _1)"
+                wf-class="{{replaces h-52: state.shell.expand ? 'h-full' : 'h-52'}}"
+                id="Shell"
+                class="h-52"
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div
+          wf-if="state.collab.rtc"
+          class="border-t border-black/50"
+          hidden=""
+        >
+          <div
+            class="text-sm px-4 py-3 text-blue-400"
+            wf-if="state.collab.rtc.presence.length &lt;= 1"
+          >
+            Awaiting collaborators...
+          </div>
+          <div
+            class="text-sm px-4 py-3 text-green-400"
+            wf-if="state.collab.rtc.presence.length &gt; 1"
+          >
+            Currently collaborating with {{state.collab.rtc.presence.length -
+            1}} clients.
+          </div>
+        </div>
+        <div
+          class="text-sm px-4 py-3 flex gap-2 text-red-500"
+          wf-if="state.app.autoassist?.clipboard?.length"
+          hidden=""
+        >
+          <div>Assistant clipboard:</div>
+          <div
+            class="flex gap-1 items-center"
+            wf-map="x of state.app.autoassist.clipboard"
+          >
+            <button
+              class="hover:underline outline-none"
+              wf-onclick="post('app.autoassistCopy', x)"
+            >
+              {{x.name}} {{x.copied}}</button
+            ><button
+              class="nf nf-oct-x relative top-0.5 outline-none"
+              wf-onclick="post('app.autoassistRmClip', x)"
+            ></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
