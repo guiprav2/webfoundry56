@@ -105,7 +105,7 @@ export default class Designer {
         await post('designer.maptrack', frame);
         frame.html.addEventListener('mousedown', async ev => await post('designer.mousedown', ev), true);
         frame.html.addEventListener('click', ev => ev.preventDefault(), true);
-        //frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
+        frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
         frame.html.addEventListener('keydown', async ev => await post('designer.keydown', ev), true);
       }
       frame.ready = true;
@@ -138,9 +138,15 @@ export default class Designer {
     mousedown: async ev => {
       let frame = this.state.current;
       frame.el.focus();
+      frame.doc.activeElement.blur();
       ev.preventDefault();
       if (!ev.shiftKey) await actions.changeSelection.handler({ cur: state.collab.uid, s: [frame.map.getKey(ev.target)] });
       else await actions.changeSelection.handler({ cur: state.collab.uid, s: [...new Set([...frame.cursors[state.collab.uid] || [], frame.map.getKey(ev.target)])] });
+    },
+
+    dblclick: async ev => {
+      if (!/^HTML(InputElement|TextAreaElement)$/.test(ev.target.constructor.name)) return;
+      ev.target.select();
     },
 
     keydown: async ev => {

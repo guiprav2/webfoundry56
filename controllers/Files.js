@@ -32,7 +32,6 @@ export default class Files {
         let port = event.ports[0];
         try {
           let notFound = () => port.postMessage({ status: 404, data: new Blob(['Not found'], { type: 'text/plain' }) });
-          console.log(project, path);
           let data = !location.pathname.startsWith('/collab.html') ? await rfiles.load(project, path) : await ungzblob(unb64(await post('collab.rpc', 'fetch', { project, path })), mimeLookup(path));
           if (!data) return notFound();
           port.postMessage({ status: 200, data });
