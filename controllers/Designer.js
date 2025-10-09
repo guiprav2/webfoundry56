@@ -98,7 +98,7 @@ export default class Designer {
         frame.html.addEventListener('mousedown', async ev => await post('designer.mousedown', ev), true);
         frame.html.addEventListener('click', ev => ev.preventDefault(), true);
         //frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
-        //frame.html.addEventListener('keydown', async ev => await post('designer.keydown', ev), true);
+        frame.html.addEventListener('keydown', async ev => await post('designer.keydown', ev), true);
       }
       frame.ready = true;
       frame.resolve();
@@ -132,6 +132,21 @@ export default class Designer {
       frame.el.focus();
       ev.preventDefault();
       await actions.changeSelection.handler({ cur: state.collab.uid, s: [frame.map.getKey(ev.target)] });
+    },
+
+    keydown: async ev => {
+      // FIXME: Slave support
+      if (/^input|textarea|button$/i.test(this.state.current.doc.activeElement.tagName)) {
+        if (ev.key === 'Escape') ev.target.blur();
+        return;
+      }
+      let key = ev.key;
+      if (ev.ctrlKey) key = `Ctrl-${key}`;
+      let [k, cmd] = [...Object.entries(actions)].find(kv => arrayify(kv[1].shortcut).includes(key));
+      if (!cmd || (cmd.condition && !cmd.condition(state.collab.uid))) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      await cmd.handler({ cur: state.collab.uid });
     },
 
     save: debounce(async frame => {

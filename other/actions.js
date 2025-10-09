@@ -1,4 +1,42 @@
 let actions = {
+  undo: {
+    shortcut: 'Ctrl-z',
+    condition: () => state.designer.open,
+    negativeReason: () => [!state.designer.open && `Designer closed.`],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose history to undo (defaults to master)` },
+      },
+    },
+    handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'undo' });
+      let frame = state.designer.current;
+      if (!frame.history[cur] || frame.ihistory[cur] < 1) return;
+      --frame.ihistory[cur];
+      await frame.history[cur][frame.ihistory[cur]](false);
+    },
+  },
+
+  redo: {
+    shortcut: 'Ctrl-y',
+    condition: () => state.designer.open,
+    negativeReason: () => [!state.designer.open && `Designer closed.`],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose history to redo (defaults to master)` },
+      },
+    },
+    handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'redo' });
+      let frame = state.designer.current;
+      if (!frame.history[cur] || !frame.history[cur][frame.ihistory[cur]]) return;
+      await frame.history[cur][frame.ihistory[cur]](true);
+      ++frame.ihistory[cur];
+    },
+  },
+
   changeSelection: {
     description: `Select elements based on their data-htmlsnap IDs`,
     condition: () => state.designer.open,
@@ -21,7 +59,7 @@ let actions = {
     },
   },
 
-  toggleSelections: {
+  toggleSelection: {
     description: [
       `Toggles the current element selections;`,
       `if there is a selection, it unselects;`,
@@ -37,7 +75,13 @@ let actions = {
         cur: { type: 'string', description: `Whose cursor to toggle (defaults to master)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.toggleSelections', cur),
+    handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'toggleSelection', cur });
+      let frame = state.designer.current;
+      let sel = frame.cursors[cur] || [];
+      if (sel.length) await actions.changeSelection.handler({ cur, s: [] });
+      else if (frame.lastCursors[cur]?.length) await actions.changeSelection.handler({ cur, s: frame.lastCursors[cur] });
+    },
   },
 
   selectParentElement: {
@@ -55,7 +99,16 @@ let actions = {
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectParentElement', cur, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'selectParentElement', cur, i });
+      let k = 'parentElement';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        s[k] && frame.body.contains(s[k]) && await actions.changeSelection.handler({ cur, s: [frame.map.getKey(s[k])] });
+      }
+    },
   },
 
   selectNextSibling: {
@@ -72,7 +125,16 @@ let actions = {
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectNextSibling', cur, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'selectNextSibling', cur, i });
+      let k = 'nextElementSibling';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        s[k] && frame.body.contains(s[k]) && await actions.changeSelection.handler({ cur, s: [frame.map.getKey(s[k])] });
+      }
+    },
   },
 
   selectPrevSibling: {
@@ -89,7 +151,16 @@ let actions = {
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectPrevSibling', cur, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'selectPrevSibling', cur, i });
+      let k = 'previousElementSibling';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        s[k] && frame.body.contains(s[k]) && await actions.changeSelection.handler({ cur, s: [frame.map.getKey(s[k])] });
+      }
+    },
   },
 
   selectFirstChild: {
@@ -106,7 +177,16 @@ let actions = {
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectFirstChild', cur, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'selectFirstChild', cur, i });
+      let k = 'firstElementChild';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        s[k] && frame.body.contains(s[k]) && await actions.changeSelection.handler({ cur, s: [frame.map.getKey(s[k])] });
+      }
+    },
   },
 
   selectLastChild: {
@@ -123,33 +203,16 @@ let actions = {
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectLastChild', cur, i),
-  },
-
-  undo: {
-    shortcut: 'Ctrl-z',
-    condition: () => state.designer.open,
-    negativeReason: () => [!state.designer.open && `Designer closed.`],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose history to undo (defaults to master)` },
-      },
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'selectLastChild', cur, i });
+      let k = 'lastElementChild';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        s[k] && frame.body.contains(s[k]) && await actions.changeSelection.handler({ cur, s: [frame.map.getKey(s[k])] });
+      }
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.undo', cur),
-  },
-
-  redo: {
-    shortcut: 'Ctrl-y',
-    condition: () => state.designer.open,
-    negativeReason: () => [!state.designer.open && `Designer closed.`],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose history to redo (defaults to master)` },
-      },
-    },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.redo', cur),
   },
 
   createNextSibling: {
@@ -164,9 +227,39 @@ let actions = {
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
+        i: { type: 'string', description: `How many to create (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createNextSibling', cur, tag),
+    handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createNextSibling', cur, tag, i });
+      let pos = 'afterend';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      let created = [];
+      let parents = [];
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        let p = s.parentElement;
+        let j = [...p.childNodes].indexOf(s);
+        let k = 1;
+        let pv;
+        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
+        let x = d.el(tag);
+        created.push(x);
+        parents.push(s);
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let i = 0; i < created.length; i++) created[i].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+        }
+      });
+    },
   },
 
   createPrevSibling: {
@@ -181,9 +274,39 @@ let actions = {
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
+        i: { type: 'string', description: `How many to create (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createPrevSibling', cur, tag),
+    handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createPrevSibling', cur, tag, i });
+      let pos = 'beforebegin';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      let created = [];
+      let parents = [];
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        let p = s.parentElement;
+        let j = [...p.childNodes].indexOf(s);
+        let k = 1;
+        let pv;
+        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
+        let x = d.el(tag);
+        created.push(x);
+        parents.push(s);
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let i = 0; i < created.length; i++) created[i].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+        }
+      });
+    },
   },
 
   createLastChild: {
@@ -198,9 +321,39 @@ let actions = {
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
+        i: { type: 'string', description: `How many to create (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createLastChild', cur, tag),
+    handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createLastChild', cur, tag, i });
+      let pos = 'beforeend';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      let created = [];
+      let parents = [];
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        let p = s.parentElement;
+        let j = [...p.childNodes].indexOf(s);
+        let k = 1;
+        let pv;
+        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
+        let x = d.el(tag);
+        created.push(x);
+        parents.push(s);
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let i = 0; i < created.length; i++) created[i].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+        }
+      });
+    },
   },
 
   createFirstChild: {
@@ -215,9 +368,39 @@ let actions = {
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
+        i: { type: 'string', description: `How many to create (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createFirstChild', cur, tag),
+    handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createFirstChild', cur, tag, i });
+      let pos = 'afterbegin';
+      let frame = state.designer.current;
+      if (frame.cursors[cur].length !== 1) return;
+      let created = [];
+      let parents = [];
+      while (i-- > 0) {
+        let s = frame.map.get(frame.cursors[cur][0]);
+        let p = s.parentElement;
+        let j = [...p.childNodes].indexOf(s);
+        let k = 1;
+        let pv;
+        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
+        let x = d.el(tag);
+        created.push(x);
+        parents.push(s);
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let i = 0; i < created.length; i++) created[i].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+        }
+      });
+    },
   },
 
   copySelected: {
@@ -234,7 +417,14 @@ let actions = {
         cur: { type: 'string', description: `Whose selection to copy (defaults to master)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.copySelected', cur),
+    handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'copySelected', cur });
+      let frame = state.designer.current;
+      let els = frame.cursors[cur].map(id => frame.map.get(id)).filter(Boolean);
+      let html = els.map(n => n.outerHTML).join('\n');
+      frame.clipboards[cur] = html;
+      cur === 'master' && localStorage.setItem('webfoundry:clipboard', html);
+    },
   },
 
   deleteSelected: {
@@ -252,7 +442,43 @@ let actions = {
         i: { type: 'number', description: `How many times to delete (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.deleteSelected', cur, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'deleteSelected', cur });
+      let frame = state.designer.current;
+      await actions.copySelected.handler({ cur });
+      while (i-- > 0) {
+        let ss = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => x !== frame.root && x !== frame.body && x !== frame.head);
+        if (!ss.length) return;
+        let select = new Set();
+        let removed = [];
+        let ps = ss.map(x => x.parentElement);
+        let idxs = ss.map(x => [...x.parentElement.children].indexOf(x));
+        for (let s of ss) {
+          let p = s.parentElement;
+          let i = [...p.children].indexOf(s);
+          s.remove();
+          removed.push(s);
+          select.add(ss.length === 1 ? p.children[i] || p.children[i - 1] || p : p.children[i - 1]);
+        }
+        select = [...select].filter(Boolean).filter(x => !removed.includes(x));
+        if (!select.length) select.push(...ps);
+        await post('designer.pushHistory', cur, async apply => {
+          if (apply) {
+            for (let s of removed) s.remove();
+            await new Promise(pres => setTimeout(pres));
+            await actions.changeSelection.handler({ cur, s: select.map(x => frame.map.getKey(x)) });
+          } else {
+            for (let n = 0; n < removed.length; n++) {
+              let p = ps[n];
+              let i = idxs[n];
+              if (p.children[i]) p.insertBefore(removed[n], p.children[i]); else p.appendChild(removed[n]);
+            }
+            await new Promise(pres => setTimeout(pres));
+            await actions.changeSelection.handler({ cur, s: removed.map(x => frame.map.getKey(x)) });
+          }
+        });
+      }
+    },
   },
 
   pasteNextSibling: {
