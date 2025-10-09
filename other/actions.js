@@ -922,7 +922,10 @@ let actions = {
         idxs.push(i);
       }
       if (html == null) {
-        let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML', initialValue: replaced[0].outerHTML });
+        let el = replaced[0].cloneNode(true);
+        el.removeAttribute('data-htmlsnap');
+        el.querySelectorAll('*').forEach(x => x.removeAttribute('data-htmlsnap'));
+        let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML', initialValue: el.outerHTML });
         if (btn !== 'ok') return;
         html = val;
       }
