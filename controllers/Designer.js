@@ -9,6 +9,14 @@ import { defaultHead } from '../other/templates.js';
 
 export default class Designer {
   state = {
+    toolbar: 'manipulation',
+
+    get tagLabel() {
+      let s = this.current.cursors[state.collab.uid];
+      if (s?.length !== 1) return 'Tag';
+      return `<${this.current.map.get(s[0]).tagName.toLowerCase()}>`;
+    },
+
     list: [],
 
     frameVisible(path) {
@@ -179,6 +187,11 @@ export default class Designer {
       await op(true);
       frame.history[cur].push(op);
       ++frame.ihistory[cur];
+    },
+
+    toolbar: async (k, params) => {
+      if (/^(manipulation|tailwind)$/.test(k)) { this.state.toolbar = k; return }
+      await actions[k].handler(params);
     },
   };
 };
