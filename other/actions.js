@@ -413,11 +413,7 @@ let actions = {
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (!tag) {
-        let [btn, val] = await showModal('PromptDialog', {
-          title: 'Change tag',
-          label: 'Tag name',
-          initialValue: targets[0].tagName.toLowerCase(),
-        });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change tag', label: 'Tag name', initialValue: targets[0].tagName.toLowerCase() });
         if (btn !== 'ok' || !val.trim()) return;
         tag = val.trim();
       }
@@ -1628,7 +1624,6 @@ let actions = {
     },
   },
 
-  // FIXME: Support multiple selections like in the Styles panel
   setEventHandlers: {
     shortcut: 'Ctrl-o',
     disabled: ({ cur = 'master' }) => [
@@ -1638,13 +1633,25 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
       },
     },
     handler: async ({ cur = 'master' } = {}) => {
+      let frame = state.designer.current;
+      let el = frame.map.get(frame.cursors[cur][0]);
+      if (!el) return;
+      let prevHandlers = [];
+      for (let attr of el.attributes) if (attr.name.startsWith('wf-on')) prevHandlers.push({ name: attr.name.slice(5), expr: attr.value });
+      let [btn, ...val] = await showModal('EventHandlersDialog', { handlers: prevHandlers });
+      if (btn !== 'ok') return;
+      let newHandlers = Array.isArray(val) ? val.filter(h => h && h.name && h.expr) : [];
+      let prev = Array.isArray(prevHandlers) ? prevHandlers : [];
+      let next = newHandlers.length ? newHandlers : prev;
+      await post('designer.pushHistory', cur, async apply => {
+        let list = apply ? next : prev;
+        for (let attr of [...el.attributes]) if (attr.name.startsWith('wf-on')) el.removeAttribute(attr.name);
+        for (let h of list) if (h.name && h.expr) el.setAttribute(`wf-on${h.name}`, h.expr);
+      });
     },
   },
 
