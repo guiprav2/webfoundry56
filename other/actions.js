@@ -922,31 +922,63 @@ let actions = {
         idxs.push(i);
       }
       if (html == null) {
-        let el = replaced[0].cloneNode(true);
-        el.removeAttribute('data-htmlsnap');
-        el.querySelectorAll('*').forEach(x => x.removeAttribute('data-htmlsnap'));
-        let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML', initialValue: el.outerHTML });
+        let combined = replaced.map(el => {
+          let clone = el.cloneNode(true);
+          clone.removeAttribute('data-htmlsnap');
+          clone.querySelectorAll('*').forEach(x => x.removeAttribute('data-htmlsnap'));
+          return clone.outerHTML;
+        }).join('\n');
+        let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML', initialValue: combined });
         if (btn !== 'ok') return;
         html = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeHtml', cur, html });
+      let added = [];
       await post('designer.pushHistory', cur, async apply => {
         if (apply) {
+          let template = document.createElement('template');
+          template.innerHTML = html;
+          let newEls = [...template.content.children];
           let newSelect = [];
+          added = [];
+          let lastParent = parents.at(-1);
+          let lastIndex = idxs.at(-1);
           for (let n = 0; n < replaced.length; n++) {
             let p = parents[n];
             let i = idxs[n];
-            p.children[i].outerHTML = html;
-            newSelect.push(p.children[i]);
+            let newEl = newEls[n];
+            if (newEl) {
+              p.children[i].replaceWith(newEl);
+              newSelect.push(newEl);
+            } else {
+              p.children[i]?.remove();
+            }
+          }
+          if (newEls.length > replaced.length) {
+            let after = lastParent.children[lastIndex];
+            let rest = newEls.slice(replaced.length);
+            for (let el of rest) {
+              if (after?.nextSibling) after.parentElement.insertBefore(el, after.nextSibling);
+              else after?.parentElement.appendChild(el);
+              newSelect.push(el);
+              added.push(el);
+              after = el;
+            }
           }
           await new Promise(pres => setTimeout(pres));
           await actions.changeSelection.handler({ cur, s: newSelect.map(x => frame.map.getKey(x)) });
         } else {
           let newSelect = [];
+          for (let el of added) el.remove();
           for (let n = 0; n < replaced.length; n++) {
             let p = parents[n];
             let i = idxs[n];
-            p.children[i].replaceWith(replaced[n]);
+            let current = p.children[i];
+            if (current) current.replaceWith(replaced[n]);
+            else {
+              if (p.children[i - 1]) p.children[i - 1].after(replaced[n]);
+              else p.insertBefore(replaced[n], p.firstChild);
+            }
             newSelect.push(replaced[n]);
           }
           await new Promise(pres => setTimeout(pres));
