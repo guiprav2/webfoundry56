@@ -968,13 +968,13 @@ let actions = {
     shortcut: 'm',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
-        html: { type: 'string' },
+        html: { type: 'string', description: `Keep original CSS classes and attributes unless they conflict with the requested HTML changes.` },
       },
     },
     handler: async ({ cur = 'master', html = null } = {}) => {
@@ -1067,43 +1067,61 @@ let actions = {
     shortcut: 'M',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `whose selected elements to change (defaults to master)`,
-        },
+        cur: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
         html: { type: 'string' },
       },
     },
-    handler: async ({ cur = 'master', html } = {}) =>
-      await post('designer.changeInnerHtml', cur, html),
+    handler: async ({ cur = 'master', html = null } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      let prev = targets.map(x => x.innerHTML);
+      if (html == null) {
+        let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML (inner)', initialValue: prev.join('\n') });
+        if (btn !== 'ok') return;
+        html = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) targets[n].innerHTML = apply ? html : prev[n];
+        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+      });
+    },
   },
 
   changeInputPlaceholder: {
     shortcut: 'Ctrl-p',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `whose selected elements to change (defaults to master)`,
-        },
-        placeholder: {
-          type: 'string',
-          description: `Placeholder text (default prompts user)`,
-        },
+        cur: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
+        placeholder: { type: 'string', description: `Placeholder text (default prompts user)` },
       },
     },
-    handler: async ({ cur = 'master', placeholder } = {}) =>
-      await post('designer.changeInputPlaceholder', cur, placeholder),
+    handler: async ({ cur = 'master', placeholder = null } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => /^HTML(InputElement|TextAreaElement)$/.test(x.constructor.name));
+      if (!targets.length) return;
+      let prev = targets.map(x => x.placeholder);
+      if (placeholder == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change input placeholder', label: 'Placeholder text', initialValue: prev[0] || '' });
+        if (btn !== 'ok') return;
+        placeholder = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let nv = apply ? placeholder : prev[n];
+          nv ? targets[n].setAttribute('placeholder', nv) : targets[n].removeAttribute('placeholder');
+        }
+      });
+    },
   },
 
   changeFormMethod: {
@@ -1111,23 +1129,31 @@ let actions = {
     shortcut: 'Ctrl-M',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `whose selected elements to change (defaults to master)`,
-        },
-        method: {
-          type: 'string',
-          description: `Method to use (default prompts user)`,
-        },
+        cur: { type: 'string', description: `whose selected elements to change (defaults to master)` },
+        method: { type: 'string', description: `Method to use (default prompts user)` },
       },
     },
-    handler: async ({ cur = 'master', method } = {}) =>
-      await post('designer.changeFormMethod', cur, method),
+    handler: async ({ cur = 'master', method } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => x?.tagName === 'FORM');
+      let prev = targets.map(x => x.getAttribute('method') || '');
+      if (method == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change form method', label: 'Method', initialValue: prev[0] || '' });
+        if (btn !== 'ok') return;
+        method = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let nv = apply ? method : prev[n];
+          nv ? targets[n].setAttribute('method', nv) : targets[n].removeAttribute('method');
+        }
+      });
+    },
   },
 
   toggleHidden: {
@@ -1143,7 +1169,14 @@ let actions = {
         cur: { type: 'string', description: `Whose selected elements to toggle (defaults to master)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.toggleHidden', cur),
+    handler: async ({ cur = 'master' } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      let prev = targets.map(x => x.hidden);
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) targets[n].hidden = apply ? !prev[n] : prev[n];
+      });
+    },
   },
 
   replaceTextContent: {
@@ -1156,18 +1189,23 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to move (defaults to master)`,
-        },
-        text: {
-          type: 'string',
-          description: `Replacement text (defaults to a modal to prompt the user)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        text: { type: 'string', description: `Replacement text (defaults to a modal to prompt the user)` },
       },
     },
-    handler: async ({ cur = 'master', text } = {}) =>
-      await post('designer.replaceTextContent', cur, text),
+    handler: async ({ cur = 'master', text } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      let prev = targets.map(x => x.textContent);
+      if (text == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Replace text', label: 'Text', initialValue: prev[0] || '' });
+        if (btn !== 'ok') return;
+        text = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) targets[n].textContent = apply ? text : prev[n];
+      });
+    },
   },
 
   replaceMultilineTextContent: {
@@ -1180,18 +1218,23 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
-        text: {
-          type: 'string',
-          description: `Replacement text (defaults to multiline textarea prompt)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+        text: { type: 'string', description: `Replacement text (defaults to multiline textarea prompt)` },
       },
     },
-    handler: async ({ cur = 'master', text } = {}) =>
-      await post('designer.replaceMultilineTextContent', cur, text),
+    handler: async ({ cur = 'master', text } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      let prev = targets.map(x => x.textContent);
+      if (text == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Replace text (multiline)', label: 'Text', initialValue: prev.join('\n'), multiline: true });
+        if (btn !== 'ok') return;
+        text = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) targets[n].textContent = apply ? text : prev[n];
+      });
+    },
   },
 
   changeLinkUrl: {
@@ -1203,18 +1246,26 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
-        url: {
-          type: 'string',
-          description: `Link URL (default prompts user)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+        url: { type: 'string', description: `Link URL (default prompts user)` },
       },
     },
-    handler: async ({ cur = 'master', url } = {}) =>
-      await post('designer.changeLinkUrl', cur, url),
+    handler: async ({ cur = 'master', url } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean).filter(x => x.tagName === 'A');
+      let prev = targets.map(x => x.getAttribute('href') || '');
+      if (url == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change link URL', label: 'URL', initialValue: prev[0] || '' });
+        if (btn !== 'ok') return;
+        url = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let nv = apply ? url : prev[n];
+          nv ? targets[n].setAttribute('href', nv) : targets[n].removeAttribute('href');
+        }
+      });
+    },
   },
 
   changeMediaSrc: {
@@ -1226,18 +1277,26 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
-        url: {
-          type: 'string',
-          description: `Link URL (default prompts user)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+        url: { type: 'string', description: `Link URL (default prompts user)` },
       },
     },
-    handler: async ({ cur = 'master', url } = {}) =>
-      await post('designer.changeMediaSrc', cur, url),
+    handler: async ({ cur = 'master', url } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean).filter(x => ['IMG','VIDEO','AUDIO','SOURCE'].includes(x.tagName));
+      let prev = targets.map(x => x.getAttribute('src') || '');
+      if (url == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change media source', label: 'URL', initialValue: prev[0] || '' });
+        if (btn !== 'ok') return;
+        url = val;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let nv = apply ? url : prev[n];
+          nv ? targets[n].setAttribute('src', nv) : targets[n].removeAttribute('src');
+        }
+      });
+    },
   },
 
   // FIXME: Test if possible to create a "list gallery media" function and reply
