@@ -1341,7 +1341,6 @@ let actions = {
     },
     handler: async ({ cur = 'master', url } = {}) => {
       let frame = state.designer.current;
-      if (!frame) throw new Error(`Designer not open`);
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       let prevSrcs = targets.map(x => x.getAttribute('src'));
@@ -1415,7 +1414,6 @@ let actions = {
     },
     handler: async ({ cur = 'master' } = {}) => {
       let frame = state.designer.current;
-      if (!frame) throw new Error(`Designer not open`);
       let [btn, url] = await showModal('MediaGalleryDialog');
       if (btn !== 'ok') return;
       let mime = mimeLookup(url);
@@ -1519,7 +1517,6 @@ let actions = {
     },
     handler: async ({ cur = 'master' } = {}) => {
       let frame = state.designer.current;
-      if (!frame) throw new Error(`Designer not open`);
       let [btn, url] = await showModal('MediaGalleryDialog');
       if (btn !== 'ok') return;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
@@ -1550,7 +1547,6 @@ let actions = {
     },
     handler: async ({ cur = 'master', expr = null } = {}) => {
       let frame = state.designer.current;
-      if (!frame) throw new Error(`Designer not open`);
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (expr == null) {
@@ -1568,8 +1564,8 @@ let actions = {
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
           let el = targets[n];
-          let v = apply ? newVal : prev[n];
-          v ? el.setAttribute('wf-if', v) : el.removeAttribute('wf-if');
+          let nv = apply ? newVal : prev[n];
+          nv ? el.setAttribute('wf-if', nv) : el.removeAttribute('wf-if');
         }
         await new Promise(pres => setTimeout(pres));
         await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
@@ -1593,7 +1589,6 @@ let actions = {
     },
     handler: async ({ cur = 'master', mapExpr = null } = {}) => {
       let frame = state.designer.current;
-      if (!frame) throw new Error(`Designer not open`);
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (mapExpr == null) {
@@ -1611,8 +1606,8 @@ let actions = {
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
           let el = targets[n];
-          let v = apply ? newVal : prev[n];
-          v ? el.setAttribute('wf-map', v) : el.removeAttribute('wf-map');
+          let nv = apply ? newVal : prev[n];
+          nv ? el.setAttribute('wf-map', nv) : el.removeAttribute('wf-map');
         }
         await new Promise(pres => setTimeout(pres));
         await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
@@ -1649,14 +1644,32 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+        expr: { type: 'string', description: `Expression to bind to the disabled attribute (optional, prompts if not provided)` },
       },
     },
-    handler: async ({ cur = 'master', mapExpr } = {}) =>
-      await post('designer.setDisabledExpression', cur, mapExpr),
+    handler: async ({ cur = 'master', expr = null } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      if (expr == null) {
+        let initial = targets[0].getAttribute('wf-disabled');
+        let [btn, val] = await showModal('PromptDialog', { title: 'Set disabled expression', placeholder: 'Expression (e.g. !form.valid)', initialValue: initial });
+        if (btn !== 'ok') return;
+        expr = val.trim();
+      }
+      let prev = targets.map(x => x.getAttribute('wf-disabled'));
+      let newVal = expr;
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let el = targets[n];
+          let nv = apply ? newVal : prev[n];
+          nv ? el.setAttribute('wf-disabled', nv) : el.removeAttribute('wf-disabled');
+        }
+        await new Promise(pres => setTimeout(pres));
+        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+      });
+    },
   },
 
   refreshPage: {
