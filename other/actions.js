@@ -921,9 +921,14 @@ let actions = {
         parents.push(p);
         idxs.push(i);
       }
+      let order = replaced.map((el, n) => ({ el, p: parents[n], i: idxs[n], n }));
+      order.sort((a, b) => {
+        if (a.p === b.p) return a.i - b.i;
+        return a.p.compareDocumentPosition(b.p) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+      });
       if (html == null) {
-        let combined = replaced.map(el => {
-          let clone = el.cloneNode(true);
+        let combined = order.map(o => {
+          let clone = o.el.cloneNode(true);
           clone.removeAttribute('data-htmlsnap');
           clone.querySelectorAll('*').forEach(x => x.removeAttribute('data-htmlsnap'));
           return clone.outerHTML;
@@ -946,7 +951,7 @@ let actions = {
           for (let n = 0; n < replaced.length; n++) {
             let p = parents[n];
             let i = idxs[n];
-            let newEl = newEls[n];
+            let newEl = newEls[order.findIndex(o => o.n === n)];
             if (newEl) {
               p.children[i].replaceWith(newEl);
               newSelect.push(newEl);
