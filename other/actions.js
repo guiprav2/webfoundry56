@@ -770,18 +770,53 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose selection to wrap (defaults to master)`,
-        },
-        tag: {
-          type: 'string',
-          description: `Tag to wrap with (defaults to div)`,
-        },
+        cur: { type: 'string', description: `Whose selection to wrap (defaults to master)` },
+        tag: { type: 'string', description: `Tag to wrap with (defaults to div)` },
+        i: { type: 'number', description: `How many wraps (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master', tag = 'div' } = {}) =>
-      await post('designer.wrap', cur, tag),
+    handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'wrap', cur, tag, i });
+      let frame = state.designer.current;
+      let els = frame.cursors[cur].map(id => frame.map.get(id)).filter(Boolean);
+      let parents = els.map(x => x.parentElement);
+      let idxs = els.map(x => [...x.parentElement.children].indexOf(x));
+      let wrapperChains = els.map(() => []);
+      for (let n = 0; n < els.length; n++) {
+        let chain = [];
+        for (let j = 0; j < i; j++) chain.push(document.createElement(tag));
+        wrapperChains[n] = chain;
+      }
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < els.length; n++) {
+            let node = els[n];
+            let p = parents[n];
+            let before = p.children[idxs[n]];
+            let chain = wrapperChains[n];
+            let outer = chain[0];
+            let inner = chain.at(-1);
+            p.insertBefore(outer, before);
+            for (let k = 1; k < chain.length; k++) chain[k - 1].appendChild(chain[k]);
+            inner.appendChild(node);
+          }
+          await new Promise(pres => setTimeout(pres));
+          let selection = wrapperChains.map(c => c[0]);
+          await actions.changeSelection.handler({ cur, s: selection.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = els.length - 1; n >= 0; n--) {
+            let node = els[n];
+            let p = parents[n];
+            let chain = wrapperChains[n];
+            let outer = chain[0];
+            let inner = chain.at(-1);
+            if (outer.parentElement === p) { p.insertBefore(node, outer); outer.remove() }
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: els.map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   unwrap: {
@@ -794,14 +829,49 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose selection to unwrap (defaults to master)`,
-        },
+        cur: { type: 'string', description: `Whose selection to unwrap (defaults to master)` },
+        i: { type: 'number', description: `How many unwraps (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) =>
-      await post('designer.unwrap', cur),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'unwrap', cur, i });
+      let frame = state.designer.current;
+      let wrappers = frame.cursors[cur].map(id => frame.map.get(id)).filter(Boolean);
+      let parents = wrappers.map(x => x.parentElement);
+      let idxs = wrappers.map(x => [...x.parentElement.children].indexOf(x));
+      let childLists = wrappers.map(x => [...x.childNodes]);
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = wrappers.length - 1; n >= 0; n--) {
+            let wrapper = wrappers[n];
+            let p = parents[n];
+            let before = p.children[idxs[n]];
+            for (let j = 0; j < i; j++) {
+              if (!wrapper || !wrapper.parentElement) break;
+              let children = [...wrapper.childNodes];
+              for (let c of children) p.insertBefore(c, before);
+              wrapper.remove();
+              wrapper = p.children[idxs[n]];
+            }
+          }
+          await new Promise(pres => setTimeout(pres));
+          let promoted = [];
+          for (let list of childLists) promoted.push(...list.filter(x => x.parentElement));
+          await actions.changeSelection.handler({ cur, s: promoted.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < wrappers.length; n++) {
+            let wrapper = wrappers[n];
+            let p = parents[n];
+            let i = idxs[n];
+            let before = p.children[i];
+            if (!before) p.appendChild(wrapper); else p.insertBefore(wrapper, before);
+            for (let c of childLists[n]) wrapper.appendChild(c);
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: wrappers.map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   addCssClasses: {
