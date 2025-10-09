@@ -135,6 +135,11 @@ export default class Designer {
       }
     },
 
+    toolbar: async (k, params) => {
+      if (/^(manipulation|tailwind)$/.test(k)) { this.state.toolbar = k; return }
+      await actions[k].handler(params);
+    },
+
     mousedown: async ev => {
       let frame = this.state.current;
       frame.el.focus();
@@ -156,7 +161,9 @@ export default class Designer {
         return;
       }
       let key = ev.key;
-      if (ev.ctrlKey) key = `Ctrl-${key}`;
+      if (ev.altKey && ev.key !== 'Alt') key = `Alt-${key}`;
+      if (ev.ctrlKey && ev.key !== 'Control') key = `Ctrl-${key}`;
+      if (key === 'Control') key = 'Ctrl';
       let [k, cmd] = [...Object.entries(actions)].find(kv => arrayify(kv[1].shortcut).includes(key)) || [];
       if (!cmd || cmd?.disabled?.({ cur: state.collab.uid })?.filter?.(Boolean)?.length) return;
       ev.preventDefault();
@@ -185,6 +192,17 @@ export default class Designer {
       await loadman.run('designer.togglePreview', async () => await p.promise);
     },
 
+    refresh: async () => {
+      let frame = this.state.current;
+      let p = Promise.withResolvers();
+      Object.assign(frame, { ready: false, resolve: p.resolve, reject: p.reject });
+      d.update();
+      await loadman.run('designer.refresh', async () => {
+        frame.el.src = frame.el.src;
+        await p.promise;
+      });
+    },
+
     pushHistory: async (cur, op) => {
       let frame = this.state.current;
       frame.history[cur] ??= [];
@@ -193,11 +211,6 @@ export default class Designer {
       await op(true);
       frame.history[cur].push(op);
       ++frame.ihistory[cur];
-    },
-
-    toolbar: async (k, params) => {
-      if (/^(manipulation|tailwind)$/.test(k)) { this.state.toolbar = k; return }
-      await actions[k].handler(params);
     },
   };
 };

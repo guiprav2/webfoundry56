@@ -1280,7 +1280,7 @@ let actions = {
     shortcut: 'T',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1308,7 +1308,7 @@ let actions = {
     shortcut: 'H',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1339,7 +1339,7 @@ let actions = {
     shortcut: 's',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1481,7 +1481,7 @@ let actions = {
     shortcut: 'b',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1516,7 +1516,7 @@ let actions = {
     shortcut: 'B',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1659,7 +1659,7 @@ let actions = {
     shortcut: 'Ctrl-D',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1692,7 +1692,62 @@ let actions = {
     },
   },
 
-  refreshPage: {
+  normalizeStylesUnion: {
+    description: `Makes all selected elements have the union of their classes (confirm union is what the user wants before calling)`,
+    shortcut: 'Alt-u',
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && (state.designer.current.cursors[cur]?.length || 0) < 2 && `At least 2 elements must be selected.`,
+    ],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+      },
+    },
+    handler: async ({ cur = 'master' } = {}) => {
+      let frame = state.designer.current;
+      let all = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!all.length) return;
+      let prev = all.map(x => x.className);
+      let union = new Set();
+      for (let el of all) for (let c of el.classList) union.add(c);
+      let merged = [...union].join(' ').trim();
+      await post('designer.pushHistory', cur, async apply => {
+        for (let i = 0; i < all.length; i++) all[i].className = apply ? merged : prev[i];
+      });
+    },
+  },
+
+  normalizeStylesIntersect: {
+    description: `Makes all selected elements have the intersection of their classes (confirm intersection is what the user wants before calling)`,
+    shortcut: 'Alt-U',
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && (state.designer.current.cursors[cur]?.length || 0) < 2 && `At least 2 elements must be selected.`,
+    ],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+      },
+    },
+    handler: async ({ cur = 'master' } = {}) => {
+      let frame = state.designer.current;
+      let all = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!all.length) return;
+      let prev = all.map(x => x.className);
+      let intersection = new Set(all[0].classList);
+      for (let i = 1; i < all.length; i++) for (let c of [...intersection]) if (!all[i].classList.contains(c)) intersection.delete(c);
+      let merged = [...intersection].join(' ').trim();
+      await post('designer.pushHistory', cur, async apply => {
+        for (let i = 0; i < all.length; i++) all[i].className = apply ? merged : prev[i];
+      });
+    },
+  },
+
+  refresh: {
+    shortcut: 'r',
     disabled: () => [!state.designer.open && `Designer closed.`],
     handler: async () => await post('designer.refresh'),
   },
