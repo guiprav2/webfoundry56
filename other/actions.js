@@ -1169,7 +1169,7 @@ let actions = {
       if (!targets.length) return;
       let prev = targets.map(x => x.placeholder);
       if (placeholder == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change input placeholder', label: 'Placeholder text', initialValue: prev[0] || '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change input placeholder', label: 'Placeholder text', initialValue: prev[0] });
         if (btn !== 'ok') return;
         placeholder = val;
       }
@@ -1199,9 +1199,9 @@ let actions = {
     handler: async ({ cur = 'master', method } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => x?.tagName === 'FORM');
-      let prev = targets.map(x => x.getAttribute('method') || '');
+      let prev = targets.map(x => x.getAttribute('method'));
       if (method == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change form method', label: 'Method', initialValue: prev[0] || '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change form method', label: 'Method', initialValue: prev[0] });
         if (btn !== 'ok') return;
         method = val;
       }
@@ -1256,7 +1256,7 @@ let actions = {
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       let prev = targets.map(x => x.textContent);
       if (text == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Replace text', label: 'Text', initialValue: prev[0] || '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Replace text', label: 'Text', initialValue: prev[0] });
         if (btn !== 'ok') return;
         text = val;
       }
@@ -1311,9 +1311,9 @@ let actions = {
     handler: async ({ cur = 'master', url } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean).filter(x => x.tagName === 'A');
-      let prev = targets.map(x => x.getAttribute('href') || '');
+      let prev = targets.map(x => x.getAttribute('href'));
       if (url == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change link URL', label: 'URL', initialValue: prev[0] || '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change link URL', label: 'URL', initialValue: prev[0] });
         if (btn !== 'ok') return;
         url = val;
       }
@@ -1344,10 +1344,10 @@ let actions = {
       if (!frame) throw new Error(`Designer not open`);
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
-      let prevSrcs = targets.map(x => x.getAttribute('src') || '');
+      let prevSrcs = targets.map(x => x.getAttribute('src'));
       let prevTags = targets.map(x => x.tagName.toLowerCase());
       if (url == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change media source', label: 'URL', initialValue: prevSrcs[0] || '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change media source', label: 'URL', initialValue: prevSrcs[0] });
         if (btn !== 'ok') return;
         url = val;
       }
@@ -1424,7 +1424,7 @@ let actions = {
       if (!targets.length) return;
       let parents = targets.map(x => x.parentElement);
       let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
-      let prevSrcs = targets.map(x => x.getAttribute('src') || '');
+      let prevSrcs = targets.map(x => x.getAttribute('src'));
       let prevTags = targets.map(x => x.tagName.toLowerCase());
       let oldEls = targets.map(x => x);
       let newEls = targets.map((el, n) => {
@@ -1487,9 +1487,9 @@ let actions = {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
-      let prev = targets.map(x => x.style.backgroundImage || '');
+      let prev = targets.map(x => x.style.backgroundImage);
       if (url == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change Background', label: 'Image URL', initialValue: '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change background image', label: 'Image URL', initialValue: prev[0]?.replace(/^url\("|"\)$/g, '') });
         if (btn !== 'ok') return;
         url = val;
       }
@@ -1524,7 +1524,7 @@ let actions = {
       if (btn !== 'ok') return;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
-      let prev = targets.map(x => x.style.backgroundImage || '');
+      let prev = targets.map(x => x.style.backgroundImage);
       let newBg = url ? `url("${url}")` : '';
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) { let x = targets[n]; x.style.backgroundImage = apply ? newBg : prev[n] }
@@ -1539,7 +1539,7 @@ let actions = {
     shortcut: 'Ctrl-i',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1548,8 +1548,33 @@ let actions = {
         expr: { type: 'string' },
       },
     },
-    handler: async ({ cur = 'master', expr } = {}) =>
-      await post('designer.setIfExpression', cur, expr),
+    handler: async ({ cur = 'master', expr = null } = {}) => {
+      let frame = state.designer.current;
+      if (!frame) throw new Error(`Designer not open`);
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      if (expr == null) {
+        let initial = targets[0].getAttribute('wf-if');
+        let [btn, val] = await showModal('PromptDialog', {
+          title: 'Set if expression',
+          placeholder: 'Expression',
+          initialValue: initial,
+        });
+        if (btn !== 'ok') return;
+        expr = val.trim();
+      }
+      let prev = targets.map(x => x.getAttribute('wf-if'));
+      let newVal = expr;
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let el = targets[n];
+          let v = apply ? newVal : prev[n];
+          v ? el.setAttribute('wf-if', v) : el.removeAttribute('wf-if');
+        }
+        await new Promise(pres => setTimeout(pres));
+        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+      });
+    },
   },
 
   setMapExpression: {
@@ -1557,7 +1582,7 @@ let actions = {
     shortcut: 'Ctrl-m',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1566,8 +1591,33 @@ let actions = {
         mapExpr: { type: 'string', description: `Format: x of xs` },
       },
     },
-    handler: async ({ cur = 'master', mapExpr } = {}) =>
-      await post('designer.setMapExpression', cur, mapExpr),
+    handler: async ({ cur = 'master', mapExpr = null } = {}) => {
+      let frame = state.designer.current;
+      if (!frame) throw new Error(`Designer not open`);
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      if (mapExpr == null) {
+        let initial = targets[0].getAttribute('wf-map');
+        let [btn, val] = await showModal('PromptDialog', {
+          title: 'Set map expression',
+          placeholder: 'Expression (item of expr)',
+          initialValue: initial,
+        });
+        if (btn !== 'ok') return;
+        mapExpr = val.trim();
+      }
+      let prev = targets.map(x => x.getAttribute('wf-map'));
+      let newVal = mapExpr;
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let el = targets[n];
+          let v = apply ? newVal : prev[n];
+          v ? el.setAttribute('wf-map', v) : el.removeAttribute('wf-map');
+        }
+        await new Promise(pres => setTimeout(pres));
+        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+      });
+    },
   },
 
   // FIXME: Support multiple selections like in the Styles panel
@@ -1586,8 +1636,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ cur = 'master' } = {}) =>
-      await post('designer.setEventHandlers', cur),
+    handler: async ({ cur = 'master' } = {}) => {
+    },
   },
 
   setDisabledExpression: {
