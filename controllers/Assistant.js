@@ -20,6 +20,7 @@ export default class Assistant {
           parameters: v.parameters,
           handler: async params => {
             try {
+              if (document.querySelector('dialog')) throw new Error(`Operation not possible: A modal dialog is currently open`);
               if (v?.disabled?.(params)?.filter?.(Boolean)?.length) return { success: false, error: `Operation not possible because:\n${disabled.map(x => `- ${x}`).join('\n')}` };
               return await v.handler(params);
             } catch (err) {
