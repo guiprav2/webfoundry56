@@ -802,71 +802,95 @@ let actions = {
   },
 
   addCssClasses: {
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
+    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
     negativeReason: (cur = 'master') => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open &&
-        !state.designer.cursors[cur]?.length &&
-        `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose selection to use (defaults to master)`,
-        },
-        framework: {
-          type: 'string',
-          enum: ['tw', 'bs', 'bu', 'none'],
-          description: `Use tw for Tailwind classes, bs for Bootstrap, and bu for Bulma`,
-        },
-        classes: {
-          type: 'array',
-          items: { type: 'string' },
-        },
+        cur: { type: 'string', description: `Whose selection to use (defaults to master)` },
+        cls: { type: 'array', items: { type: 'string' } },
       },
-      required: ['framework', 'classes'],
+      required: ['cls'],
     },
-    handler: async ({ cur = 'master', framework, classes } = {}) =>
-      await post(
-        'designer.addCssClasses',
-        cur,
-        framework === 'none' ? classes : [framework, ...classes],
-      ),
+    handler: async ({ cur = 'master', cls } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'addCssClasses', cur, cls });
+      let frame = state.designer.current;
+      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      await post('designer.pushHistory', 'master', async apply => {
+        if (apply) for (let x of targets) for (let y of cls) x.classList.add(y);
+        else for (let x of targets) for (let y of cls) x.classList.remove(y);
+        await post('collab.sync');
+      });
+    },
   },
 
   removeCssClasses: {
-    description: [
-      `If no Tailwind classes are left, always remove "tw" as well.`,
-      `If no Bootstrap classes are left, always remove "bs" as well.`,
-      `If no Bulma classes are left, always remove "bu" as well.`,
-    ].join('\n'),
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
+    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
     negativeReason: (cur = 'master') => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open &&
-        !state.designer.cursors[cur]?.length &&
-        `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose selection to use (defaults to master)`,
-        },
-        classes: {
-          type: 'array',
-          items: { type: 'string' },
-        },
+        cur: { type: 'string', description: `Whose selection to use (defaults to master)` },
+        cls: { type: 'array', items: { type: 'string' } },
       },
-      required: ['classes'],
+      required: ['cls'],
     },
-    handler: async ({ cur = 'master', classes } = {}) =>
-      await post('designer.removeCssClasses', cur, classes),
+    handler: async ({ cur = 'master', cls } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'removeCssClasses', cur, cls });
+      let frame = state.designer.current;
+      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
+      let targets = frame.cursors.master.map(x => frame.map.get(x)).filter(Boolean);
+      await post('designer.pushHistory', 'master', async apply => {
+        if (apply) for (let x of targets) for (let y of cls) x.classList.remove(y);
+        else for (let x of targets) for (let y of cls) x.classList.add(y);
+        await post('collab.sync');
+      });
+    },
+  },
+
+  replaceCssClasses: {
+    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
+    negativeReason: (cur = 'master') => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose selection to use (defaults to master)` },
+        old: { type: 'array', items: { type: 'string' } },
+        cls: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['cls'],
+    },
+    handler: async ({ cur = 'master', old, cls } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceCssClasses', cur, old, cls });
+      let frame = state.designer.current;
+      old = new Set(Array.isArray(old) ? old : old?.split(/\s+/) || []);
+      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let x of targets) {
+            for (let y of old) x.classList.remove(y);
+            for (let y of cls) x.classList.add(y);
+          }
+        } else {
+          for (let x of targets) {
+            for (let y of cls) x.classList.remove(y);
+            for (let y of old) x.classList.add(y);
+          }
+        }
+        await post('collab.sync');
+      });
+    },
   },
 
   changeHtml: {

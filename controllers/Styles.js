@@ -1,7 +1,9 @@
+import actions from '../other/actions.js';
+
 export default class Styles {
   state = {
     get list() {
-      let ss = state.designer.current.cursors?.master || [];
+      let ss = state.designer.current.cursors?.[state.collab.uid] || [];
       let ssclasses = ss?.map?.(x => [...(state.designer.current.map.get(x)?.classList || [])]) || [];
       let classes;
       for (let ssc of ssclasses) classes = classes ? classes.intersection(new Set(ssc)) : new Set(ssc);
@@ -22,34 +24,15 @@ export default class Styles {
       ev.target.value = '';
     },
 
-    add: async cls => {
-      let frame = state.designer.current;
-      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
-      let targets = frame.cursors.master.map(x => frame.map.get(x)).filter(Boolean);
-      await post('designer.pushHistory', 'master', async apply => {
-        if (apply) for (let x of targets) for (let y of cls) x.classList.add(y);
-        else for (let x of targets) for (let y of cls) x.classList.remove(y);
-      });
-    },
-
+    add: async cls => await actions.addCssClasses.handler({ cur: state.collab.uid, cls }),
+    rm: async cls => await actions.removeCssClasses.handler({ cur: state.collab.uid, cls }),
     edit: x => (this.state.replacing = x),
     replaceKeyDown: ev => ev.key === 'Enter' && ev.target.blur(),
 
     replaceBlur: async ev => {
-      await post('styles.rm', this.state.replacing);
-      await post('styles.add', ev.target.value.trim());
+      await actions.replaceCssClasses.handler({ cur: state.collab.uid, old: this.state.replacing, cls: ev.target.value.trim() });
       this.state.replacing = null;
       ev.target.value = '';
-    },
-
-    rm: async cls => {
-      let frame = state.designer.current;
-      let classes = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
-      let targets = frame.cursors.master.map(x => frame.map.get(x)).filter(Boolean);
-      await post('designer.pushHistory', 'master', async apply => {
-        if (apply) for (let x of targets) for (let y of classes) x.classList.remove(y);
-        else for (let x of targets) for (let y of classes) x.classList.add(y);
-      });
     },
   };
 }
