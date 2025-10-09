@@ -1,3 +1,5 @@
+import { lookup as mimeLookup } from 'https://esm.sh/mrmime';
+
 let actions = {
   undo: {
     shortcut: 'Ctrl-z',
@@ -385,6 +387,62 @@ let actions = {
           for (let i = 0; i < created.length; i++) created[i].remove();
           await new Promise(pres => setTimeout(pres));
           await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+        }
+      });
+    },
+  },
+
+  changeElementTag: {
+    shortcut: 'e',
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose selection to change tag (defaults to master)` },
+        tag: { type: 'string', description: `New tag name (default prompts user)` },
+      },
+    },
+    handler: async ({ cur = 'master', tag } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeElementTag', cur, tag });
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      if (!tag) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change tag', label: 'Tag name', initialValue: targets[0].tagName.toLowerCase() });
+        if (btn !== 'ok' || !val.trim()) return;
+        tag = val.trim();
+      }
+      let parents = targets.map(x => x.parentElement);
+      let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
+      let originals = targets.map(x => x.cloneNode(true));
+      let newNodes = targets.map(() => null);
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < targets.length; n++) {
+            let el = targets[n];
+            let p = parents[n];
+            let i = idxs[n];
+            let newEl = document.createElement(tag);
+            for (let attr of el.attributes) newEl.setAttribute(attr.name, attr.value);
+            newEl.innerHTML = el.innerHTML;
+            p.replaceChild(newEl, p.children[i]);
+            newNodes[n] = newEl;
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: newNodes.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < targets.length; n++) {
+            let p = parents[n];
+            let i = idxs[n];
+            let el = newNodes[n] || p.children[i];
+            let original = originals[n];
+            if (el && el.parentElement === p) p.replaceChild(original, el);
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: originals.map(x => frame.map.getKey(x)) });
         }
       });
     },
@@ -1283,46 +1341,133 @@ let actions = {
     },
     handler: async ({ cur = 'master', url } = {}) => {
       let frame = state.designer.current;
-      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean).filter(x => ['IMG','VIDEO','AUDIO','SOURCE'].includes(x.tagName));
-      let prev = targets.map(x => x.getAttribute('src') || '');
+      if (!frame) throw new Error(`Designer not open`);
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      let prevSrcs = targets.map(x => x.getAttribute('src') || '');
+      let prevTags = targets.map(x => x.tagName.toLowerCase());
       if (url == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change media source', label: 'URL', initialValue: prev[0] || '' });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change media source', label: 'URL', initialValue: prevSrcs[0] || '' });
         if (btn !== 'ok') return;
         url = val;
       }
+      let mime = mimeLookup(url);
+      let newTag = mime?.startsWith?.('audio/') ? 'audio' : mime?.startsWith?.('video/') ? 'video' : 'img';
+      let parents = targets.map(x => x.parentElement);
+      let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
+      let oldEls = targets.map(x => x);
+      let newEls = targets.map((el, n) => {
+        let tag = newTag && newTag !== el.tagName.toLowerCase() ? newTag : el.tagName.toLowerCase();
+        if (tag === el.tagName.toLowerCase()) return el;
+        let clone = document.createElement(tag);
+        for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
+        clone.innerHTML = el.innerHTML;
+        return clone;
+      });
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let nv = apply ? url : prev[n];
-          nv ? targets[n].setAttribute('src', nv) : targets[n].removeAttribute('src');
+        if (apply) {
+          for (let n = 0; n < oldEls.length; n++) {
+            let el = oldEls[n];
+            let p = parents[n];
+            let i = idxs[n];
+            let repl = newEls[n];
+            if (repl !== el) {
+              if (p.children[i] === el) p.replaceChild(repl, el);
+              else p.insertBefore(repl, p.children[i]);
+            }
+            let nv = url;
+            nv ? repl.setAttribute('src', nv) : repl.removeAttribute('src');
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: newEls.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < oldEls.length; n++) {
+            let el = oldEls[n];
+            let p = parents[n];
+            let i = idxs[n];
+            let repl = newEls[n];
+            if (repl !== el) {
+              if (p.children[i] === repl) p.replaceChild(el, repl);
+              else p.insertBefore(el, p.children[i]);
+            }
+            let pv = prevSrcs[n];
+            pv ? el.setAttribute('src', pv) : el.removeAttribute('src');
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: oldEls.map(x => frame.map.getKey(x)) });
         }
       });
     },
   },
 
-  // FIXME: Test if possible to create a "list gallery media" function and reply
-  // using the success object in a usable way. Probably not but worth trying.
-
+  // TODO: Test if possible to create a "list gallery media" function and reply using the success object in a usable way.
   changeMediaSrcFromGallery: {
     shortcut: 'S',
     disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
-        url: {
-          type: 'string',
-          description: `Gallery media URL if known (default prompts user)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
       },
     },
-    handler: async ({ cur = 'master', url } = {}) =>
-      await post('designer.changeMediaFromGallery', cur, url),
+    handler: async ({ cur = 'master' } = {}) => {
+      let frame = state.designer.current;
+      if (!frame) throw new Error(`Designer not open`);
+      let [btn, url] = await showModal('MediaGalleryDialog');
+      if (btn !== 'ok') return;
+      let mime = mimeLookup(url);
+      let newTag = mime?.startsWith?.('audio/') ? 'audio' : mime?.startsWith?.('video/') ? 'video' : 'img';
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      let parents = targets.map(x => x.parentElement);
+      let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
+      let prevSrcs = targets.map(x => x.getAttribute('src') || '');
+      let prevTags = targets.map(x => x.tagName.toLowerCase());
+      let oldEls = targets.map(x => x);
+      let newEls = targets.map((el, n) => {
+        let tag = newTag && newTag !== el.tagName.toLowerCase() ? newTag : el.tagName.toLowerCase();
+        if (tag === el.tagName.toLowerCase()) return el;
+        let clone = document.createElement(tag);
+        for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
+        clone.innerHTML = el.innerHTML;
+        return clone;
+      });
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < oldEls.length; n++) {
+            let el = oldEls[n];
+            let p = parents[n];
+            let i = idxs[n];
+            let repl = newEls[n];
+            if (repl !== el) {
+              if (p.children[i] === el) p.replaceChild(repl, el);
+              else p.insertBefore(repl, p.children[i]);
+            }
+            url ? repl.setAttribute('src', url) : repl.removeAttribute('src');
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: newEls.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < oldEls.length; n++) {
+            let el = oldEls[n];
+            let p = parents[n];
+            let i = idxs[n];
+            let repl = newEls[n];
+            if (repl !== el) {
+              if (p.children[i] === repl) p.replaceChild(el, repl);
+              else p.insertBefore(el, p.children[i]);
+            }
+            let pv = prevSrcs[n];
+            pv ? el.setAttribute('src', pv) : el.removeAttribute('src');
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: oldEls.map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   changeBackgroundUrl: {
@@ -1334,18 +1479,30 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
-        url: {
-          type: 'string',
-          description: `Link URL (default prompts user)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
+        url: { type: 'string', description: `Link URL (default prompts user)` },
       },
     },
-    handler: async ({ cur = 'master', url } = {}) =>
-      await post('designer.changeBackgroundUrl', cur, url),
+    handler: async ({ cur = 'master', url = null } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      let prev = targets.map(x => x.style.backgroundImage || '');
+      if (url == null) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change Background', label: 'Image URL', initialValue: '' });
+        if (btn !== 'ok') return;
+        url = val;
+      }
+      let newBg = url ? `url("${url}")` : '';
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) {
+          let x = targets[n];
+          x.style.backgroundImage = apply ? newBg : prev[n];
+        }
+        await new Promise(pres => setTimeout(pres));
+        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+      });
+    },
   },
 
   changeBackgroundFromGallery: {
@@ -1357,18 +1514,24 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        cur: {
-          type: 'string',
-          description: `Whose cursor to use (defaults to master)`,
-        },
-        url: {
-          type: 'string',
-          description: `Gallery media URL if known (default prompts user)`,
-        },
+        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
       },
     },
-    handler: async ({ cur = 'master', url } = {}) =>
-      await post('designer.changeBackgroundFromGallery', cur, url),
+    handler: async ({ cur = 'master' } = {}) => {
+      let frame = state.designer.current;
+      if (!frame) throw new Error(`Designer not open`);
+      let [btn, url] = await showModal('MediaGalleryDialog');
+      if (btn !== 'ok') return;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      let prev = targets.map(x => x.style.backgroundImage || '');
+      let newBg = url ? `url("${url}")` : '';
+      await post('designer.pushHistory', cur, async apply => {
+        for (let n = 0; n < targets.length; n++) { let x = targets[n]; x.style.backgroundImage = apply ? newBg : prev[n] }
+        await new Promise(pres => setTimeout(pres));
+        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+      });
+    },
   },
 
   setIfExpression: {
