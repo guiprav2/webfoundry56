@@ -405,44 +405,57 @@ let actions = {
         tag: { type: 'string', description: `New tag name (default prompts user)` },
       },
     },
-    handler: async ({ cur = 'master', tag } = {}) => {
-      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeElementTag', cur, tag });
+    handler: async ({ cur = 'master', tag = null } = {}) => {
+      if (state.collab.uid !== 'master')
+        return state.collab.rtc.send({ type: 'cmd', k: 'changeElementTag', cur, tag });
       let frame = state.designer.current;
+      if (!frame) throw new Error(`Designer not open`);
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (!tag) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change tag', label: 'Tag name', initialValue: targets[0].tagName.toLowerCase() });
+        let [btn, val] = await showModal('PromptDialog', {
+          title: 'Change tag',
+          label: 'Tag name',
+          initialValue: targets[0].tagName.toLowerCase(),
+        });
         if (btn !== 'ok' || !val.trim()) return;
         tag = val.trim();
       }
       let parents = targets.map(x => x.parentElement);
       let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
-      let originals = targets.map(x => x.cloneNode(true));
-      let newNodes = targets.map(() => null);
+      let oldEls = targets.map(x => x);
+      let newEls = targets.map(el => {
+        if (el.tagName.toLowerCase() === tag) return el;
+        let clone = document.createElement(tag);
+        for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
+        clone.innerHTML = el.innerHTML;
+        return clone;
+      });
       await post('designer.pushHistory', cur, async apply => {
         if (apply) {
-          for (let n = 0; n < targets.length; n++) {
-            let el = targets[n];
+          for (let n = 0; n < oldEls.length; n++) {
             let p = parents[n];
             let i = idxs[n];
-            let newEl = document.createElement(tag);
-            for (let attr of el.attributes) newEl.setAttribute(attr.name, attr.value);
-            newEl.innerHTML = el.innerHTML;
-            p.replaceChild(newEl, p.children[i]);
-            newNodes[n] = newEl;
+            let oldEl = oldEls[n];
+            let newEl = newEls[n];
+            if (oldEl !== newEl && p.children[i] === oldEl) {
+              p.replaceChild(newEl, oldEl);
+            }
           }
           await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: newNodes.map(x => frame.map.getKey(x)) });
+          await actions.changeSelection.handler({ cur, s: newEls.map(x => frame.map.getKey(x)) });
         } else {
-          for (let n = 0; n < targets.length; n++) {
+          for (let n = 0; n < oldEls.length; n++) {
             let p = parents[n];
             let i = idxs[n];
-            let el = newNodes[n] || p.children[i];
-            let original = originals[n];
-            if (el && el.parentElement === p) p.replaceChild(original, el);
+            let oldEl = oldEls[n];
+            let newEl = newEls[n];
+            if (oldEl !== newEl && p.children[i] === newEl) {
+              p.replaceChild(oldEl, newEl);
+            }
           }
           await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: originals.map(x => frame.map.getKey(x)) });
+          await actions.changeSelection.handler({ cur, s: oldEls.map(x => frame.map.getKey(x)) });
         }
       });
     },
