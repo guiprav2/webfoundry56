@@ -131,7 +131,8 @@ export default class Designer {
       let frame = this.state.current;
       frame.el.focus();
       ev.preventDefault();
-      await actions.changeSelection.handler({ cur: state.collab.uid, s: [frame.map.getKey(ev.target)] });
+      if (!ev.shiftKey) await actions.changeSelection.handler({ cur: state.collab.uid, s: [frame.map.getKey(ev.target)] });
+      else await actions.changeSelection.handler({ cur: state.collab.uid, s: [...new Set([...frame.cursors[state.collab.uid] || [], frame.map.getKey(ev.target)])] });
     },
 
     keydown: async ev => {

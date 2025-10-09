@@ -489,9 +489,66 @@ let actions = {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.pasteNextSibling', cur),
+    handler: async ({ cur = 'master', i = 1 } = {}) => { // FIXME: Implement i, fix paste order, all equivalents
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteNextSibling', cur, i });
+      let pos = 'afterend';
+      let frame = state.designer.current;
+      let html = frame.clipboards[cur] || (cur === 'master' && localStorage.getItem('webfoundry:clipboard'));
+      if (!html) return;
+      let template = document.createElement('template');
+      template.innerHTML = html;
+      let fragments = [...template.content.children];
+      if (!fragments.length) return;
+      let cursors = frame.cursors[cur];
+      let clones = [];
+      let reversed = pos === 'afterbegin';
+      if (cursors.length === 1) {
+        let id = cursors[0];
+        let x = frame.map.get(id);
+        if (!x) return;
+        let items = reversed ? [...fragments].reverse() : fragments;
+        for (let i = 0; i < items.length; i++) {
+          let y = items[i].cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      } else {
+        let items = reversed ? [...cursors].reverse() : cursors;
+        for (let i = 0; i < items.length; i++) {
+          let id = items[i];
+          let x = frame.map.get(id);
+          if (!x) continue;
+          let frag = fragments[i % fragments.length];
+          let y = frag.cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      }
+      await new Promise(res => setTimeout(res));
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < clones.length; n++) {
+            let y = clones[n];
+            if (!y.isConnected) {
+              let ref = cursors[n % cursors.length];
+              let x = frame.map.get(ref);
+              if (x) x.insertAdjacentElement(pos, y);
+            }
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: clones.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < clones.length; n++) clones[n].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   pastePrevSibling: {
@@ -502,9 +559,66 @@ let actions = {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.pastePrevSibling', cur),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pastePrevSibling', cur, i });
+      let pos = 'beforebegin';
+      let frame = state.designer.current;
+      let html = frame.clipboards[cur] || (cur === 'master' && localStorage.getItem('webfoundry:clipboard'));
+      if (!html) return;
+      let template = document.createElement('template');
+      template.innerHTML = html;
+      let fragments = [...template.content.children];
+      if (!fragments.length) return;
+      let cursors = frame.cursors[cur];
+      let clones = [];
+      let reversed = pos === 'afterbegin';
+      if (cursors.length === 1) {
+        let id = cursors[0];
+        let x = frame.map.get(id);
+        if (!x) return;
+        let items = reversed ? [...fragments].reverse() : fragments;
+        for (let i = 0; i < items.length; i++) {
+          let y = items[i].cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      } else {
+        let items = reversed ? [...cursors].reverse() : cursors;
+        for (let i = 0; i < items.length; i++) {
+          let id = items[i];
+          let x = frame.map.get(id);
+          if (!x) continue;
+          let frag = fragments[i % fragments.length];
+          let y = frag.cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      }
+      await new Promise(res => setTimeout(res));
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < clones.length; n++) {
+            let y = clones[n];
+            if (!y.isConnected) {
+              let ref = cursors[n % cursors.length];
+              let x = frame.map.get(ref);
+              if (x) x.insertAdjacentElement(pos, y);
+            }
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: clones.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < clones.length; n++) clones[n].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   pasteLastChild: {
@@ -515,9 +629,66 @@ let actions = {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.pasteLastChild', cur),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteLastChild', cur, i });
+      let pos = 'beforeend';
+      let frame = state.designer.current;
+      let html = frame.clipboards[cur] || (cur === 'master' && localStorage.getItem('webfoundry:clipboard'));
+      if (!html) return;
+      let template = document.createElement('template');
+      template.innerHTML = html;
+      let fragments = [...template.content.children];
+      if (!fragments.length) return;
+      let cursors = frame.cursors[cur];
+      let clones = [];
+      let reversed = pos === 'afterbegin';
+      if (cursors.length === 1) {
+        let id = cursors[0];
+        let x = frame.map.get(id);
+        if (!x) return;
+        let items = reversed ? [...fragments].reverse() : fragments;
+        for (let i = 0; i < items.length; i++) {
+          let y = items[i].cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      } else {
+        let items = reversed ? [...cursors].reverse() : cursors;
+        for (let i = 0; i < items.length; i++) {
+          let id = items[i];
+          let x = frame.map.get(id);
+          if (!x) continue;
+          let frag = fragments[i % fragments.length];
+          let y = frag.cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      }
+      await new Promise(res => setTimeout(res));
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < clones.length; n++) {
+            let y = clones[n];
+            if (!y.isConnected) {
+              let ref = cursors[n % cursors.length];
+              let x = frame.map.get(ref);
+              if (x) x.insertAdjacentElement(pos, y);
+            }
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: clones.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < clones.length; n++) clones[n].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   pasteFirstChild: {
@@ -528,9 +699,66 @@ let actions = {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => await post('designer.pasteFirstChild', cur),
+    handler: async ({ cur = 'master', i = 1 } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteFirstChild', cur, i });
+      let pos = 'afterbegin';
+      let frame = state.designer.current;
+      let html = frame.clipboards[cur] || (cur === 'master' && localStorage.getItem('webfoundry:clipboard'));
+      if (!html) return;
+      let template = document.createElement('template');
+      template.innerHTML = html;
+      let fragments = [...template.content.children];
+      if (!fragments.length) return;
+      let cursors = frame.cursors[cur];
+      let clones = [];
+      let reversed = pos === 'afterbegin';
+      if (cursors.length === 1) {
+        let id = cursors[0];
+        let x = frame.map.get(id);
+        if (!x) return;
+        let items = reversed ? [...fragments].reverse() : fragments;
+        for (let i = 0; i < items.length; i++) {
+          let y = items[i].cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      } else {
+        let items = reversed ? [...cursors].reverse() : cursors;
+        for (let i = 0; i < items.length; i++) {
+          let id = items[i];
+          let x = frame.map.get(id);
+          if (!x) continue;
+          let frag = fragments[i % fragments.length];
+          let y = frag.cloneNode(true);
+          y.removeAttribute('data-htmlsnap');
+          x.insertAdjacentElement(pos, y);
+          clones.push(y);
+        }
+      }
+      await new Promise(res => setTimeout(res));
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          for (let n = 0; n < clones.length; n++) {
+            let y = clones[n];
+            if (!y.isConnected) {
+              let ref = cursors[n % cursors.length];
+              let x = frame.map.get(ref);
+              if (x) x.insertAdjacentElement(pos, y);
+            }
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: clones.map(x => frame.map.getKey(x)) });
+        } else {
+          for (let n = 0; n < clones.length; n++) clones[n].remove();
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   wrap: {
@@ -572,7 +800,6 @@ let actions = {
     handler: async ({ cur = 'master' } = {}) =>
       await post('designer.unwrap', cur),
   },
-
 
   addCssClasses: {
     condition: (cur = 'master') =>
@@ -642,100 +869,6 @@ let actions = {
       await post('designer.removeCssClasses', cur, classes),
   },
 
-  normalizeStylesUnion: {
-    description: `Makes all selected elements have the union of their classes (confirm union is what the user wants before calling)`,
-    shortcut: 'Ctrl-u',
-    condition: (cur = 'master') =>
-      state.designer.open && (state.designer.cursors[cur]?.length || 0 < 2),
-    negativeReason: (cur = 'master') => [
-      !state.designer.open && `Designer closed.`,
-      (state.designer.cursors[cur]?.length || 0 < 2) &&
-        `At least 2 elements must be selected`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string' },
-      },
-    },
-    handler: async ({ cur = 'master' } = {}) =>
-      await post('designer.normalizeStylesUnion', cur),
-  },
-
-  normalizeStylesIntersect: {
-    description: `Makes all selected elements have the intersection of their classes (confirm intersection is what the user wants before calling)`,
-    shortcut: 'Ctrl-U',
-    condition: (cur = 'master') =>
-      state.designer.open && (state.designer.cursors[cur]?.length || 0 < 2),
-    negativeReason: (cur = 'master') => [
-      !state.designer.open && `Designer closed.`,
-      (state.designer.cursors[cur]?.length || 0 < 2) &&
-        `At least 2 elements must be selected`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string' },
-      },
-    },
-    handler: async ({ cur = 'master' } = {}) =>
-      await post('designer.normalizeStylesIntersect', cur),
-  },
-
-  changeElementId: {
-    shortcut: 'Ctrl-I',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length === 1,
-    negativeReason: (cur = 'master') => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open &&
-        !state.designer.cursors[cur]?.length &&
-        `A single element must be selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: {
-          type: 'string',
-          description: `Whose selection to use (defaults to master)`,
-        },
-        id: {
-          type: 'string',
-          description: `New ID (default prompts user)`,
-        },
-      },
-    },
-    handler: async ({ cur = 'master', id } = {}) =>
-      await post('designer.changeElementId', cur, id),
-  },
-
-  changeElementTag: {
-    shortcut: 'e',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open &&
-        !state.designer.cursors[cur]?.length &&
-        `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: {
-          type: 'string',
-          description: `Whose selection to use (defaults to master)`,
-        },
-        tag: {
-          type: 'string',
-          description: `New tag name (default prompts user)`,
-        },
-      },
-    },
-    handler: async ({ cur = 'master', tag } = {}) =>
-      await post('designer.changeElementTag', cur, tag),
-  },
-
   changeHtml: {
     description: `Changes the outer HTML of selected elements (prompts if not provided)`,
     shortcut: 'm',
@@ -751,7 +884,49 @@ let actions = {
         html: { type: 'string' },
       },
     },
-    handler: async ({ cur = 'master', html } = {}) => await post('designer.changeHtml', cur, html),
+    handler: async ({ cur = 'master', html = null } = {}) => {
+      let frame = state.designer.current;
+      let replaced = [];
+      let parents = [];
+      let idxs = [];
+      for (let el of frame.cursors[cur]) {
+        el = frame.map.get(el);
+        let p = el.parentElement;
+        let i = [...p.children].indexOf(el);
+        replaced.push(el);
+        parents.push(p);
+        idxs.push(i);
+      }
+      if (html == null) {
+        let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML', initialValue: replaced[0].outerHTML });
+        if (btn !== 'ok') return;
+        html = val;
+      }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeHtml', cur, html });
+      await post('designer.pushHistory', cur, async apply => {
+        if (apply) {
+          let newSelect = [];
+          for (let n = 0; n < replaced.length; n++) {
+            let p = parents[n];
+            let i = idxs[n];
+            p.children[i].outerHTML = html;
+            newSelect.push(p.children[i]);
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: newSelect.map(x => frame.map.getKey(x)) });
+        } else {
+          let newSelect = [];
+          for (let n = 0; n < replaced.length; n++) {
+            let p = parents[n];
+            let i = idxs[n];
+            p.children[i].replaceWith(replaced[n]);
+            newSelect.push(replaced[n]);
+          }
+          await new Promise(pres => setTimeout(pres));
+          await actions.changeSelection.handler({ cur, s: newSelect.map(x => frame.map.getKey(x)) });
+        }
+      });
+    },
   },
 
   changeInnerHtml: {
