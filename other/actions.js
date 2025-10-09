@@ -6,11 +6,19 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to move (defaults to master)` },
-        ids: { type: 'array', items: { type: 'string' } },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        s: { type: 'array', items: { type: 'string' }, description: `IDs to select` },
       },
     },
-    handler: async ({ uid = 'master', ids } = {}) => await post('designer.changeSelection', uid, ids.map(x => state.designer.current.map.get(x))),
+    handler: async ({ cur = 'master', s } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeSelection', cur, s });
+      let frame = state.designer.current;
+      s = [...new Set(s.map(x => frame.map.get(x)).filter(x => frame.body.contains(x)).map(x => frame.map.getKey(x)).filter(Boolean))];
+      if (!s.length) frame.lastCursors[cur] = frame.cursors[cur];
+      frame.cursors[cur] = s;
+      d.update();
+      await post('collab.sync');
+    },
   },
 
   toggleSelections: {
@@ -26,10 +34,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to toggle (defaults to master)` },
+        cur: { type: 'string', description: `Whose cursor to toggle (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.toggleSelections', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.toggleSelections', cur),
   },
 
   selectParentElement: {
@@ -43,11 +51,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ uid = 'master', i = 1 } = {}) => await post('designer.selectParentElement', uid, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectParentElement', cur, i),
   },
 
   selectNextSibling: {
@@ -60,11 +68,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ uid = 'master', i = 1 } = {}) => await post('designer.selectNextSibling', uid, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectNextSibling', cur, i),
   },
 
   selectPrevSibling: {
@@ -77,11 +85,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ uid = 'master', i = 1 } = {}) => await post('designer.selectPrevSibling', uid, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectPrevSibling', cur, i),
   },
 
   selectFirstChild: {
@@ -94,11 +102,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ uid = 'master', i = 1 } = {}) => await post('designer.selectFirstChild', uid, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectFirstChild', cur, i),
   },
 
   selectLastChild: {
@@ -111,11 +119,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose cursor to move (defaults to master)` },
+        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
         i: { type: 'number', description: `How far to go (defaults to 1)` },
       },
     },
-    handler: async ({ uid = 'master', i = 1 } = {}) => await post('designer.selectLastChild', uid, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.selectLastChild', cur, i),
   },
 
   undo: {
@@ -125,10 +133,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose history to undo (defaults to master)` },
+        cur: { type: 'string', description: `Whose history to undo (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.undo', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.undo', cur),
   },
 
   redo: {
@@ -138,10 +146,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose history to redo (defaults to master)` },
+        cur: { type: 'string', description: `Whose history to redo (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.redo', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.redo', cur),
   },
 
   createNextSibling: {
@@ -154,11 +162,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
+        cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
       },
     },
-    handler: async ({ uid = 'master', tag = 'div' } = {}) => await post('designer.createNextSibling', uid, tag),
+    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createNextSibling', cur, tag),
   },
 
   createPrevSibling: {
@@ -171,11 +179,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
+        cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
       },
     },
-    handler: async ({ uid = 'master', tag = 'div' } = {}) => await post('designer.createPrevSibling', uid, tag),
+    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createPrevSibling', cur, tag),
   },
 
   createLastChild: {
@@ -188,11 +196,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
+        cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
       },
     },
-    handler: async ({ uid = 'master', tag = 'div' } = {}) => await post('designer.createLastChild', uid, tag),
+    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createLastChild', cur, tag),
   },
 
   createFirstChild: {
@@ -205,11 +213,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
+        cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
       },
     },
-    handler: async ({ uid = 'master', tag = 'div' } = {}) => await post('designer.createFirstChild', uid, tag),
+    handler: async ({ cur = 'master', tag = 'div' } = {}) => await post('designer.createFirstChild', cur, tag),
   },
 
   copySelected: {
@@ -223,10 +231,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose selection to copy (defaults to master)` },
+        cur: { type: 'string', description: `Whose selection to copy (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.copySelected', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.copySelected', cur),
   },
 
   deleteSelected: {
@@ -240,11 +248,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
+        cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         i: { type: 'number', description: `How many times to delete (defaults to 1)` },
       },
     },
-    handler: async ({ uid = 'master', i = 1 } = {}) => await post('designer.deleteSelected', uid, i),
+    handler: async ({ cur = 'master', i = 1 } = {}) => await post('designer.deleteSelected', cur, i),
   },
 
   pasteNextSibling: {
@@ -254,10 +262,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.pasteNextSibling', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.pasteNextSibling', cur),
   },
 
   pastePrevSibling: {
@@ -267,10 +275,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.pastePrevSibling', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.pastePrevSibling', cur),
   },
 
   pasteLastChild: {
@@ -280,10 +288,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.pasteLastChild', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.pasteLastChild', cur),
   },
 
   pasteFirstChild: {
@@ -293,10 +301,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Target cursor for paste (defaults to master)` },
+        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.pasteFirstChild', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.pasteFirstChild', cur),
   },
 
   wrap: {
@@ -307,7 +315,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose selection to wrap (defaults to master)`,
         },
@@ -317,8 +325,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', tag = 'div' } = {}) =>
-      await post('designer.wrap', uid, tag),
+    handler: async ({ cur = 'master', tag = 'div' } = {}) =>
+      await post('designer.wrap', cur, tag),
   },
 
   unwrap: {
@@ -329,14 +337,14 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose selection to unwrap (defaults to master)`,
         },
       },
     },
-    handler: async ({ uid = 'master' } = {}) =>
-      await post('designer.unwrap', uid),
+    handler: async ({ cur = 'master' } = {}) =>
+      await post('designer.unwrap', cur),
   },
 
 
@@ -352,7 +360,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose selection to use (defaults to master)`,
         },
@@ -368,10 +376,10 @@ let actions = {
       },
       required: ['framework', 'classes'],
     },
-    handler: async ({ uid = 'master', framework, classes } = {}) =>
+    handler: async ({ cur = 'master', framework, classes } = {}) =>
       await post(
         'designer.addCssClasses',
-        uid,
+        cur,
         framework === 'none' ? classes : [framework, ...classes],
       ),
   },
@@ -393,7 +401,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose selection to use (defaults to master)`,
         },
@@ -404,8 +412,8 @@ let actions = {
       },
       required: ['classes'],
     },
-    handler: async ({ uid = 'master', classes } = {}) =>
-      await post('designer.removeCssClasses', uid, classes),
+    handler: async ({ cur = 'master', classes } = {}) =>
+      await post('designer.removeCssClasses', cur, classes),
   },
 
   normalizeStylesUnion: {
@@ -421,11 +429,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string' },
+        cur: { type: 'string' },
       },
     },
-    handler: async ({ uid = 'master' } = {}) =>
-      await post('designer.normalizeStylesUnion', uid),
+    handler: async ({ cur = 'master' } = {}) =>
+      await post('designer.normalizeStylesUnion', cur),
   },
 
   normalizeStylesIntersect: {
@@ -441,11 +449,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string' },
+        cur: { type: 'string' },
       },
     },
-    handler: async ({ uid = 'master' } = {}) =>
-      await post('designer.normalizeStylesIntersect', uid),
+    handler: async ({ cur = 'master' } = {}) =>
+      await post('designer.normalizeStylesIntersect', cur),
   },
 
   changeElementId: {
@@ -461,7 +469,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose selection to use (defaults to master)`,
         },
@@ -471,8 +479,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', id } = {}) =>
-      await post('designer.changeElementId', uid, id),
+    handler: async ({ cur = 'master', id } = {}) =>
+      await post('designer.changeElementId', cur, id),
   },
 
   changeElementTag: {
@@ -488,7 +496,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose selection to use (defaults to master)`,
         },
@@ -498,8 +506,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', tag } = {}) =>
-      await post('designer.changeElementTag', uid, tag),
+    handler: async ({ cur = 'master', tag } = {}) =>
+      await post('designer.changeElementTag', cur, tag),
   },
 
   changeHtml: {
@@ -513,11 +521,11 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
+        cur: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
         html: { type: 'string' },
       },
     },
-    handler: async ({ uid = 'master', html } = {}) => await post('designer.changeHtml', uid, html),
+    handler: async ({ cur = 'master', html } = {}) => await post('designer.changeHtml', cur, html),
   },
 
   changeInnerHtml: {
@@ -532,15 +540,15 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `whose selected elements to change (defaults to master)`,
         },
         html: { type: 'string' },
       },
     },
-    handler: async ({ uid = 'master', html } = {}) =>
-      await post('designer.changeInnerHtml', uid, html),
+    handler: async ({ cur = 'master', html } = {}) =>
+      await post('designer.changeInnerHtml', cur, html),
   },
 
   changeInputPlaceholder: {
@@ -554,7 +562,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `whose selected elements to change (defaults to master)`,
         },
@@ -564,8 +572,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', placeholder } = {}) =>
-      await post('designer.changeInputPlaceholder', uid, placeholder),
+    handler: async ({ cur = 'master', placeholder } = {}) =>
+      await post('designer.changeInputPlaceholder', cur, placeholder),
   },
 
   changeFormMethod: {
@@ -580,7 +588,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `whose selected elements to change (defaults to master)`,
         },
@@ -590,8 +598,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', method } = {}) =>
-      await post('designer.changeFormMethod', uid, method),
+    handler: async ({ cur = 'master', method } = {}) =>
+      await post('designer.changeFormMethod', cur, method),
   },
 
   toggleHidden: {
@@ -605,10 +613,10 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string', description: `Whose selected elements to toggle (defaults to master)` },
+        cur: { type: 'string', description: `Whose selected elements to toggle (defaults to master)` },
       },
     },
-    handler: async ({ uid = 'master' } = {}) => await post('designer.toggleHidden', uid),
+    handler: async ({ cur = 'master' } = {}) => await post('designer.toggleHidden', cur),
   },
 
   replaceTextContent: {
@@ -625,7 +633,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to move (defaults to master)`,
         },
@@ -635,8 +643,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', text } = {}) =>
-      await post('designer.replaceTextContent', uid, text),
+    handler: async ({ cur = 'master', text } = {}) =>
+      await post('designer.replaceTextContent', cur, text),
   },
 
   replaceMultilineTextContent: {
@@ -651,7 +659,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
@@ -661,8 +669,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', text } = {}) =>
-      await post('designer.replaceMultilineTextContent', uid, text),
+    handler: async ({ cur = 'master', text } = {}) =>
+      await post('designer.replaceMultilineTextContent', cur, text),
   },
 
   changeLinkUrl: {
@@ -676,7 +684,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
@@ -686,8 +694,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', url } = {}) =>
-      await post('designer.changeLinkUrl', uid, url),
+    handler: async ({ cur = 'master', url } = {}) =>
+      await post('designer.changeLinkUrl', cur, url),
   },
 
   changeMediaSrc: {
@@ -701,7 +709,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
@@ -711,8 +719,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', url } = {}) =>
-      await post('designer.changeMediaSrc', uid, url),
+    handler: async ({ cur = 'master', url } = {}) =>
+      await post('designer.changeMediaSrc', cur, url),
   },
 
   // FIXME: Test if possible to create a "list gallery media" function and reply
@@ -729,7 +737,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
@@ -739,8 +747,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', url } = {}) =>
-      await post('designer.changeMediaFromGallery', uid, url),
+    handler: async ({ cur = 'master', url } = {}) =>
+      await post('designer.changeMediaFromGallery', cur, url),
   },
 
   changeBackgroundUrl: {
@@ -754,7 +762,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
@@ -764,8 +772,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', url } = {}) =>
-      await post('designer.changeBackgroundUrl', uid, url),
+    handler: async ({ cur = 'master', url } = {}) =>
+      await post('designer.changeBackgroundUrl', cur, url),
   },
 
   changeBackgroundFromGallery: {
@@ -779,7 +787,7 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
@@ -789,8 +797,8 @@ let actions = {
         },
       },
     },
-    handler: async ({ uid = 'master', url } = {}) =>
-      await post('designer.changeBackgroundFromGallery', uid, url),
+    handler: async ({ cur = 'master', url } = {}) =>
+      await post('designer.changeBackgroundFromGallery', cur, url),
   },
 
   setIfExpression: {
@@ -805,12 +813,12 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string' },
+        cur: { type: 'string' },
         expr: { type: 'string' },
       },
     },
-    handler: async ({ uid = 'master', expr } = {}) =>
-      await post('designer.setIfExpression', uid, expr),
+    handler: async ({ cur = 'master', expr } = {}) =>
+      await post('designer.setIfExpression', cur, expr),
   },
 
   setMapExpression: {
@@ -825,12 +833,12 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: { type: 'string' },
+        cur: { type: 'string' },
         mapExpr: { type: 'string', description: `Format: x of xs` },
       },
     },
-    handler: async ({ uid = 'master', mapExpr } = {}) =>
-      await post('designer.setMapExpression', uid, mapExpr),
+    handler: async ({ cur = 'master', mapExpr } = {}) =>
+      await post('designer.setMapExpression', cur, mapExpr),
   },
 
   // FIXME: Support multiple selections like in the Styles panel
@@ -846,14 +854,14 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
       },
     },
-    handler: async ({ uid = 'master' } = {}) =>
-      await post('designer.setEventHandlers', uid),
+    handler: async ({ cur = 'master' } = {}) =>
+      await post('designer.setEventHandlers', cur),
   },
 
   setDisabledExpression: {
@@ -867,14 +875,14 @@ let actions = {
     parameters: {
       type: 'object',
       properties: {
-        uid: {
+        cur: {
           type: 'string',
           description: `Whose cursor to use (defaults to master)`,
         },
       },
     },
-    handler: async ({ uid = 'master', mapExpr } = {}) =>
-      await post('designer.setDisabledExpression', uid, mapExpr),
+    handler: async ({ cur = 'master', mapExpr } = {}) =>
+      await post('designer.setDisabledExpression', cur, mapExpr),
   },
 
   refreshPage: {

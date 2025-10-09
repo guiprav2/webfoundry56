@@ -22,10 +22,10 @@ export default class App {
         await post('shell.init');
       }
       await post('files.init');
-      //await post('collab.init');
+      await post('collab.init');
       await post('codeEditor.init');
       await post('styles.init');
-      //await post('designer.init');
+      await post('designer.init');
       await post('app.brandCanvasMonitor');
     },
 
