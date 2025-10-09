@@ -1,8 +1,7 @@
 let actions = {
   undo: {
     shortcut: 'Ctrl-z',
-    condition: () => state.designer.open,
-    negativeReason: () => [!state.designer.open && `Designer closed.`],
+    disabled: () => [!state.designer.open && `Designer closed.`],
     parameters: {
       type: 'object',
       properties: {
@@ -20,8 +19,7 @@ let actions = {
 
   redo: {
     shortcut: 'Ctrl-y',
-    condition: () => state.designer.open,
-    negativeReason: () => [!state.designer.open && `Designer closed.`],
+    disabled: () => [!state.designer.open && `Designer closed.`],
     parameters: {
       type: 'object',
       properties: {
@@ -39,8 +37,7 @@ let actions = {
 
   changeSelection: {
     description: `Select elements based on their data-htmlsnap IDs`,
-    condition: () => state.designer.open,
-    negativeReason: `Designer closed.`,
+    disabled: () => [!state.designer.open && `Designer closed.`],
     parameters: {
       type: 'object',
       properties: {
@@ -67,8 +64,7 @@ let actions = {
       `only use upon explicit user request`,
     ].join(' '),
     shortcut: 'Escape',
-    condition: () => state.designer.open,
-    negativeReason: `Designer closed.`,
+    disabled: () => [!state.designer.open && `Designer closed.`],
     parameters: {
       type: 'object',
       properties: {
@@ -87,10 +83,9 @@ let actions = {
   selectParentElement: {
     description: `Moves selection to the parent element`,
     shortcut: ['ArrowLeft', 'h'],
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -113,10 +108,9 @@ let actions = {
 
   selectNextSibling: {
     shortcut: ['ArrowDown', 'j'],
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -139,8 +133,7 @@ let actions = {
 
   selectPrevSibling: {
     shortcut: ['ArrowUp', 'k'],
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -165,8 +158,7 @@ let actions = {
 
   selectFirstChild: {
     shortcut: ['ArrowRight', 'l'],
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -191,8 +183,7 @@ let actions = {
 
   selectLastChild: {
     shortcut: ['ArrowRight', 'l'],
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -217,8 +208,7 @@ let actions = {
 
   createNextSibling: {
     shortcut: 'a',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -264,8 +254,7 @@ let actions = {
 
   createPrevSibling: {
     shortcut: 'A',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -311,8 +300,7 @@ let actions = {
 
   createLastChild: {
     shortcut: 'i',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -358,8 +346,7 @@ let actions = {
 
   createFirstChild: {
     shortcut: 'I',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -406,10 +393,9 @@ let actions = {
   copySelected: {
     description: `Copies currently selected element(s)`,
     shortcut: 'c',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -432,8 +418,7 @@ let actions = {
   deleteSelected: {
     description: `Deletes and copies currently selected element(s)`,
     shortcut: 'd',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -486,7 +471,10 @@ let actions = {
   pasteNextSibling: {
     description: `Pastes copied elements as the next sibling`,
     shortcut: 'p',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
     parameters: {
       type: 'object',
       properties: {
@@ -556,7 +544,10 @@ let actions = {
   pastePrevSibling: {
     description: `Pastes copied elements as the previous sibling`,
     shortcut: 'P',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
     parameters: {
       type: 'object',
       properties: {
@@ -626,7 +617,10 @@ let actions = {
   pasteLastChild: {
     description: `Pastes copied elements as the last child`,
     shortcut: 'o',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
     parameters: {
       type: 'object',
       properties: {
@@ -696,7 +690,10 @@ let actions = {
   pasteFirstChild: {
     description: `Pastes copied elements as the first child`,
     shortcut: 'O',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
     parameters: {
       type: 'object',
       properties: {
@@ -766,8 +763,10 @@ let actions = {
   wrap: {
     description: `Wraps selected elements with a new element`,
     shortcut: 'w',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
     parameters: {
       type: 'object',
       properties: {
@@ -788,8 +787,10 @@ let actions = {
   unwrap: {
     description: `Unwraps selected element(s), promoting children to their level`,
     shortcut: 'W',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
     parameters: {
       type: 'object',
       properties: {
@@ -804,8 +805,7 @@ let actions = {
   },
 
   addCssClasses: {
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -831,8 +831,7 @@ let actions = {
   },
 
   removeCssClasses: {
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -858,8 +857,7 @@ let actions = {
   },
 
   replaceCssClasses: {
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
       state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
@@ -898,10 +896,9 @@ let actions = {
   changeHtml: {
     description: `Changes the outer HTML of selected elements (prompts if not provided)`,
     shortcut: 'm',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.current.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -998,11 +995,9 @@ let actions = {
   changeInnerHtml: {
     description: `Changes the inner HTML of selected elements (prompts if not provided)`,
     shortcut: 'M',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1020,11 +1015,9 @@ let actions = {
 
   changeInputPlaceholder: {
     shortcut: 'Ctrl-p',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1046,11 +1039,9 @@ let actions = {
   changeFormMethod: {
     description: `Changes a form element's method attribute`,
     shortcut: 'Ctrl-M',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1072,10 +1063,9 @@ let actions = {
   toggleHidden: {
     description: `Toggles visibility of selected elements (via hidden attribute)`,
     shortcut: 'x',
-    condition: (cur = 'master') => state.designer.open && state.designer.current.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1089,13 +1079,9 @@ let actions = {
   replaceTextContent: {
     description: `If no text is provided, a single-line input modal is shown`,
     shortcut: 't',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.open &&
-        !state.designer.cursors[cur]?.length &&
-        `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1117,11 +1103,9 @@ let actions = {
   replaceMultilineTextContent: {
     description: `Replaces the selected element's content with multiline input; prompts textarea if no text is provided`,
     shortcut: 'T',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1142,11 +1126,9 @@ let actions = {
 
   changeLinkUrl: {
     shortcut: 'H',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1167,11 +1149,9 @@ let actions = {
 
   changeMediaSrc: {
     shortcut: 's',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1195,11 +1175,9 @@ let actions = {
 
   changeMediaSrcFromGallery: {
     shortcut: 'S',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1220,11 +1198,9 @@ let actions = {
 
   changeBackgroundUrl: {
     shortcut: 'b',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1245,11 +1221,9 @@ let actions = {
 
   changeBackgroundFromGallery: {
     shortcut: 'B',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1271,11 +1245,9 @@ let actions = {
   setIfExpression: {
     description: `Sets conditional expression for displaying elements (prompts if not provided)`,
     shortcut: 'Ctrl-i',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1291,11 +1263,9 @@ let actions = {
   setMapExpression: {
     description: `Sets map expression for repeating elements (prompts if not provided)`,
     shortcut: 'Ctrl-m',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1311,12 +1281,9 @@ let actions = {
   // FIXME: Support multiple selections like in the Styles panel
   setEventHandlers: {
     shortcut: 'Ctrl-o',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length === 1,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      state.designer.cursors[cur]?.length !== 1 &&
-        `A single element must be selected.`,
+      state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`,
     ],
     parameters: {
       type: 'object',
@@ -1333,11 +1300,9 @@ let actions = {
 
   setDisabledExpression: {
     shortcut: 'Ctrl-D',
-    condition: (cur = 'master') =>
-      state.designer.open && state.designer.cursors[cur]?.length,
-    negativeReason: (cur = 'master') => [
+    disabled: ({ cur = 'master' }) => [
       !state.designer.open && `Designer closed.`,
-      !state.designer.cursors[cur]?.length && `No elements selected`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected`,
     ],
     parameters: {
       type: 'object',
@@ -1353,8 +1318,7 @@ let actions = {
   },
 
   refreshPage: {
-    condition: () => state.designer.open,
-    negativeReason: `Designer closed.`,
+    disabled: () => [!state.designer.open && `Designer closed.`],
     handler: async () => await post('designer.refresh'),
   },
 };

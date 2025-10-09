@@ -18,7 +18,15 @@ export default class Assistant {
         let fns = Object.fromEntries([...Object.entries(actions)].map(([k, v]) => [k, {
           description: v.description,
           parameters: v.parameters,
-          handler: v.handler,
+          handler: async params => {
+            try {
+              if (v?.disabled?.(params)?.filter?.(Boolean)?.length) return { success: false, error: `Operation not possible because:\n${disabled.map(x => `- ${x}`).join('\n')}` };
+              return await v.handler(params);
+            } catch (err) {
+              console.error(err);
+              return { success: false, error: err.toString() };
+            }
+          },
         }]));
         this.state.session.sysupdate({
           main: `You're Webfoundry Assistant, a voice assistant embedded into a web app and site creation tool.`,
