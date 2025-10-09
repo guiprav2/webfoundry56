@@ -422,9 +422,10 @@ let actions = {
       let frame = state.designer.current;
       let els = frame.cursors[cur].map(id => frame.map.get(id)).filter(Boolean);
       let html = els.map(n => n.outerHTML).join('\n');
-      frame.clipboards[cur] = html;
+      state.designer.clipboards[cur] = html;
       localStorage.setItem('webfoundry:clipboard', html);
       d.update();
+      await post('collab.sync');
     },
   },
 
@@ -497,7 +498,7 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteNextSibling', cur, i });
       let pos = 'afterend';
       let frame = state.designer.current;
-      let html = frame.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
+      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
       if (!html) return;
       let template = document.createElement('template');
       template.innerHTML = html;
@@ -567,7 +568,7 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pastePrevSibling', cur, i });
       let pos = 'beforebegin';
       let frame = state.designer.current;
-      let html = frame.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
+      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
       if (!html) return;
       let template = document.createElement('template');
       template.innerHTML = html;
@@ -637,7 +638,7 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteLastChild', cur, i });
       let pos = 'beforeend';
       let frame = state.designer.current;
-      let html = frame.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
+      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
       if (!html) return;
       let template = document.createElement('template');
       template.innerHTML = html;
@@ -707,7 +708,7 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteFirstChild', cur, i });
       let pos = 'afterbegin';
       let frame = state.designer.current;
-      let html = frame.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
+      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
       if (!html) return;
       let template = document.createElement('template');
       template.innerHTML = html;

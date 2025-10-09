@@ -77,6 +77,11 @@
           wf-class="{{state.app.panel === 'styles' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'styles')"
           wf-if="state.designer.open"
+        ></button
+        ><button
+          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-md-dots_vertical_circle IconsSidebar-settingsBtn"
+          wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
+          wf-onclick="post('app.selectPanel', 'settings')"
         ></button>
 
         <button
@@ -96,7 +101,7 @@
         </div>
 
         <div
-          wf-if="state.settings.options?.toolbar &amp;&amp; state.files.current?.endsWith('.html') &amp;&amp; !state.designer.preview"
+          wf-if="state.designer.open &amp;&amp; !state.designer.current.preview &amp;&amp; state.settings.opt.toolbar"
         >
           <div
             class="text-neutral-100 bg-[#091017] border-b border-black/50 flex px-4 items-center py-3 gap-4"
@@ -121,7 +126,7 @@
                     <div>Manipulation</div></button
                   ><button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'tw')"
+                    wf-onclick="post('designer.toolbar', 'tailwind')"
                   >
                     <div>Tailwind</div>
                   </button>
@@ -142,17 +147,18 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.undo')"
+                    wf-onclick="post('designer.toolbar', 'undo')"
                   >
                     <div>Undo</div>
                     <div
                       class="relative top-0.5 text-xs rounded h-5 flex justify-center items-center font-mono bg-[#0071b2] px-2"
                     >
                       <div class="relative top-[1px]">Ctrl-z</div>
-                    </div></button
-                  ><button
+                    </div>
+                  </button>
+                  <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.redo')"
+                    wf-onclick="post('designer.toolbar', 'redo')"
                   >
                     <div>Redo</div>
                     <div
@@ -178,7 +184,7 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.selectParentElement')"
+                    wf-onclick="post('designer.toolbar', 'selectParentElement')"
                   >
                     <div>Parent</div>
                     <div
@@ -187,9 +193,10 @@
                       h
                     </div>
                   </button>
+
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.selectNextSibling')"
+                    wf-onclick="post('designer.toolbar', 'selectNextSibling')"
                   >
                     <div>Next</div>
                     <div
@@ -200,7 +207,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.selectPrevSibling')"
+                    wf-onclick="post('designer.toolbar', 'selectPrevSibling')"
                   >
                     <div>Previous</div>
                     <div
@@ -211,7 +218,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.selectFirstChild')"
+                    wf-onclick="post('designer.toolbar', 'selectFirstChild')"
                   >
                     <div>First Child</div>
                     <div
@@ -222,7 +229,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.selectLastChild')"
+                    wf-onclick="post('designer.toolbar', 'selectLastChild')"
                   >
                     <div>Last Child</div>
                     <div
@@ -248,7 +255,7 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.createFirstChild')"
+                    wf-onclick="post('designer.toolbar', 'createFirstChild')"
                   >
                     <div>Inside</div>
                     <div
@@ -259,7 +266,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.createLastChild')"
+                    wf-onclick="post('designer.toolbar', 'createLastChild')"
                   >
                     <div>Inside (last)</div>
                     <div
@@ -270,7 +277,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.createNextSibling')"
+                    wf-onclick="post('designer.toolbar', 'createNextSibling')"
                   >
                     <div>After</div>
                     <div
@@ -281,7 +288,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.createPrevSibling')"
+                    wf-onclick="post('designer.toolbar', 'createPrevSibling')"
                   >
                     <div>Before</div>
                     <div
@@ -292,7 +299,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.wrap')"
+                    wf-onclick="post('designer.toolbar', 'wrap')"
                   >
                     <div>Wrap</div>
                     <div
@@ -303,7 +310,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.unwrap')"
+                    wf-onclick="post('designer.toolbar', 'unwrap')"
                   >
                     <div>Unwrap</div>
                     <div
@@ -317,7 +324,7 @@
             </div>
             <div
               class="relative inline-block group"
-              wf-if="localStorage.getItem('webfoundry.copy')"
+              wf-if="state.designer.clipboards[state.collab.uid] || localStorage.getItem('webfoundry:clipboard')"
             >
               <button
                 class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between w-24 py-1"
@@ -332,7 +339,7 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.pasteNextSibling')"
+                    wf-onclick="post('designer.toolbar', 'pasteNextSibling')"
                   >
                     <div>After</div>
                     <div
@@ -343,7 +350,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.pastePrevSibling')"
+                    wf-onclick="post('designer.toolbar', 'pastePrevSibling')"
                   >
                     <div>Before</div>
                     <div
@@ -354,7 +361,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.pasteLastChild')"
+                    wf-onclick="post('designer.toolbar', 'pasteLastChild')"
                   >
                     <div>Last Child</div>
                     <div
@@ -365,7 +372,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.pasteFirstChild')"
+                    wf-onclick="post('designer.toolbar', 'pasteFirstChild')"
                   >
                     <div>First Child</div>
                     <div
@@ -377,6 +384,7 @@
                 </div>
               </div>
             </div>
+
             <div class="relative inline-block group">
               <button
                 class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"
@@ -391,7 +399,7 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementId')"
+                    wf-onclick="post('designer.toolbar', 'changeElementId')"
                   >
                     <div>ID</div>
                     <div
@@ -402,7 +410,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag')"
                   >
                     <div>Tag</div>
                     <div
@@ -413,7 +421,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeHtml')"
+                    wf-onclick="post('designer.toolbar', 'changeHtml')"
                   >
                     <div>HTML</div>
                     <div
@@ -424,7 +432,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeInnerHtml')"
+                    wf-onclick="post('designer.toolbar', 'changeInnerHtml')"
                   >
                     <div>Inner HTML</div>
                     <div
@@ -435,7 +443,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeInputPlaceholder')"
+                    wf-onclick="post('designer.toolbar', 'changeInputPlaceholder')"
                   >
                     <div>Placeholder</div>
                     <div
@@ -446,7 +454,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeFormMethod')"
+                    wf-onclick="post('designer.toolbar', 'changeFormMethod')"
                   >
                     <div>Form Method</div>
                     <div
@@ -458,7 +466,7 @@
 
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toggleHidden')"
+                    wf-onclick="post('designer.toolbar', 'toggleHidden')"
                   >
                     <div>Toggle hidden</div>
                     <div
@@ -469,7 +477,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.normalizeStylesUnion')"
+                    wf-onclick="post('designer.toolbar', 'normalizeStylesUnion')"
                   >
                     <div>Normalize (union)</div>
                     <div
@@ -479,7 +487,7 @@
                     </div></button
                   ><button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.normalizeStylesIntersect')"
+                    wf-onclick="post('designer.toolbar', 'normalizeStylesIntersect')"
                   >
                     <div>Normalize (intersect)</div>
                     <div
@@ -505,7 +513,7 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.replaceTextContent')"
+                    wf-onclick="post('designer.toolbar', 'replaceTextContent')"
                   >
                     <div>Single line</div>
                     <div
@@ -516,7 +524,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.replaceMultilineTextContent')"
+                    wf-onclick="post('designer.toolbar', 'replaceMultilineTextContent')"
                   >
                     <div>Multiline</div>
                     <div
@@ -527,7 +535,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeLinkUrl')"
+                    wf-onclick="post('designer.toolbar', 'changeLinkUrl')"
                   >
                     <div>Link URL</div>
                     <div
@@ -539,7 +547,7 @@
 
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeMediaSrc')"
+                    wf-onclick="post('designer.toolbar', 'changeMediaSrc')"
                   >
                     <div>Media URL</div>
                     <div
@@ -551,7 +559,7 @@
 
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeMediaFromGallery')"
+                    wf-onclick="post('designer.toolbar', 'changeMediaFromGallery')"
                   >
                     <div>Media Gallery</div>
                     <div
@@ -563,7 +571,7 @@
 
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeBackgroundUrl')"
+                    wf-onclick="post('designer.toolbar', 'changeBackgroundUrl')"
                   >
                     <div>Background URL</div>
                     <div
@@ -575,7 +583,7 @@
 
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeBackgroundFromGallery')"
+                    wf-onclick="post('designer.toolbar', 'changeBackgroundFromGallery')"
                   >
                     <div>Background Gallery</div>
                     <div
@@ -601,7 +609,7 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.setIfExpression')"
+                    wf-onclick="post('designer.toolbar', 'setIfExpression')"
                   >
                     <div>Conditional</div>
                     <div
@@ -612,7 +620,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.setMapExpression')"
+                    wf-onclick="post('designer.toolbar', 'setMapExpression')"
                   >
                     <div>Map</div>
                     <div
@@ -623,7 +631,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.setEventHandlers')"
+                    wf-onclick="post('designer.toolbar', 'setEventHandlers')"
                   >
                     <div>Event Handlers</div>
                     <div
@@ -635,7 +643,7 @@
 
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.setDisabledExpression')"
+                    wf-onclick="post('designer.toolbar', 'setDisabledExpression')"
                   >
                     <div>Disabled</div>
                     <div
@@ -646,7 +654,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.evalJavaScript')"
+                    wf-onclick="post('designer.toolbar', 'evalJavaScript')"
                   >
                     <div>Evaluate</div>
                     <div
@@ -672,205 +680,207 @@
                 >
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag')"
                   >
                     &lt;custom&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'div')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'div' })"
                   >
                     &lt;div&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'span')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'span }')"
                   >
                     &lt;span&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'a')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'a')"
+                    }=""
                   >
                     &lt;a&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'p')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'p')"
+                    }=""
                   >
                     &lt;p&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'button')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'butt }on')"
                   >
                     &lt;button&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'input')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'inpu }t')"
                   >
                     &lt;input&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'form')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'form }')"
                   >
                     &lt;form&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'label')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'labe }l')"
                   >
                     &lt;label&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'textarea')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'text }area')"
                   >
                     &lt;textarea&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'ul')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'ul') }"
                   >
                     &lt;ul&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'ol')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'ol') }"
                   >
                     &lt;ol&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'li')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'li') }"
                   >
                     &lt;li&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'img')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'img' })"
                   >
                     &lt;img&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'section')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'sect }ion')"
                   >
                     &lt;section&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'article')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'arti }cle')"
                   >
                     &lt;article&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'header')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'head }er')"
                   >
                     &lt;header&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'footer')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'foot }er')"
                   >
                     &lt;footer&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'nav')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'nav' })"
                   >
                     &lt;nav&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'main')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'main }')"
                   >
                     &lt;main&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'h1')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h1') }"
                   >
                     &lt;h1&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'h2')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h2') }"
                   >
                     &lt;h2&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'h3')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h3') }"
                   >
                     &lt;h3&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'h4')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h4') }"
                   >
                     &lt;h4&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'h5')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h5') }"
                   >
                     &lt;h5&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'h6')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h6') }"
                   >
                     &lt;h6&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'br')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'br') }"
                   >
                     &lt;br&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'hr')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'hr') }"
                   >
                     &lt;hr&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'table')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tabl }e')"
                   >
                     &lt;table&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'thead')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'thea }d')"
                   >
                     &lt;thead&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'tbody')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tbod }y')"
                   >
                     &lt;tbody&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'tr')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tr') }"
                   >
                     &lt;tr&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'td')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'td') }"
                   >
                     &lt;td&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.changeElementTag', 'master', 'th')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'th') }"
                   >
                     &lt;th&gt;
                   </button>
@@ -881,16 +891,17 @@
             <div class="flex gap-1">
               <button
                 class="nf outline-none nf-md-refresh p-1.5"
-                wf-onclick="post('designer.refresh')"
+                wf-onclick="post('designer.toolbar', 'refresh')"
               ></button>
 
               <button
                 class="nf nf-fa-clone outline-none p-1.5"
-                wf-onclick="post('designer.copySelected')"
+                wf-onclick="post('designer.toolbar', 'copySelected')"
               ></button>
+
               <button
                 class="nf nf-oct-x outline-none p-1.5"
-                wf-onclick="post('designer.deleteSelected')"
+                wf-onclick="post('designer.toolbar', 'deleteSelected')"
               ></button>
             </div>
           </div>
@@ -2686,6 +2697,58 @@
                   placeholder="add class"
                   wf-onkeyup="post('styles.addKeyUp', event)"
                 />
+              </div>
+            </div>
+          </div>
+          <div
+            class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 bg-[#091017] overflow-auto"
+            wf-if="state.app.panel === 'settings'"
+          >
+            <div>Settings &amp; More</div>
+            <div class="ml-3">
+              <div class="space-y-2 mt-2 -ml-3">
+                <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                >
+                  <div class="shrink-0">Hide toolbar</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="!state.settings.opt.toolbar"
+                      wf-onclick="event.preventDefault(), post('settings.option', 'toolbar')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div>
+                </label>
+
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none disabled:opacity-50"
+                  wf-if="!state.assistant.session"
+                  wf-onclick="event.preventDefault(), post('assistant.start')"
+                  wf-disabled="state.assistant.initializing"
+                >
+                  <div>Voice assistant</div>
+                  <div
+                    class="text-sm text-green-400"
+                    wf-if="state.assistant.initializing"
+                  >
+                    Connecting...
+                  </div>
+                </button>
+                <button
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
+                  wf-if="state.assistant.session"
+                  wf-onclick="event.preventDefault(), post('assistant.stop')"
+                >
+                  <div>Disable assistant</div>
+                </button>
               </div>
             </div>
           </div>

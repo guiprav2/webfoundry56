@@ -80,6 +80,7 @@ export default class Collab {
         current: state.files.current,
         contents: full && state.designer.open && state.designer.current.snap,
         cursors: state.designer.current?.cursors,
+        clipboards: state.designer.clipboards,
       });
     },
 
@@ -94,6 +95,7 @@ export default class Collab {
       }
       ev.contents != null && morphdom(state.designer.current.html, ev.contents);
       state.designer.current.cursors = ev.cursors;
+      state.designer.clipboards = ev.clipboards;
     },
   };
 

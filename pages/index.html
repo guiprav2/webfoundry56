@@ -346,7 +346,7 @@
             </div>
             <div
               class="relative inline-block group"
-              wf-if="state.designer.current?.clipboards?.[state.collab.uid] || localStorage.getItem('webfoundry:clipboard')"
+              wf-if="state.designer.clipboards[state.collab.uid] || localStorage.getItem('webfoundry:clipboard')"
             >
               <button
                 class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between w-24 py-1"
@@ -406,6 +406,7 @@
                 </div>
               </div>
             </div>
+
             <div class="relative inline-block group">
               <button
                 class="px-3 outline-none focus:ring ring-neutral-600 text-white rounded flex items-center justify-between py-1 w-32"

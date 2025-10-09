@@ -33,6 +33,7 @@ export default class Designer {
 
     get current() { return this.list.find(x => x.path === state.files.current) },
     get open() { return this.current?.ready },
+    clipboards: {},
   };
 
   actions = {
@@ -68,7 +69,6 @@ export default class Designer {
         overlays: {},
         history: {},
         ihistory: {},
-        clipboards: {},
         resolve: p.resolve,
         reject: p.reject,
       });

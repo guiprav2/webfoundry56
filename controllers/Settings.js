@@ -9,11 +9,13 @@ export default class Settings {
       this.state.opt = JSON.parse(localStorage.getItem('webfoundry:config') || 'null');
       if (!this.state.opt) {
         this.state.opt = {
+          toolbar: true,
           companion: false,
           companionKey: `wf-${crypto.randomUUID()}`,
         };
         await post('settings.save');
       }
+      if (state.collab.uid !== 'master') return;
       bus.on('projects:select:ready', async () => {
         let project = state.projects.current;
         this.state.popt = await rprojects.config(project);
