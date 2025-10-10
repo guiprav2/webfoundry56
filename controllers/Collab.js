@@ -1,12 +1,14 @@
 import * as pako from 'https://esm.sh/pako';
 import RealtimeCollab from '../other/RealtimeCollab.js';
 import actions from '../other/actions.js';
+import diff from 'https://esm.sh/fast-diff';
 import morphdom from 'https://esm.sh/morphdom';
 import rfiles from '../repos/rfiles.js';
 
 export default class Collab {
   state = {
     get uid() { return location.pathname !== '/collab.html' ? 'master' : this.rtc.uid },
+    ver: 0,
     rpcs: {},
   };
 
@@ -15,9 +17,9 @@ export default class Collab {
       let { bus } = state.event;
       if (location.pathname !== '/collab.html') {
         bus.on('files:select:ready', async () => await post('collab.sync'));
-        bus.on('designer:select:ready', async () => await post('collab.sync', true));
+        bus.on('designer:select:ready', async () => await post('collab.sync', 'full'));
         bus.on('designer:changeSelection:ready', async () => await post('collab.sync'));
-        bus.on('designer:save:ready', async () => await post('collab.sync', true));
+        bus.on('designer:save:ready', async () => await post('collab.sync', 'delta'));
       } else {
         let room = location.hash.slice(1);
         if (!room) { location.href = '/'; return }
@@ -31,7 +33,7 @@ export default class Collab {
       let [btn, rtc] = await showModal('Collaborate');
       if (btn !== 'ok') return await rtc.teardown();
       this.state.rtc = rtc;
-      rtc.events.on('presence:join', async () => await post('collab.sync', true));
+      rtc.events.on('presence:join', async () => await post('collab.sync', 'full'));
       rtc.events.on('rpc:*', async ev => await post('collab.rpcInvoke', ev));
       rtc.events.on('changeSelection', async ev => await post('designer.changeSelection', ev.peer, ev.s.map(x => state.designer.current.map.get(x))));
       rtc.events.on('cmd', async ev => await actions[ev.k].handler({ cur: null, ...ev, cur: ev.peer }));
@@ -71,20 +73,32 @@ export default class Collab {
       }
     },
 
-    sync: async full => {
+    sync: async kind => {
+      this.state.ver++;
+      let snap = state.designer.open ? state.designer.current.snap : '';
+      let delta;
+      if (kind === 'delta' && this.state.lastSnap) {
+        let diffs = diff(this.state.lastSnap, snap);
+        delta = await gzbase64(JSON.stringify(diffs));
+      }
+      this.state.lastSnap = snap;
       this.state.rtc?.send?.({
         type: 'sync',
+        ver: this.state.ver,
         project: state.projects.current,
         files: state.files.list,
         expandedPaths: [...state.files.expandedPaths],
         current: state.files.current,
-        contents: full && state.designer.open && state.designer.current.snap,
+        contents: kind === 'full' ? snap : undefined,
+        delta,
         cursors: state.designer.current?.cursors,
         clipboards: state.designer.clipboards,
       });
     },
 
     apply: async ev => {
+      if (ev.ver <= this.state.ver) return;
+      this.state.ver = ev.ver;
       state.projects.current = ev.project;
       state.files.list = ev.files;
       state.files.expandedPaths = new Set(ev.expandedPaths);
@@ -92,7 +106,15 @@ export default class Collab {
         state.files.current = ev.current;
         await post('designer.select', ev.current);
       }
-      ev.contents != null && morphdom(state.designer.current.html, ev.contents);
+      if (ev.contents) {
+        morphdom(state.designer.current.html, ev.contents);
+        this.state.lastSnap = ev.contents;
+      } else if (ev.delta) {
+        let diffs = JSON.parse(await ungzbase64(ev.delta));
+        let patched = applyFastDiff(this.state.lastSnap, diffs);
+        morphdom(state.designer.current.html, patched);
+        this.state.lastSnap = patched;
+      }
       state.designer.current.cursors = ev.cursors;
       state.designer.clipboards = ev.clipboards;
     },
@@ -106,17 +128,37 @@ export default class Collab {
       return await b64(await gzblob(blob));
     },
   };
-};
+}
+
+function applyFastDiff(oldText, diffs) {
+  let out = '';
+  for (let [op, data] of diffs) {
+    if (op === 0) out += data;
+    else if (op === 1) out += data;
+  }
+  return out;
+}
+
+async function gzbase64(str) {
+  let blob = new Blob([pako.gzip(str)], { type: 'application/gzip' });
+  return await b64(blob);
+}
+
+async function ungzbase64(b64str) {
+  let binary = atob(b64str);
+  let array = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(pako.ungzip(array));
+}
 
 async function gzblob(blob) {
   return new Blob([pako.gzip(new Uint8Array(await blob.arrayBuffer()))], { type: 'application/gzip' });
 }
 
 function b64(blob) {
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+  return new Promise((res, rej) => {
+    let r = new FileReader();
+    r.onloadend = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
   });
 }
