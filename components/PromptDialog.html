@@ -117,7 +117,8 @@
   </head>
   <body class="flex justify-center items-center min-h-screen">
     <dialog
-      class="outline-none rounded-lg shadow-xl text-neutral-100 bg-[#091017] p-3 pt-2 {{this.props.short_&amp;&amp;_'w-64'}} {{!this.props.short_&amp;&amp;_'w-[30vw]'}}"
+      class="outline-none rounded-lg shadow-xl text-neutral-100 bg-[#091017] p-3 pt-2"
+      wf-class="{{this.props.short ? 'w-64' : 'w-[30vw]'}}"
       open=""
     >
       <form
