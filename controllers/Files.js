@@ -236,6 +236,112 @@ export default class Files {
       await post('broadcast.publish', 'files:pull', { project });
       bus.emit('files:pull:ready');
     }),
+
+    deploy: async () => {
+      let project = state.projects.current;
+      let key = localStorage.getItem('webfoundry:netlifyApiKey');
+      if (!key) {
+        let [btn, x] = await showModal('NetlifyApiKey', { key });
+        if (btn !== 'ok') return;
+        key = x;
+        localStorage.setItem('webfoundry:netlifyApiKey', key);
+      }
+      let siteId = localStorage.getItem(`webfoundry:netlifySiteId:${project}`);
+      let btn, type, x;
+      while (true) {
+        [btn, type, x] = await showModal('NetlifyDeploy', { key, id: siteId });
+        if (btn === 'key') {
+          let key = localStorage.getItem('webfoundry:netlifyApiKey');
+          let [btn, x] = await showModal('NetlifyApiKey', { key });
+          if (btn !== 'ok') continue;
+          key = x;
+          localStorage.setItem('webfoundry:netlifyApiKey', key);
+          continue;
+        }
+        if (btn !== 'ok') return;
+        break;
+      }
+      showModal('Loading', { msg: 'Compressing files...' });
+      const blob = await rfiles.exportZip(project);
+      document.querySelector('dialog')?.remove?.();
+      const headers = { Authorization: `Bearer ${key}` };
+      if (type === 'new') {
+        const res = await fetch('https://api.netlify.com/api/v1/sites', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: x }),
+        });
+        if (!res.ok) {
+          await showModal('NetlifyPostDeploy', { success: false });
+          return;
+        }
+        const json = await res.json();
+        siteId = json.id;
+      } else if (type === 'existing') {
+        siteId = x;
+      }
+      localStorage.setItem(`webfoundry:netlifySiteId:${project}`, siteId);
+      const uploadStart = Date.now();
+      showModal('Loading', { msg: 'Deploying to Netlify...' });
+      try {
+        await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/zip' },
+          body: blob,
+        });
+      } catch (err) {
+        !err.message.includes('CORS') && console.error(err);
+      }
+      const checkDeployStatus = async (timeout = 60000, interval = 3000) => {
+        const start = Date.now();
+        while (Date.now() - start < timeout) {
+          const res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, { headers });
+          if (res.ok) {
+            const deploys = await res.json();
+            deploys.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const latestDeploy = deploys[0];
+            if (latestDeploy && new Date(latestDeploy.created_at).getTime() >= uploadStart) return latestDeploy;
+          }
+          await new Promise(resolve => setTimeout(resolve, interval));
+        }
+        throw new Error('Deploy status check timed out');
+      };
+      try {
+        let x = await checkDeployStatus();
+        document.querySelector('dialog')?.remove?.();
+        let [btn] = await showModal('NetlifyPostDeploy', { success: true });
+        let url = x.ssl_urll || x.url;
+        url = this.state.current && !this.state.current.endsWith('/index.html') ? `${url}/${this.state.current.slice('pages/'.length)}` : url;
+        btn === 'visit' && open(url, siteId);
+      } catch (err) {
+        console.error(err);
+        await showModal('NetlifyPostDeploy', { success: false });
+      }
+    },
+
+    importZip: async () => {
+      let input = d.html`<input class="hidden" type="file" accept=".zip">`;
+      input.onchange = async () => {
+        let [file] = input.files;
+        if (!file) return;
+        showModal('Loading', { msg: 'Importing ZIP...' });
+        await rfiles.importZip(state.projects.current, file);
+        await post('files.injectBuiltins');
+        await post('files.generateReflections');
+        await post('files.load');
+        document.querySelector('dialog')?.remove?.();
+      }
+      document.body.append(input);
+      input.click();
+      input.remove();
+    },
+
+    exportZip: async () => {
+      let project = state.projects.current;
+      let blob = await rfiles.exportZip(project);
+      let a = d.html`<a class="hidden" ${{ download: `${state.projects.list.find(x => x.id === project).name}.zip`, href: URL.createObjectURL(blob) }}>`;
+      document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    },
   };
 };
 

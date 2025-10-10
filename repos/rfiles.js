@@ -1,3 +1,4 @@
+import JSZip from 'https://esm.sh/jszip';
 import lf from 'https://esm.sh/localforage';
 import rprojects from './rprojects.js';
 import { lookup as mimeLookup } from 'https://cdn.skypack.dev/mrmime';
@@ -17,7 +18,7 @@ class FilesRepository {
       case 'cfs': list = (await post('companion.rpc', 'files:list', { path: name })).map(x => x.slice(name.length + 1)); break;
       default: throw new Error(`Unknown project storage: ${storage}`);
     }
-    return list.filter(x => !/\.swp$|^index.html$|^wf.uiconfig.json$|^webfoundry\//.test(x));
+    return list;
   }
 
   async save(project, path, blob) {
@@ -84,6 +85,22 @@ class FilesRepository {
       case 'cfs': return await post('companion.rpc', 'files:rm', { path: `${name}/${path}` });
       default: throw new Error(`Unknown project storage: ${storage}`);
     }
+  }
+
+  async importZip(project, blob) {
+    let zip = await JSZip.loadAsync(blob);
+    for (let [path, entry] of Object.entries(zip.files)) {
+      if (path.endsWith('/')) continue;
+      let fileBlob = await entry.async('blob');
+      await this.save(project, path, new Blob([await fileBlob.arrayBuffer()], { type: mimeLookup(path) || 'application/octet-stream', }));
+    }
+  }
+
+  async exportZip(project, extraFiles = {}) {
+    let zip = new JSZip();
+    for (let path of await this.list(project)) zip.file(path, await this.load(project, path));
+    for (let [k, v] of Object.entries(extraFiles)) zip.file(k, v);
+    return await zip.generateAsync({ type: 'blob' });
   }
 
   async push(project) {

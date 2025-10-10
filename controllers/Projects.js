@@ -28,7 +28,7 @@ export default class Projects {
       let { bus } = state.event;
       bus.emit('projects:create:start');
       bus.emit('projects:create:prompt');
-      let [btn, name] = await showModal('PromptDialog', { title: 'Create project', placeholder: 'Project name', allowEmpty: false });
+      let [btn, name] = await showModal('PromptDialog', { title: 'Create project', placeholder: 'Project name', allowEmpty: false, short: true });
       if (btn !== 'ok') return bus.emit('projects:create:cancel');
       await loadman.run('projects.create', async () => {
         bus.emit('projects:create:confirmed', { name });
