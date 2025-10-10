@@ -982,8 +982,8 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'removeCssClasses', cur, cls });
       let frame = state.designer.current;
       cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
-      let targets = frame.cursors.master.map(x => frame.map.get(x)).filter(Boolean);
-      await post('designer.pushHistory', 'master', async apply => {
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      await post('designer.pushHistory', cur, async apply => {
         if (apply) for (let x of targets) for (let y of cls) x.classList.remove(y);
         else for (let x of targets) for (let y of cls) x.classList.add(y);
         await post('collab.sync');
