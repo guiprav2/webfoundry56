@@ -7,7 +7,11 @@ export default class Projects {
   actions = {
     init: async () => {
       let { bus } = state.event;
-      bus.on('projects:create:ready', async () => await post('projects.load'));
+      bus.on('projects:create:ready', async ({ project }) => {
+        await post('projects.load');
+        await new Promise(pres => setTimeout(pres, 1000));
+        await post('projects.select', project);
+      });
       bus.on('projects:mv:ready', async () => await post('projects.load'));
       bus.on('projects:rm:ready', async () => await post('projects.load'));
       await post('projects.load');
