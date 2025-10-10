@@ -85,7 +85,6 @@ export default class Collab {
     },
 
     apply: async ev => {
-      console.log('apply:', ev);
       state.projects.current = ev.project;
       state.files.list = ev.files;
       state.files.expandedPaths = new Set(ev.expandedPaths);

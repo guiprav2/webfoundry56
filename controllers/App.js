@@ -27,6 +27,7 @@ export default class App {
       await post('styles.init');
       await post('designer.init');
       await post('app.brandCanvasMonitor');
+      state.collab.uid === 'master' && await post('app.selectPanel', 'projects');
     },
 
     selectPanel: x => {

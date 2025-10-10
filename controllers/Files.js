@@ -32,7 +32,7 @@ export default class Files {
         let port = event.ports[0];
         try {
           let notFound = () => port.postMessage({ status: 404, data: new Blob(['Not found'], { type: 'text/plain' }) });
-          let data = !location.pathname.startsWith('/collab.html') ? await rfiles.load(project, path) : await ungzblob(unb64(await post('collab.rpc', 'fetch', { project, path })), mimeLookup(path));
+          let data = state.collab.uid === 'master' ? await rfiles.load(project, path) : await ungzblob(unb64(await post('collab.rpc', 'fetch', { project, path })), mimeLookup(path));
           if (!data) return notFound();
           port.postMessage({ status: 200, data });
         } catch (err) {
@@ -40,9 +40,11 @@ export default class Files {
           port.postMessage({ status: 500, error: err.message });
         }
       });
-      if (location.pathname.startsWith('/collab.html')) return;
+      if (state.collab.uid !== 'master') return;
       bus.on('projects:select:ready', async () => await loadman.run('files.projectSelect', async () => {
         this.state.list = [];
+        this.state.expandedPaths = new Set(['pages/']);
+        this.state.current = null;
         d.update();
         await post('files.load');
         if (state.app.panel === 'projects') await post('app.selectPanel', 'files');
@@ -115,7 +117,7 @@ export default class Files {
     }), 500),
 
     select: path => {
-      if (location.pathname.startsWith('/collab.html')) return;
+      if (state.collab.uid !== 'master') return;
       let project = state.projects.current;
       let { bus } = state.event;
       bus.emit('files:select:start');
