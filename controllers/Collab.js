@@ -121,11 +121,21 @@ export default class Collab {
   };
 
   rpcs = {
+    list: async ({ project }) => {
+      if (state.projects.current !== project) throw new Error(`Wrong project: ${project}`);
+      return await rfiles.list(project);
+    },
+
     fetch: async ({ project, path }) => {
       if (state.projects.current !== project) throw new Error(`Wrong project: ${project}`);
       let blob = await rfiles.load(project, path);
       if (!blob) throw new Error(`Not found: ${path}`);
       return await b64(await gzblob(blob));
+    },
+
+    save: async ({ project, path, data }) => {
+      if (state.projects.current !== project) throw new Error(`Wrong project: ${project}`);
+      await rfiles.save(project, path, await ungzblob(await unb64(data)));
     },
   };
 }
@@ -154,6 +164,11 @@ async function gzblob(blob) {
   return new Blob([pako.gzip(new Uint8Array(await blob.arrayBuffer()))], { type: 'application/gzip' });
 }
 
+async function ungzblob(blob, type) {
+  if (blob == null) return null;
+  return new Blob([pako.ungzip(new Uint8Array(await blob.arrayBuffer()))], { type });
+}
+
 function b64(blob) {
   return new Promise((res, rej) => {
     let r = new FileReader();
@@ -161,4 +176,12 @@ function b64(blob) {
     r.onerror = rej;
     r.readAsDataURL(blob);
   });
+}
+
+function unb64(base64, type = '') {
+  if (base64 == null) return null;
+  let chars = atob(base64);
+  let nums = new Array(chars.length);
+  for (let i = 0; i < chars.length; i++) nums[i] = chars.charCodeAt(i);
+  return new Blob([new Uint8Array(nums)], { type });
 }
