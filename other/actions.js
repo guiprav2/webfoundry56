@@ -406,10 +406,7 @@ let actions = {
       },
     },
     handler: async ({ cur = 'master', tag = null } = {}) => {
-      if (state.collab.uid !== 'master')
-        return state.collab.rtc.send({ type: 'cmd', k: 'changeElementTag', cur, tag });
       let frame = state.designer.current;
-      if (!frame) throw new Error(`Designer not open`);
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (!tag) {
@@ -417,6 +414,7 @@ let actions = {
         if (btn !== 'ok' || !val.trim()) return;
         tag = val.trim();
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeElementTag', cur, tag });
       let parents = targets.map(x => x.parentElement);
       let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
       let oldEls = targets.map(x => x);
@@ -1152,6 +1150,7 @@ let actions = {
         if (btn !== 'ok') return;
         html = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeInnerHtml', cur, html });
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) targets[n].innerHTML = apply ? html : prev[n];
         await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
@@ -1182,6 +1181,7 @@ let actions = {
         if (btn !== 'ok') return;
         placeholder = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeInputPlaceholder', cur, placeholder });
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
           let nv = apply ? placeholder : prev[n];
@@ -1214,6 +1214,7 @@ let actions = {
         if (btn !== 'ok') return;
         method = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeFormMethod', cur, method });
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
           let nv = apply ? method : prev[n];
@@ -1237,6 +1238,7 @@ let actions = {
       },
     },
     handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'toggleHidden', cur });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       let prev = targets.map(x => x.hidden);
@@ -1269,6 +1271,7 @@ let actions = {
         if (btn !== 'ok') return;
         text = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceTextContent', cur, text });
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) targets[n].textContent = apply ? text : prev[n];
       });
@@ -1298,6 +1301,7 @@ let actions = {
         if (btn !== 'ok') return;
         text = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceMultilineTextContent', cur, text });
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) targets[n].textContent = apply ? text : prev[n];
       });
@@ -1326,6 +1330,7 @@ let actions = {
         if (btn !== 'ok') return;
         url = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeLinkUrl', cur, url });
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
           let nv = apply ? url : prev[n];
@@ -1359,6 +1364,7 @@ let actions = {
         if (btn !== 'ok') return;
         url = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeMediaSrc', cur, url });
       let mime = mimeLookup(url);
       let newTag = mime?.startsWith?.('audio/') ? 'audio' : mime?.startsWith?.('video/') ? 'video' : 'img';
       let parents = targets.map(x => x.parentElement);
@@ -1425,6 +1431,7 @@ let actions = {
       let frame = state.designer.current;
       let [btn, url] = await showModal('MediaGalleryDialog');
       if (btn !== 'ok') return;
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeMediaSrc', cur, url });
       let mime = mimeLookup(url);
       let newTag = mime?.startsWith?.('audio/') ? 'audio' : mime?.startsWith?.('video/') ? 'video' : 'img';
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
@@ -1500,6 +1507,7 @@ let actions = {
         if (btn !== 'ok') return;
         url = val;
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeBackgroundUrl', cur, url });
       let newBg = url ? `url("${url}")` : '';
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
@@ -1528,6 +1536,7 @@ let actions = {
       let frame = state.designer.current;
       let [btn, url] = await showModal('MediaGalleryDialog');
       if (btn !== 'ok') return;
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeBackgroundUrl', cur, url });
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       let prev = targets.map(x => x.style.backgroundImage);
@@ -1568,6 +1577,7 @@ let actions = {
         if (btn !== 'ok') return;
         expr = val.trim();
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setIfExpression', cur, expr });
       let prev = targets.map(x => x.getAttribute('wf-if'));
       let newVal = expr;
       await post('designer.pushHistory', cur, async apply => {
@@ -1593,14 +1603,14 @@ let actions = {
       type: 'object',
       properties: {
         cur: { type: 'string' },
-        mapExpr: { type: 'string', description: `Format: x of xs` },
+        expr: { type: 'string', description: `Format: x of xs` },
       },
     },
-    handler: async ({ cur = 'master', mapExpr = null } = {}) => {
+    handler: async ({ cur = 'master', expr = null } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
-      if (mapExpr == null) {
+      if (expr == null) {
         let initial = targets[0].getAttribute('wf-map');
         let [btn, val] = await showModal('PromptDialog', {
           title: 'Set map expression',
@@ -1608,10 +1618,11 @@ let actions = {
           initialValue: initial,
         });
         if (btn !== 'ok') return;
-        mapExpr = val.trim();
+        expr = val.trim();
       }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setMapExpression', cur, expr });
       let prev = targets.map(x => x.getAttribute('wf-map'));
-      let newVal = mapExpr;
+      let newVal = expr;
       await post('designer.pushHistory', cur, async apply => {
         for (let n = 0; n < targets.length; n++) {
           let el = targets[n];
@@ -1636,15 +1647,19 @@ let actions = {
         cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
       },
     },
-    handler: async ({ cur = 'master' } = {}) => {
+    handler: async ({ cur = 'master', handlers } = {}) => {
       let frame = state.designer.current;
       let el = frame.map.get(frame.cursors[cur][0]);
       if (!el) return;
       let prevHandlers = [];
       for (let attr of el.attributes) if (attr.name.startsWith('wf-on')) prevHandlers.push({ name: attr.name.slice(5), expr: attr.value });
-      let [btn, ...val] = await showModal('EventHandlersDialog', { handlers: prevHandlers });
-      if (btn !== 'ok') return;
-      let newHandlers = Array.isArray(val) ? val.filter(h => h && h.name && h.expr) : [];
+      if (!handlers) {
+        let [btn, ...val] = await showModal('EventHandlersDialog', { handlers: prevHandlers });
+        if (btn !== 'ok') return;
+        handlers = val;
+      }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setEventHandlers', cur, handlers });
+      let newHandlers = Array.isArray(handlers) ? handlers.filter(h => h && h.name && h.expr) : [];
       let prev = Array.isArray(prevHandlers) ? prevHandlers : [];
       let next = newHandlers.length ? newHandlers : prev;
       await post('designer.pushHistory', cur, async apply => {
@@ -1669,6 +1684,7 @@ let actions = {
       },
     },
     handler: async ({ cur = 'master', expr = null } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setDisabledExpression', cur, expr });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
@@ -1706,6 +1722,7 @@ let actions = {
       },
     },
     handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'normalizeStylesUnion', cur });
       let frame = state.designer.current;
       let all = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!all.length) return;
@@ -1733,6 +1750,7 @@ let actions = {
       },
     },
     handler: async ({ cur = 'master' } = {}) => {
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'normalizeStylesIntersect', cur });
       let frame = state.designer.current;
       let all = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!all.length) return;
@@ -1749,7 +1767,10 @@ let actions = {
   refresh: {
     shortcut: 'r',
     disabled: () => [!state.designer.open && `Designer closed.`],
-    handler: async () => await post('designer.refresh'),
+    handler: async () => {
+      if (state.collab.uid !== 'master') return;
+      await post('designer.refresh');
+    },
   },
 };
 

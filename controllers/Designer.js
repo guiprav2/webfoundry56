@@ -137,7 +137,7 @@ export default class Designer {
 
     toolbar: async (k, params) => {
       if (/^(manipulation|tailwind)$/.test(k)) { this.state.toolbar = k; return }
-      await actions[k].handler(params);
+      await actions[k].handler({ cur: state.collab.uid, ...params });
     },
 
     mousedown: async ev => {

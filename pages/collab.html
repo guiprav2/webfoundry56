@@ -443,6 +443,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; /^input|textarea$/.test(state.designer.current.frame.map.get(x).tagName.toLowerCase()))"
                     wf-onclick="post('designer.toolbar', 'changeInputPlaceholder')"
                   >
                     <div>Placeholder</div>
@@ -454,6 +455,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
+                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; state.designer.current.frame.map.get(x).tagName === 'FORM')"
                     wf-onclick="post('designer.toolbar', 'changeFormMethod')"
                   >
                     <div>Form Method</div>
@@ -692,69 +694,69 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'span }')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'span' })"
                   >
                     &lt;span&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'a')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'a' })"
                     }=""
                   >
                     &lt;a&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'p')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'p' })"
                     }=""
                   >
                     &lt;p&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'butt }on')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'button' })"
                   >
                     &lt;button&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'inpu }t')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'input' })"
                   >
                     &lt;input&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'form }')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'form' })"
                   >
                     &lt;form&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'labe }l')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'label' })"
                   >
                     &lt;label&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'text }area')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'textarea' })"
                   >
                     &lt;textarea&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'ul') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'ul' })"
                   >
                     &lt;ul&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'ol') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'ol' })"
                   >
                     &lt;ol&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'li') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'li' })"
                   >
                     &lt;li&gt;
                   </button>
@@ -766,25 +768,25 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'sect }ion')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'section' })"
                   >
                     &lt;section&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'arti }cle')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'article' })"
                   >
                     &lt;article&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'head }er')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'header' })"
                   >
                     &lt;header&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'foot }er')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'footer' })"
                   >
                     &lt;footer&gt;
                   </button>
@@ -796,91 +798,91 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'main }')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'main' })"
                   >
                     &lt;main&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h1') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h1' })"
                   >
                     &lt;h1&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h2') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h2' })"
                   >
                     &lt;h2&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h3') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h3' })"
                   >
                     &lt;h3&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h4') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h4' })"
                   >
                     &lt;h4&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h5') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h5' })"
                   >
                     &lt;h5&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h6') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'h6' })"
                   >
                     &lt;h6&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'br') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'br' })"
                   >
                     &lt;br&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'hr') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'hr' })"
                   >
                     &lt;hr&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tabl }e')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'table' })"
                   >
                     &lt;table&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'thea }d')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'thead' })"
                   >
                     &lt;thead&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tbod }y')"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tbody' })"
                   >
                     &lt;tbody&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tr') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'tr' })"
                   >
                     &lt;tr&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'td') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'td' })"
                   >
                     &lt;td&gt;
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'th') }"
+                    wf-onclick="post('designer.toolbar', 'changeElementTag', { tag: 'th' })"
                   >
                     &lt;th&gt;
                   </button>
@@ -2640,7 +2642,7 @@
             >
               <div
                 class="italic mb-1"
-                wf-if="!state.designer.current.cursors.master?.length"
+                wf-if="!state.designer.current.cursors[state.collab.uid]?.length"
               >
                 There are currently no selected elements. Select some to see and
                 edit their styles here.
@@ -2648,7 +2650,7 @@
 
               <div
                 class="italic mb-1"
-                wf-if="state.designer.current.cursors.master?.length &amp;&amp; !state.styles.list.length"
+                wf-if="state.designer.current.cursors[state.collab.uid]?.length &amp;&amp; !state.styles.list.length"
               >
                 The currently selected elements have no styles. Add some here or
                 through the
@@ -2689,7 +2691,7 @@
               </div>
               <div
                 class="StylesPanel-addStyle flex items-center gap-3 rounded outline-none py-1 px-2"
-                wf-if="state.designer.current.cursors.master?.length"
+                wf-if="state.designer.current.cursors[state.collab.uid]?.length"
               >
                 <div class="nf p-2 nf-fa-plus"></div>
                 <input
