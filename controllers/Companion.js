@@ -5,7 +5,7 @@ export default class Companion {
 
   actions = {
     init: async () => {
-      state.event.bus.on('settings:option:done', async ({ k, v }) => {
+      state.event.bus.on('settings:global:option:ready', async ({ k, v }) => {
         if (!k.startsWith('companion')) return;
         if (!v && this.state.client) {
           this.state.client.dispose();

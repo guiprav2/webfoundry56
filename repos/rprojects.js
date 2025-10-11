@@ -51,4 +51,5 @@ class ProjectsRepository {
   }
 }
 
-export default new ProjectsRepository();
+let rprojects = window.rprojects = new ProjectsRepository();
+export default rprojects;

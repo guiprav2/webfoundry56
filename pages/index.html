@@ -2619,13 +2619,16 @@
                 href="#"
                 class="ProjectsPanel-project flex items-center gap-3 rounded outline-none py-1 justify-between px-2"
                 wf-map="x of state.projects.list"
-                wf-disabled="loadman.busy()"
+                wf-disabled="loadman.busy() || (rprojects.storage(x) === 'cfs' &amp;&amp; state.companion.client?.status !== 'connected')"
                 wf-onclick="post('projects.select', x)"
-                wf-class="{{state.projects.current === x &amp;&amp; 'bg-black/50'}}"
+                wf-class="{{state.projects.current === x &amp;&amp; 'bg-black/50'}} {{rprojects.storage(x) === 'cfs' &amp;&amp; state.companion.client?.status !== 'connected' &amp;&amp; 'opacity-50'}}"
               >
                 <div class="flex items-center gap-3">
                   <div>
-                    <div class="nf nf-fa-sitemap p-2"></div>
+                    <div
+                      class="nf nf-fa-sitemap p-2"
+                      wf-class="{{replaces nf-fa-sitemap: rprojects.storage(x) === 'cfs' &amp;&amp; state.companion.client?.status !== 'connected' ? 'nf-md-lightning_bolt' : 'nf-fa-sitemap'}}"
+                    ></div>
                   </div>
                   <div class="ProjectsPanel-projectName">
                     {{x.split(':')[0]}}
