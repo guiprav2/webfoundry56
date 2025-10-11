@@ -1395,6 +1395,7 @@ let actions = {
         if (tag === el.tagName.toLowerCase()) return el;
         let clone = document.createElement(tag);
         for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
+        clone.className = el.className;
         clone.innerHTML = el.innerHTML;
         return clone;
       });
@@ -1466,6 +1467,7 @@ let actions = {
         if (tag === el.tagName.toLowerCase()) return el;
         let clone = document.createElement(tag);
         for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
+        clone.className = el.className;
         clone.innerHTML = el.innerHTML;
         return clone;
       });

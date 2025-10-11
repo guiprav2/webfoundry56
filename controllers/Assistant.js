@@ -34,6 +34,8 @@ export default class Assistant {
           disabledFns: `Whenever a disabled function is requested, tell the user the reasons.`,
           configPanel: `Config or configuration panel refers to the settings panel in the icons sidebar.`,
           selections: `MISSION CRITICAL: All operations happen relative to the selected elements, so make sure to select the right ones before issuing any commands.`,
+          precision: `When requested to select an element, make sure it's the right target by checking its HTML. If confused, ask for clarifications.`,
+          imageContent: `When asked to select or manipulate a specific image by visual content, remind the user you have no access to image contents, ask for other instructions such as CSS classes, attributes, or image URL.`,
           imageGeneration: `When asked to generate images, make sure to probe the user to understand exactly the style as well as what they want before generating.`,
         }, fns);
       } finally {
