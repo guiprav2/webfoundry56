@@ -46,6 +46,7 @@ export default class Designer {
         if (!/^(components|pages)\/.*\.html$/.test(path)) return;
         await post('designer.select', path);
       });
+      addEventListener('keydown', async ev => await post('designer.keydown', ev, true), true);
       await post('designer.trackCursors');
     },
 
@@ -164,9 +165,9 @@ export default class Designer {
       ev.target.select();
     },
 
-    keydown: async ev => {
+    keydown: async (ev, external) => {
       // FIXME: Slave support
-      if (/^input|textarea|button$/i.test(this.state.current.doc.activeElement.tagName)) {
+      if (/^input|textarea|button$/i.test(external ? document.activeElement.tagName : this.state.current.doc.activeElement.tagName)) {
         if (ev.key === 'Escape') ev.target.blur();
         return;
       }
