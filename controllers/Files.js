@@ -109,7 +109,7 @@ export default class Files {
       let project = state.projects.current;
       let { bus } = state.event;
       bus.emit('files:load:start');
-      let list = await rfiles.list(project);
+      let list = (await rfiles.list(project)).filter(x => !/(^wf.uiconfig.json$|^webfoundry\/)/.test(x));
       if (state.projects.current !== project) return bus.emit('files:load:abort');
       if (!list.includes(this.state.current)) await post('files.select', null);
       this.state.list = structuredFiles(list);

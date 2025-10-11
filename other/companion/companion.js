@@ -52,7 +52,7 @@ let s = server(process.env.WF_CLIENT_KEY);
 s.events.on('connected', () => console.log('Client connected (handshake OK).'));
 s.events.on('disconnected', () => console.log('Client disconnected.'));
 
-s.rpc('files:list', async ({ path }) => (await glob(`${path}/**/*`, { nodir: true, dot: true })).filter(x => !/\/(\.git|node_modules|webfoundry)\//.test(x)));
+s.rpc('files:list', async ({ path }) => (await glob(`${path}/**/*`, { nodir: true, dot: true })).filter(x => !/\/(\.git|node_modules)\//.test(x)));
 
 s.rpc('files:stat', async ({ path }) => {
   try { return await fsp.stat(path) }
