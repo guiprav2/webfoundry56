@@ -14,6 +14,10 @@ export default class Projects {
       });
       bus.on('projects:mv:ready', async () => await post('projects.load'));
       bus.on('projects:rm:ready', async () => await post('projects.load'));
+      bus.on('settings:global:option:ready', async ({ k, v }) => {
+        if (k !== 'companion' || v) return;
+        if (rprojects.storage(state.projects.current) === 'cfs') await post('projects.select', null);
+      });
       await post('projects.load');
     },
 
