@@ -33,6 +33,8 @@ export default class Designer {
 
     get current() { return this.list.find(x => x.path === state.files.current) },
     get open() { return this.current?.ready },
+    frameWidth: 'calc(100% - 1rem)',
+    frameHeight: '100%',
     clipboards: {},
   };
 
@@ -86,6 +88,8 @@ export default class Designer {
       }, true);
     },
 
+    hookFrameWidth: el => d.el(el, { style: { width: () => this.state.frameWidth } }),
+
     frameAttach: (path, el) => {
       let frame = this.state.list.find(x => x.path === path);
       if (!frame) throw new Error(`Designer frame not found: ${path}`);
@@ -110,6 +114,7 @@ export default class Designer {
         frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
         frame.html.addEventListener('keydown', async ev => await post('designer.keydown', ev), true);
       }
+      if (!frame.heightHooked) { d.el(frame.el, { style: { height: () => this.state.frameHeight } }); frame.heightHooked = true }
       frame.ready = true;
       frame.resolve();
       bus.emit('designer:frame:ready', { frame });
@@ -188,6 +193,29 @@ export default class Designer {
       await rfiles.save(project, frame.path, new Blob([phtml], { type: 'text/html' }));
       state.event.bus.emit('designer:save:ready', { project, path: frame.path });
     }, 200),
+
+    resize: ev => {
+      ev.target.setPointerCapture(ev.pointerId);
+      let canvas = document.querySelector('#Canvas');
+      let crect = canvas.getBoundingClientRect();
+      let lpadder = document.querySelector('.Designer-leftPadder');
+      let move = mev => {
+        let ifrect = document.querySelector('.Designer-activeFrame').getBoundingClientRect();
+        let w = `${Math.max(320, (mev.clientX - (crect.left + crect.width / 2)) * 2)}px`;
+        if (parseInt(w, 10) >= crect.width - 16) w = '100%';
+        this.state.frameWidth = `min(100% - 1rem, ${w})`;
+        d.updateSync();
+        let ifs = getComputedStyle(document.querySelector('.Designer-activeFrame'));
+        let ifw = Number(ifs.width.replace(/px$/, ''));
+        this.state.frameHeight = ifw < 640 ? `min(100%, ${ifw * 1.666}px)` : '100%';
+        d.update();
+      };
+      ev.target.addEventListener('mousemove', move);
+      ev.target.addEventListener('mouseup', () => {
+        ev.target.removeEventListener('mousemove', move);
+        ev.target.releasePointerCapture(ev.pointerId);
+      }, { once: true });
+    },
 
     togglePreview: async () => {
       let frame = this.state.current;

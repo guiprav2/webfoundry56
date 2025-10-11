@@ -3053,19 +3053,42 @@
                 Webfoundry
               </div>
             </div>
+            <div
+              class="Designer-leftPadder flex-1"
+              wf-if="document.querySelector('.Designer-activeFrame')"
+            ></div>
 
             <div
-              class="flex flex-1 min-w-96 bg-white"
-              wf-map="x of state.designer.list"
-              wf-class="{{!state.designer.frameVisible(x.path) &amp;&amp; 'hidden'}}"
+              class="grow-0 shrink-1"
+              wf-onattach="post('designer.hookFrameWidth', _1)"
+              wf-class="{{!state.designer.current?.ready &amp;&amp; 'hidden'}}"
             >
-              <iframe
-                class="flex-1"
-                wf-src="state.designer.src(x.path)"
-                wf-onattach="post('designer.frameAttach', x.path, _1)"
-                wf-onload="post('designer.frameReady', x.path)"
-                wf-onerror="post('designer.frameReady', x.path, event)"
-              ></iframe>
+              <div
+                class="flex flex-col justify-center h-full"
+                wf-map="x of state.designer.list"
+                wf-class="{{!state.designer.frameVisible(x.path) &amp;&amp; 'hidden'}}"
+              >
+                <iframe
+                  class="bg-white h-full"
+                  wf-class="{{state.designer.frameVisible(x.path) &amp;&amp; 'Designer-activeFrame'}}"
+                  wf-src="state.designer.src(x.path)"
+                  wf-onattach="post('designer.frameAttach', x.path, _1)"
+                  wf-onload="post('designer.frameReady', x.path)"
+                  wf-onerror="post('designer.frameReady', x.path, event)"
+                ></iframe>
+              </div>
+            </div>
+
+            <div
+              class="Designer-rightPadder flex shrink-0 flex-1"
+              wf-if="document.querySelector('.Designer-activeFrame')"
+            >
+              <div class="Designer-rightPadderPole flex items-center px-1">
+                <button
+                  class="Designer-resizeBtn w-2 rounded-full h-24 bg-neutral-300 outline-none"
+                  wf-onmousedown="event.preventDefault(), post('designer.resize', event)"
+                ></button>
+              </div>
             </div>
           </div>
         </div>
