@@ -51,7 +51,7 @@ export default class Designer {
 
     select: async path => {
       if (this.state.list.find(x => x.path === path)) return;
-      if (!path.startsWith('pages/')) return;
+      if (!path?.startsWith?.('pages/')) return;
       let { bus } = state.event;
       let project = state.projects.current;
       let p = Promise.withResolvers();

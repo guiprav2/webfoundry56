@@ -6,6 +6,7 @@ export default class RealtimeCollab {
     this.supabase = createClient('https://xvxszwvhwzsxjhxskkek.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2eHN6d3Zod3pzeGpoeHNra2VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyODY2MjcsImV4cCI6MjA3Mzg2MjYyN30.tQi5XePGi6NHLAfuKEuMSw7YQCiDVY2KAd8XXmk8Lcs');
     this.events = new EventEmitter({ wildcard: true, delimiter: ':' });
     this.presence = [];
+    this.sync = false;
     this.joinRoom(room);
   }
 
@@ -23,6 +24,7 @@ export default class RealtimeCollab {
     this.channel.on('presence', { event: 'join' }, ({ newPresences }) => {
       let joined = newPresences.map(presence => ({ user: presence.user_key, ...presence }));
       this.presence.push(...joined);
+      this.sync = true;
       this.events.emit('presence:join', joined);
     });
     this.channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
@@ -40,9 +42,14 @@ export default class RealtimeCollab {
   }
 
   async teardown() {
-    this.events.removeAllListeners();
-    if (!this.channel) return;
-    await this.channel.untrack();
-    await this.channel.unsubscribe();
+    try {
+      this.presence = [];
+      if (!this.channel) return;
+      await this.channel.untrack();
+      await this.channel.unsubscribe();
+    } finally {
+      this.events.emit('teardown');
+      this.events.removeAllListeners();
+    }
   }
 };

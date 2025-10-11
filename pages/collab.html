@@ -2760,13 +2760,28 @@
               class="flex justify-center items-center px-16 flex-1 select-none flex-col gap-8 min-w-96"
               wf-class="{{!state.app.brandCanvas &amp;&amp; 'hidden'}}"
             >
-              <div>
+              <div class="gap-6 flex flex-col">
                 <img
+                  wf-if="!state.collab.rtc?.sync || state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
                   src="https://cdn.donmai.us/original/3e/e1/__original_drawn_by_chibikki__3ee13fb32a1d6c5931c82da671288632.gif"
-                  class="w-48 rounded-lg mb-6"
+                  class="w-48 rounded-lg"
                 />
-                <div class="text-white text-center text-sm italic">
+                <div
+                  wf-if="!state.collab.rtc?.sync || state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
+                  class="text-white text-center text-sm italic"
+                >
                   Please standby...
+                </div>
+                <img
+                  wf-if="state.collab.rtc?.sync &amp;&amp; !state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
+                  src="https://cdn.donmai.us/original/d7/06/__natasha_cats_crypts_drawn_by_moshimoshi_mo_518_mo__d706d9b1d5daca6ab9e808221a435c39.gif"
+                  class="w-48 rounded-lg"
+                />
+                <div
+                  wf-if="state.collab.rtc?.sync &amp;&amp; !state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
+                  class="text-white text-center text-sm italic"
+                >
+                  Session ended.
                 </div>
               </div>
             </div>
@@ -2851,12 +2866,6 @@
           class="border-t border-black/50"
           hidden=""
         >
-          <div
-            class="text-sm px-4 py-3 text-blue-400"
-            wf-if="state.collab.rtc.presence.length &lt;= 1"
-          >
-            Awaiting collaborators...
-          </div>
           <div
             class="text-sm px-4 py-3 text-green-400"
             wf-if="state.collab.rtc.presence.length &gt; 1"

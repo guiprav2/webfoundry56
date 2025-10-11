@@ -7,7 +7,7 @@ import rfiles from '../repos/rfiles.js';
 
 export default class Collab {
   state = {
-    get uid() { return location.pathname !== '/collab.html' ? 'master' : this.rtc.uid },
+    get uid() { return location.pathname !== '/collab.html' ? 'master' : this.rtc?.uid },
     ver: 0,
     rpcs: {},
   };
@@ -15,7 +15,7 @@ export default class Collab {
   actions = {
     init: async () => {
       let { bus } = state.event;
-      if (location.pathname !== '/collab.html') {
+      if (this.state.uid === 'master') {
         bus.on('files:select:ready', async () => await post('collab.sync'));
         bus.on('designer:select:ready', async () => await post('collab.sync', 'full'));
         bus.on('designer:changeSelection:ready', async () => await post('collab.sync'));
@@ -26,6 +26,7 @@ export default class Collab {
         this.state.rtc = new RealtimeCollab(room);
         this.state.rtc.events.on('sync', async ev => await post('collab.apply', ev));
         this.state.rtc.events.on('rpc:response', async ev => await post('collab.rpcResponse', ev));
+        this.state.rtc.events.on('presence:leave', async () => await post('collab.leave'));
       }
     },
 
@@ -34,10 +35,12 @@ export default class Collab {
       if (btn !== 'ok') return await rtc.teardown();
       this.state.rtc = rtc;
       rtc.events.on('presence:join', async () => await post('collab.sync', 'full'));
-      rtc.events.on('presence:leave', async () => await post('collab.clearCursors'));
+      rtc.events.on('presence:leave', async () => await post('collab.leave'));
       rtc.events.on('rpc:*', async ev => await post('collab.rpcInvoke', ev));
       rtc.events.on('changeSelection', async ev => await post('designer.changeSelection', ev.peer, ev.s.map(x => state.designer.current.map.get(x))));
       rtc.events.on('cmd', async ev => await actions[ev.k].handler({ cur: null, ...ev, cur: ev.peer }));
+      rtc.events.on('teardown', async () => await post('collab.leave'));
+      await post('collab.sync', 'full');
     },
 
     stop: () => {
@@ -92,7 +95,7 @@ export default class Collab {
         current: state.files.current,
         contents: kind === 'full' ? snap : undefined,
         delta,
-        cursors: state.designer.current?.cursors,
+        cursors: state.designer.current?.cursors || {},
         clipboards: state.designer.clipboards,
       });
     },
@@ -120,17 +123,18 @@ export default class Collab {
       state.designer.clipboards = ev.clipboards;
     },
 
-    clearCursors: async () => {
+    leave: async () => {
+      if (this.state.uid !== 'master' && !state.collab.rtc.presence.some(x => x.user === 'master')) state.files.current = null;
       if (!state.designer.open) return;
       for (let k of Object.keys(state.designer.current.cursors)) {
-        if (!this.state.rtc.presence.find(x => x.user === k)) {
+        if (this.state.uid !== k && !this.state.rtc?.presence?.find?.(x => x.user === k)) {
           let ovs = state.designer.current.overlays[k];
           for (let x of ovs) x.disable();
           delete state.designer.current.overlays[k];
           delete state.designer.current.cursors[k];
         }
       }
-      await post('collab.sync');
+      this.state.uid === 'master' && await post('collab.sync');
     },
   };
 
