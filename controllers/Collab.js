@@ -20,6 +20,7 @@ export default class Collab {
         bus.on('designer:select:ready', async () => await post('collab.sync', 'full'));
         bus.on('designer:changeSelection:ready', async () => await post('collab.sync'));
         bus.on('designer:save:ready', async () => await post('collab.sync', 'delta'));
+        bus.on('designer:resize:ready', async () => await post('collab.sync'));
       } else {
         let room = location.hash.slice(1);
         if (!room) { location.href = '/'; return }
@@ -27,6 +28,7 @@ export default class Collab {
         this.state.rtc.events.on('sync', async ev => await post('collab.apply', ev));
         this.state.rtc.events.on('rpc:response', async ev => await post('collab.rpcResponse', ev));
         this.state.rtc.events.on('presence:leave', async () => await post('collab.leave'));
+        bus.on('designer:resize:ready', async () => await post('collab.resizeSync'));
       }
     },
 
@@ -38,6 +40,7 @@ export default class Collab {
       rtc.events.on('presence:leave', async () => await post('collab.leave'));
       rtc.events.on('rpc:*', async ev => await post('collab.rpcInvoke', ev));
       rtc.events.on('changeSelection', async ev => await post('designer.changeSelection', ev.peer, ev.s.map(x => state.designer.current.map.get(x))));
+      rtc.events.on('resize', async ev => { state.designer.frameWidth = ev.frameWidth; state.designer.frameHeight = ev.frameHeight; d.update() });
       rtc.events.on('cmd', async ev => await actions[ev.k].handler({ cur: null, ...ev, cur: ev.peer }));
       rtc.events.on('teardown', async () => await post('collab.leave'));
       await post('collab.sync', 'full');
@@ -93,12 +96,16 @@ export default class Collab {
         files: state.files.list,
         expandedPaths: [...state.files.expandedPaths],
         current: state.files.current,
+        frameWidth: state.designer.frameWidth,
+        frameHeight: state.designer.frameHeight,
         contents: kind === 'full' ? snap : undefined,
         delta,
         cursors: state.designer.current?.cursors || {},
         clipboards: state.designer.clipboards,
       });
     },
+
+    resizeSync: async () => this.state.rtc?.send?.({ type: 'resize', frameWidth: state.designer.frameWidth, frameHeight: state.designer.frameHeight }),
 
     apply: async ev => {
       if (ev.ver <= this.state.ver) return;
@@ -110,6 +117,8 @@ export default class Collab {
         state.files.current = ev.current;
         await post('designer.select', ev.current);
       }
+      state.designer.frameWidth = ev.frameWidth;
+      state.designer.frameHeight = ev.frameHeight;
       if (ev.contents) {
         morphdom(state.designer.current.html, ev.contents);
         this.state.lastSnap = ev.contents;

@@ -208,11 +208,13 @@ export default class Designer {
         let ifs = getComputedStyle(document.querySelector('.Designer-activeFrame'));
         let ifw = Number(ifs.width.replace(/px$/, ''));
         this.state.frameHeight = ifw < 640 ? `min(100%, ${ifw * 1.666}px)` : '100%';
-        d.update();
+        d.updateSync();
+        ifs = getComputedStyle(document.querySelector('.Designer-activeFrame'));
+        state.event.bus.emit('designer:resize:ready', { width: ifs.width, height: ifs.height });
       };
-      ev.target.addEventListener('mousemove', move);
-      ev.target.addEventListener('mouseup', () => {
-        ev.target.removeEventListener('mousemove', move);
+      ev.target.addEventListener('pointermove', move);
+      ev.target.addEventListener('pointerup', () => {
+        ev.target.removeEventListener('pointermove', move);
         ev.target.releasePointerCapture(ev.pointerId);
       }, { once: true });
     },
