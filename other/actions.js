@@ -1075,6 +1075,7 @@ let actions = {
       let added = [];
       await post('designer.pushHistory', cur, async apply => {
         if (apply) {
+          let isBodyEdit = /^\s*<body[\s>]/i.test(html);
           let template = document.createElement('template');
           template.innerHTML = html;
           let newEls = [...template.content.children];
@@ -1086,11 +1087,30 @@ let actions = {
             let p = parents[n];
             let i = idxs[n];
             let newEl = newEls[order.findIndex(o => o.n === n)];
+            let oldEl = p.children[i];
+            if (!oldEl) continue;
             if (newEl) {
-              p.children[i].replaceWith(newEl);
-              newSelect.push(newEl);
+              if (oldEl.tagName === 'BODY') {
+                if (isBodyEdit && newEl.tagName === 'BODY') {
+                  for (let attr of [...newEl.attributes]) oldEl.setAttribute(attr.name, attr.value);
+                  for (let attr of [...oldEl.attributes]) if (!newEl.hasAttribute(attr.name)) oldEl.removeAttribute(attr.name);
+                  while (oldEl.firstChild) oldEl.removeChild(oldEl.firstChild);
+                  for (let child of [...newEl.childNodes]) oldEl.appendChild(child.cloneNode(true));
+                } else {
+                  while (oldEl.firstChild) oldEl.removeChild(oldEl.firstChild);
+                  for (let child of [...template.content.childNodes]) oldEl.appendChild(child.cloneNode(true));
+                }
+                newSelect.push(oldEl);
+              } else if (['HTML','HEAD'].includes(oldEl.tagName)) {
+                for (let attr of [...newEl.attributes]) oldEl.setAttribute(attr.name, attr.value);
+                for (let attr of [...oldEl.attributes]) if (!newEl.hasAttribute(attr.name)) oldEl.removeAttribute(attr.name);
+                newSelect.push(oldEl);
+              } else {
+                oldEl.replaceWith(newEl);
+                newSelect.push(newEl);
+              }
             } else {
-              p.children[i]?.remove();
+              oldEl.remove();
             }
           }
           if (newEls.length > replaced.length) {
