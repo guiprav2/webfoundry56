@@ -56,15 +56,18 @@ class FilesRepository {
           let blob = await lf.getItem(`webfoundry:projects:files:${uuid}:${path}`);
           await lf.setItem(`webfoundry:projects:files:${uuid}:${newPath}`, blob);
           await lf.removeItem(`webfoundry:projects:files:${uuid}:${path}`);
+          await post('broadcast.publish', 'files:rm', { project, path: `${name}/${path}` });
+          await post('broadcast.publish', 'files:add', { project, path: `${name}/${newPath}` });
         } else {
           for (let x of (await lf.keys()).filter(x => x.startsWith(`webfoundry:projects:files:${uuid}:${path}`))) {
             let y = x.replace(new RegExp(`^webfoundry:projects:files:${uuid}:${path}`), `webfoundry:projects:files:${uuid}:${newPath}`);
             let blob = await lf.getItem(x);
             await lf.setItem(y, blob);
             await lf.removeItem(x);
+            await post('broadcast.publish', 'files:rm', { project, path: `${name}/${path}` });
+            await post('broadcast.publish', 'files:add', { project, path: `${name}/${newPath}` });
           }
         }
-        await post('broadcast.publish', 'files:mv', { project, path: `${name}/${path}`, newPath: `${name}/${newPath}` });
         break;
       }
       case 'cfs': return await post('companion.rpc', 'files:mv', { path: `${name}/${path}`, newPath: `${name}/${newPath}` });

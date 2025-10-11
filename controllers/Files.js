@@ -171,13 +171,17 @@ export default class Files {
     dragover: (ev, path) => { ev.preventDefault(); ev.stopPropagation(); ev.dataTransfer.dropEffect = 'move'; this.state.dropTarget = path === '/' ? path : path.slice(0, path.lastIndexOf('/')) },
 
     drop: async (ev, dest) => {
+      let project = state.projects.current;
       ev.preventDefault();
       ev.stopPropagation();
       this.state.dropTarget = null;
       d.update();
-      let src = ev.dataTransfer.getData('text/plain');
-      let tail = src.split('/').at(src.endsWith('/') ? -2 : -1) + (src.endsWith('/') ? '/' : '');
-      await rfiles.mv(state.projects.current, src, dest === '/' ? tail : dest.slice(0, dest.lastIndexOf('/') + 1) + tail);
+      let path = ev.dataTransfer.getData('text/plain');
+      let tail = path.split('/').at(path.endsWith('/') ? -2 : -1) + (path.endsWith('/') ? '/' : '');
+      let newPath = dest === '/' ? tail : dest.slice(0, dest.lastIndexOf('/') + 1) + tail;
+      if (newPath.startsWith(path)) return;
+      await rfiles.mv(state.projects.current, path, newPath);
+      state.event.bus.emit('files:mv:ready', { project, path, newPath });
     },
 
     dragend: () => { this.state.dropTarget = null },
