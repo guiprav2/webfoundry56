@@ -34,6 +34,7 @@ export default class Collab {
       if (btn !== 'ok') return await rtc.teardown();
       this.state.rtc = rtc;
       rtc.events.on('presence:join', async () => await post('collab.sync', 'full'));
+      rtc.events.on('presence:leave', async () => await post('collab.clearCursors'));
       rtc.events.on('rpc:*', async ev => await post('collab.rpcInvoke', ev));
       rtc.events.on('changeSelection', async ev => await post('designer.changeSelection', ev.peer, ev.s.map(x => state.designer.current.map.get(x))));
       rtc.events.on('cmd', async ev => await actions[ev.k].handler({ cur: null, ...ev, cur: ev.peer }));
@@ -115,8 +116,21 @@ export default class Collab {
         morphdom(state.designer.current.html, patched);
         this.state.lastSnap = patched;
       }
-      state.designer.current.cursors = ev.cursors;
+      if (state.designer.open) state.designer.current.cursors = ev.cursors;
       state.designer.clipboards = ev.clipboards;
+    },
+
+    clearCursors: async () => {
+      if (!state.designer.open) return;
+      for (let k of Object.keys(state.designer.current.cursors)) {
+        if (!this.state.rtc.presence.find(x => x.user === k)) {
+          let ovs = state.designer.current.overlays[k];
+          for (let x of ovs) x.disable();
+          delete state.designer.current.overlays[k];
+          delete state.designer.current.cursors[k];
+        }
+      }
+      await post('collab.sync');
     },
   };
 

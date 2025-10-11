@@ -51,6 +51,7 @@ export default class Designer {
 
     select: async path => {
       if (this.state.list.find(x => x.path === path)) return;
+      if (!path.startsWith('pages/')) return;
       let { bus } = state.event;
       let project = state.projects.current;
       let p = Promise.withResolvers();
@@ -86,14 +87,15 @@ export default class Designer {
     },
 
     frameAttach: (path, el) => {
-      let frame = this.state.current;
+      let frame = this.state.list.find(x => x.path === path);
       if (!frame) throw new Error(`Designer frame not found: ${path}`);
       frame.el = el;
     },
 
     frameReady: async (path, err) => {
-      let frame = this.state.current;
+      let frame = this.state.list.find(x => x.path === path);
       if (!frame) throw new Error(`Designer frame not found: ${path}`);
+      if (!frame.el) return; // ???
       let { bus } = state.event;
       if (err) { frame.reject(err); bus.emit('designer:frame:error', { frame, err }); return }
       if (!frame.preview) {
@@ -119,6 +121,12 @@ export default class Designer {
       requestAnimationFrame(async () => await post('designer.trackCursors'));
       let frame = this.state.current;
       if (!frame) return;
+      if (frame.preview) {
+        frame.cursors = {};
+        for (let xs of Object.values(frame.overlays)) for (let x of xs) x.disable();
+        frame.overlays = {};
+        return;
+      }
       for (let [k, ids] of Object.entries(frame.cursors)) {
         let ovs = (frame.overlays[k] ??= []);
         while (ids.length > ovs.length) {
@@ -126,10 +134,7 @@ export default class Designer {
           let p = state.collab.rtc?.presence?.find?.(x => x.user === k);
           let o = d.el('div', { class: ['hidden border z-10 pointer-events-none', () => !p ? 'border-blue-400' : `border-${p.color}`] });
           document.body.append(o);
-          ovs.push(new Boo(o, () => frame.map.get(frame.cursors[k][i]), {
-            transitionClass: 'transition-all',
-            containerOverlayPosition: 'start',
-          }));
+          ovs.push(new Boo(o, () => frame.map.get(frame.cursors[k][i]), { transitionClass: 'transition-all', containerOverlayPosition: 'start' }));
         }
         while (ovs.length > ids.length) ovs.pop().disable();
       }
