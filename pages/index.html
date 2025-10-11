@@ -81,7 +81,7 @@
           class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-stylesBtn nf-fa-paint_brush"
           wf-class="{{state.app.panel === 'styles' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'styles')"
-          wf-if="state.designer.open"
+          wf-if="state.designer.open &amp;&amp; !state.designer.current?.preview"
         ></button>
         <button
           class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-oct-command_palette IconsSidebar-shellBtn"

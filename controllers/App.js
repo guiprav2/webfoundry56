@@ -28,11 +28,12 @@ export default class App {
       await post('designer.init');
       await post('app.brandCanvasMonitor');
       state.collab.uid === 'master' && await post('app.selectPanel', 'projects');
+      state.event.bus.on('designer:togglePreview:ready', async ({ preview }) => preview && this.state.panel === 'styles' && await post('app.selectPanel', 'files'));
     },
 
     selectPanel: x => {
       this.state.panel = x;
-      state.event.bus.emit('app:panel:select', { id: x });
+      state.event.bus.emit('app:selectPanel:ready', { id: x });
     },
 
     brandCanvasMonitor: () => {

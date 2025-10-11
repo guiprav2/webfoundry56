@@ -224,7 +224,10 @@ export default class Designer {
       let p = Promise.withResolvers();
       Object.assign(frame, { ready: false, resolve: p.resolve, reject: p.reject, preview: !frame.preview });
       d.update();
-      await loadman.run('designer.togglePreview', async () => await p.promise);
+      await loadman.run('designer.togglePreview', async () => {
+        await p.promise;
+        state.event.bus.emit('designer:togglePreview:ready', { preview: frame.preview });
+      });
     },
 
     refresh: async () => {

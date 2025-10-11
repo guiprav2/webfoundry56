@@ -16,7 +16,9 @@ export default class Collab {
     init: async () => {
       let { bus } = state.event;
       if (this.state.uid === 'master') {
+        bus.on('projects:select:ready', async () => await post('collab.sync'));
         bus.on('files:select:ready', async () => await post('collab.sync'));
+        bus.on('files:load:ready', async () => await post('collab.sync'));
         bus.on('designer:select:ready', async () => await post('collab.sync', 'full'));
         bus.on('designer:changeSelection:ready', async () => await post('collab.sync'));
         bus.on('designer:save:ready', async () => await post('collab.sync', 'delta'));
