@@ -129,8 +129,8 @@
         <div class="">Netlify Deploy</div>
         <img
           wf-if="!this.sites"
-          class="block w-12 mx-auto my-4"
-          src="../images/loading.svg" class="w-12"
+          class="block w-12 mx-auto mt-4 mb-5"
+          src="../media/loading.svg" class="w-12"
         />
         <div class="mb-4" wf-if="this.sites">
           <label class="block mb-1 text-sm">Select Site</label>
@@ -178,7 +178,7 @@
           </button>
           <button
             value="ok"
-            class="rounded px-4 py-2 bg-[#0071b2] hover:bg-[#008ad9] outline-none text-sm"
+            class="rounded px-4 py-2 bg-[#0071b2] hover:bg-[#008ad9] outline-none text-sm disabled:opacity-50"
             wf-disabled="!this.valid"
           >
             Deploy
