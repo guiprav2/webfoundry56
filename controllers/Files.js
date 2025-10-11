@@ -320,12 +320,13 @@ export default class Files {
     },
 
     importZip: async () => {
+      let project = state.projects.current;
       let input = d.html`<input class="hidden" type="file" accept=".zip">`;
       input.onchange = async () => {
         let [file] = input.files;
         if (!file) return;
         showModal('Loading', { msg: 'Importing ZIP...' });
-        await rfiles.importZip(state.projects.current, file);
+        await rfiles.importZip(project, file);
         await post('files.injectBuiltins');
         await post('files.generateReflections');
         await post('files.load');
@@ -338,8 +339,10 @@ export default class Files {
 
     exportZip: async () => {
       let project = state.projects.current;
+      showModal('Loading', { msg: 'Exporting ZIP...' });
       let blob = await rfiles.exportZip(project);
-      let a = d.html`<a class="hidden" ${{ download: `${state.projects.list.find(x => x.id === project).name}.zip`, href: URL.createObjectURL(blob) }}>`;
+      document.querySelector('dialog')?.remove?.();
+      let a = d.html`<a class="hidden" ${{ download: `${project.split(':')[0]}.zip`, href: URL.createObjectURL(blob) }}>`;
       document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
     },
   };
