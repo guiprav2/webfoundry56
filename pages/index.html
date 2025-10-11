@@ -2996,6 +2996,26 @@
                   wf-onclick="event.preventDefault(), post('assistant.stop')"
                 >
                   <div>Disable assistant</div></button
+                ><label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-class="{{(state.assistant.session || state.assistant.initializing) &amp;&amp; 'opacity-50'}}"
+                >
+                  <div class="shrink-0">Hold Shift-to-Speak</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy() || (state.assistant.session || state.assistant.initializing)"
+                      wf-checked="state.settings.opt.shiftToSpeak"
+                      wf-onclick="event.preventDefault(), post('settings.option', 'shiftToSpeak')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div> </label
                 ><button
                   class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
                   wf-disabled="loadman.busy()"

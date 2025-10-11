@@ -178,7 +178,6 @@ export default class Designer {
       let [k, cmd] = [...Object.entries(actions)].find(kv => arrayify(kv[1].shortcut).includes(key)) || [];
       if (!cmd || cmd?.disabled?.({ cur: state.collab.uid })?.filter?.(Boolean)?.length) return;
       ev.preventDefault();
-      ev.stopPropagation();
       await cmd.handler({ cur: state.collab.uid });
     },
 

@@ -1,5 +1,5 @@
 import actions from '../other/actions.js';
-import autoassist from 'https://esm.sh/@camilaprav/kittygpt@0.0.37/autoassist.js';
+import autoassist from 'https://esm.sh/@camilaprav/kittygpt@0.0.55/autoassist.js';
 import { arrayify, resolve } from '../other/util.js';
 
 export default class Assistant {
@@ -14,6 +14,7 @@ export default class Assistant {
           idtrack: true,
           iframes: true,
           map: state.designer.current.map,
+          pushToSpeak: state.settings.opt.shiftToSpeak && 'Shift',
         });
         let fns = Object.fromEntries([...Object.entries(actions)].map(([k, v]) => [k, {
           description: v.description,
