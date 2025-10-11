@@ -28,7 +28,7 @@ export default class App {
       await post('designer.init');
       await post('app.brandCanvasMonitor');
       state.collab.uid === 'master' && await post('app.selectPanel', 'projects');
-      state.event.bus.on('designer:togglePreview:ready', async ({ preview }) => preview && this.state.panel === 'styles' && await post('app.selectPanel', 'files'));
+      state.event.bus.on('designer:togglePreview:ready', async ({ preview }) => preview && this.state.panel === 'styles' && await post('app.selectPanel', null));
     },
 
     selectPanel: x => {

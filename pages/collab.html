@@ -2613,24 +2613,9 @@
                     {{x[0]}}
                   </div>
                 </div>
-                <div class="flex">
-                  <button
-                    class="FilesPanel-createInsideBtn outline-none nf p-2 nf-fa-plus"
-                    wf-if="x[2]"
-                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('files.create', joinPath(x[1], x[0]), x[2])"
-                  ></button
-                  ><button
-                    class="outline-none nf p-2 nf-fa-pencil"
-                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('files.mv', joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
-                    wf-if="!state.files.protected(x[1] + x[0])"
-                  ></button
-                  ><button
-                    class="outline-none nf p-2 nf-fa-trash"
-                    wf-if="!state.files.protected(x[1] + x[0])"
-                    wf-onclick="event.preventDefault(), event.stopPropagation(), post('files.rm', joinPath(x[1], x[0]) + (x[2] ? '/' : ''))"
-                  ></button>
-                </div>
-              </a>
+
+                <div class="flex"></div
+              ></a>
             </div>
           </div>
           <div

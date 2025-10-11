@@ -23,6 +23,7 @@ export default class Collab {
         bus.on('designer:changeSelection:ready', async () => await post('collab.sync'));
         bus.on('designer:save:ready', async () => await post('collab.sync', 'delta'));
         bus.on('designer:resize:ready', async () => await post('collab.sync'));
+        bus.on('designer:togglePreview:ready', async ({ preview }) => await post('collab.sync', !preview && 'full'));
       } else {
         let room = location.hash.slice(1);
         if (!room) { location.href = '/'; return }
@@ -100,6 +101,7 @@ export default class Collab {
         current: state.files.current,
         frameWidth: state.designer.frameWidth,
         frameHeight: state.designer.frameHeight,
+        preview: state.designer.current?.preview,
         contents: kind === 'full' ? snap : undefined,
         delta,
         cursors: state.designer.current?.cursors || {},
@@ -121,6 +123,7 @@ export default class Collab {
       }
       state.designer.frameWidth = ev.frameWidth;
       state.designer.frameHeight = ev.frameHeight;
+      if (state.designer.open && state.designer.current.preview !== ev.preview) await post('designer.togglePreview');
       if (ev.contents) {
         morphdom(state.designer.current.html, ev.contents);
         this.state.lastSnap = ev.contents;
