@@ -22,7 +22,6 @@ class FilesRepository {
   }
 
   async save(project, path, blob) {
-    console.log('save:', project, path);
     let [name, uuid] = project.split(':');
     let storage = rprojects.storage(project);
     switch (storage) {

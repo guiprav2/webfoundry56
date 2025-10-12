@@ -1,5 +1,6 @@
 import rfiles from '../repos/rfiles.js';
 import rprojects from '../repos/rprojects.js';
+import { defaultHtml } from '../other/templates.js';
 
 export default class Projects {
   state = { list: [] };
@@ -32,8 +33,14 @@ export default class Projects {
       let { bus } = state.event;
       bus.emit('projects:create:start');
       bus.emit('projects:create:prompt');
-      let [btn, name] = await showModal('PromptDialog', { title: 'Create project', placeholder: 'Project name', allowEmpty: false, short: true });
-      if (btn !== 'ok') return bus.emit('projects:create:cancel');
+      let name;
+      while (true) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Create project', placeholder: 'Project name', initialValue: name, allowEmpty: false, short: true });
+        if (btn !== 'ok') return bus.emit('projects:create:cancel');
+        name = val;
+        if (state.projects.list.find(x => x.split(':')[0] === val)) { await showModal('InfoDialog', { title: `Project already exists.` }); continue }
+        break;
+      }
       await loadman.run('projects.create', async () => {
         bus.emit('projects:create:confirmed', { name });
         let project = rprojects.create(name);
@@ -44,6 +51,14 @@ export default class Projects {
         state.projects.list.push(project); // needed by rprojects.config
         await rprojects.config(project, opt);
         await Promise.all(['controllers', 'components', 'media', 'pages'].map(async x => await rfiles.save(project, `${x}/.keep`, new Blob([''], { type: 'text/plain' }))));
+        await Promise.all([
+          'index.html',
+          'webfoundry/app.js',
+          'webfoundry/head.js',
+          'webfoundry/dominant.js',
+          'webfoundry/tailplay4.dafuq.js',
+        ].map(async x => await rfiles.save(project, x, await (await fetch(x)).blob())));
+        await rfiles.save(project, 'pages/index.html', new Blob([defaultHtml({ betterscroll: true })], { type: 'text/html' }));
         bus.emit('projects:create:ready', { project });
       });
     },
