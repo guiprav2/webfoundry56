@@ -194,7 +194,7 @@ export default class Designer {
       let betterscroll = true;
       let html = `<!doctype html><html>${defaultHead({ betterscroll })}${body.outerHTML}</html>`;
       await rfiles.save(project, frame.path, new Blob([html], { type: 'text/html' }));
-      let phtml = await prettier(html, { parser: 'html' });
+      let phtml = (await prettier(html, { parser: 'html' })).replace(/\{\{[\s\S]*?\}\}/g, m => m .replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\{\{\s*/g, '{{').replace(/\s*\}\}/g, '}}'));
       if (phtml === html) return;
       await rfiles.save(project, frame.path, new Blob([phtml], { type: 'text/html' }));
       state.event.bus.emit('designer:save:ready', { project, path: frame.path });
