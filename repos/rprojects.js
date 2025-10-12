@@ -11,7 +11,7 @@ class ProjectsRepository {
   }
 
   create(name, uuid = crypto.randomUUID()) {
-    if (state.projects.list.find(x => x.split(':')[0] === name)) throw new Error(`Project alreaady exists: ${name}`);
+    if (state.projects.list.find(x => x.split(':')[0] === name)) throw new Error(`Project already exists: ${name}`);
     localStorage.setItem(`webfoundry:projects:link:${name}`, uuid);
     localStorage.setItem(`webfoundry:projects:storage:${uuid}`, state.companion.client?.status !== 'connected' ? 'local' : 'cfs');
     return `${name}:${uuid}`;
@@ -30,6 +30,7 @@ class ProjectsRepository {
 
   async mv(project, newName) {
     let [name, uuid] = project.split(':');
+    if (state.projects.list.find(x => x.split(':')[0] === newName)) throw new Error(`Project already exists: ${newName}`);
     if (this.storage(project) === 'cfs') await post('companion.rpc', 'files:mv', { path: name, newPath: newName });
     localStorage.setItem(`webfoundry:projects:link:${newName}`, uuid);
     localStorage.removeItem(`webfoundry:projects:link:${name}`);

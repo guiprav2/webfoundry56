@@ -13,7 +13,11 @@ export default class Projects {
         await new Promise(pres => setTimeout(pres, 1000));
         await post('projects.select', project);
       });
-      bus.on('projects:mv:ready', async () => await post('projects.load'));
+      bus.on('projects:mv:ready', async ({ project, newName }) => {
+        await post('projects.load');
+        await new Promise(pres => setTimeout(pres, 1000));
+        await post('projects.select', `${newName}:${project.split(':')[1]}`);
+      });
       bus.on('projects:rm:ready', async () => await post('projects.load'));
       bus.on('settings:global:option:ready', async ({ k, v }) => {
         if (k !== 'companion' || v) return;
@@ -75,8 +79,14 @@ export default class Projects {
       let [name, uuid] = project.split(':');
       bus.emit('projects:mv:start', { project });
       bus.emit('projects:mv:prompt', { project });
-      let [btn, newName] = await showModal('PromptDialog', { title: 'Rename project', placeholder: 'Project name', initialValue: name, allowEmpty: false });
-      if (btn !== 'ok') return bus.emit('projects:mv:cancel');
+      let newName;
+      while (true) {
+        let [btn, val] = await showModal('PromptDialog', { title: 'Rename project', placeholder: 'Project name', initialValue: newName || name, allowEmpty: false, short: true });
+        if (btn !== 'ok') return bus.emit('projects:mv:cancel');
+        newName = val;
+        if (state.projects.list.find(x => x.split(':')[0] === val)) { await showModal('InfoDialog', { title: `Project already exists.` }); continue }
+        break;
+      }
       await loadman.run('projects.mv', async () => {
         bus.emit('projects:mv:confirmed', { project, newName });
         await rprojects.mv(project, newName);
