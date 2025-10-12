@@ -2827,6 +2827,30 @@
                 ></button>
               </div>
             </div>
+            <div
+              class="min-w-96 flex justify-center items-center flex-1 overflow-hidden"
+              wf-if="isMedia(state.files.current)"
+            >
+              <img
+                src="https://cdn.donmai.us/original/c4/69/__original_drawn_by_keke_kotowari__c469639feef9be77398d542e441fa534.gif"
+                class="w-64 max-h-full object-cover"
+                wf-if="mimeLookup(state.files.current)?.startsWith?.('image/')"
+                wf-class="{{replaces w-64: !state.files.current &amp;&amp; 'w-64'}}"
+                wf-src="`/files/${sessionStorage.webfoundryTabId}/${state.projects.current}/${state.files.current}`"
+              /><video
+                controls=""
+                class="max-h-full"
+                wf-if="mimeLookup(state.files.current)?.startsWith?.('video/')"
+                wf-src="`/files/${sessionStorage.webfoundryTabId}/${state.projects.current}/${state.files.current}`"
+                hidden=""
+              ></video
+              ><audio
+                controls=""
+                wf-if="mimeLookup(state.files.current)?.startsWith?.('audio/')"
+                wf-src="`/files/${sessionStorage.webfoundryTabId}/${state.projects.current}/${state.files.current}`"
+                hidden=""
+              ></audio>
+            </div>
           </div>
         </div>
         <div

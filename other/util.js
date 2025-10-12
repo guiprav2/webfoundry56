@@ -48,6 +48,7 @@ export function isMedia(path) {
 };
 
 window.isMedia = isMedia;
+window.mimeLookup = mimeLookup;
 
 class LoadingManager {
   ops = {};

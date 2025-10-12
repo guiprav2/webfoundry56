@@ -180,7 +180,7 @@
           </div>
         </a>
         <div
-          class="overflow-auto grid gap-6 px-4 pt-3 pb-1"
+          class="max-h-[80vh] overflow-auto grid gap-6 px-4 pt-3 pb-1"
           wf-class="{{`grid-cols-${Math.max(3, Math.min(5, this.media.length))}`}}"
           wf-if="this.media.length"
         >
@@ -196,13 +196,6 @@
                 wf-src="this.srcFor(x)"
                 class="border border-transparent max-h-full"
               />
-              <audio
-                wf-if="this.typeFor(x) === 'audio'"
-                wf-src="this.srcFor(x)"
-                wf-class="{{!this.ctrlKey && 'pointer-events-none'}}"
-                class="border border-transparent max-h-full"
-                controls
-              ></audio>
               <video
                 wf-if="this.typeFor(x) === 'video'"
                 wf-src="this.srcFor(x)"
@@ -211,6 +204,13 @@
                 class="border border-transparent max-h-full"
                 controls
               ></video>
+              <audio
+                wf-if="this.typeFor(x) === 'audio'"
+                wf-src="this.srcFor(x)"
+                wf-class="{{!this.ctrlKey && 'pointer-events-none'}}"
+                class="max-w-full border border-transparent max-h-full"
+                controls
+              ></audio>
               <div class="hidden"></div>
             </a>
             <div class="truncate text-center px-3 pt-2 pb-1">
