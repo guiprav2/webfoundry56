@@ -2,6 +2,7 @@ import BiMap from '../other/bimap.js';
 import Boo from 'https://esm.sh/@camilaprav/boo@1.0.6';
 import actions from '../other/actions.js';
 import htmlsnap from 'https://esm.sh/@camilaprav/htmlsnap@0.0.13';
+import morph from 'https://esm.sh/nanomorph';
 import prettier from '../other/prettier.js';
 import rfiles from '../repos/rfiles.js';
 import { arrayify, debounce } from '../other/util.js';
@@ -45,6 +46,11 @@ export default class Designer {
       bus.on('files:select:ready', async ({ path }) => {
         if (!/^(components|pages)\/.*\.html$/.test(path)) return;
         await post('designer.select', path);
+      });
+      bus.on('files:change', async ({ path }) => {
+        let name = state.projects.current.split(':')[0];
+        if (!path.startsWith(`${name}/`)) return;
+        //state.designer.open && state.files.current === path.slice(`${name}/`.length) && await post('designer.repatch');
       });
       addEventListener('keydown', async ev => await post('designer.keydown', ev, true), true);
       await post('designer.trackCursors');
@@ -235,10 +241,28 @@ export default class Designer {
       let p = Promise.withResolvers();
       Object.assign(frame, { ready: false, resolve: p.resolve, reject: p.reject });
       d.update();
-      await loadman.run('designer.refresh', async () => {
-        frame.el.src = frame.el.src;
-        await p.promise;
-      });
+      await loadman.run('designer.refresh', async () => { frame.el.src = frame.el.src; await p.promise });
+    },
+
+    repatch: async () => {
+      let frame = this.state.current;
+      if (!this.state.open || !frame) return;
+      let project = state.projects.current;
+      let path = state.files.current;
+      try {
+        let blob = await rfiles.load(project, path);
+        let text = await blob.text();
+        let doc = new DOMParser().parseFromString(text, 'text/html');
+        let { mutobs } = frame;
+        mutobs?.disconnect?.();
+        morph(frame.body, doc.body);
+        frame.body.style.display = '';
+        mutobs?.observe?.(frame.html, { attributes: true, subtree: true, childList: true, characterData: true });
+        state.event.bus.emit('designer:repatch:ready', { project, path });
+      } catch (err) {
+        console.error(err);
+        state.event.bus.emit('designer:repatch:error', { project, path, error: err });
+      }
     },
 
     pushHistory: async (cur, op) => {

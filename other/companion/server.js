@@ -11,8 +11,8 @@ export default function server(key, opt = {}) {
     events: new EventEmitter({ wildcard: true }),
     clients: new Set(),
     rpc: (name, fn) => rpc[name] = fn,
-    broadcast: data => {
-      for (let x of ret.clients) x.send(JSON.stringify(data));
+    broadcast: (data, exclude = new Set()) => {
+      for (let ws of ret.clients) if (!exclude.has(ws)) ws.send(JSON.stringify(data));
     },
   };
 

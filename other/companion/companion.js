@@ -52,6 +52,23 @@ let s = server(process.env.WF_CLIENT_KEY);
 s.events.on('connected', () => console.log('Client connected (handshake OK).'));
 s.events.on('disconnected', () => console.log('Client disconnected.'));
 
+let lastOps = new Map();
+function markFileOp(ws, relPath) {
+  if (!ws) return;
+  let map = lastOps.get(ws) ?? new Map();
+  map.set(relPath, Date.now());
+  lastOps.set(ws, map);
+}
+setInterval(() => {
+  let now = Date.now();
+  for (let [ws, paths] of lastOps) {
+    for (let [p, t] of paths) {
+      if (now - t > 500) paths.delete(p);
+    }
+    if (paths.size === 0) lastOps.delete(ws);
+  }
+}, 1000);
+
 s.rpc('files:list', async ({ path }) => (await glob(`${path}/**/*`, { nodir: true, dot: true })).filter(x => !/\/(\.git|node_modules)\//.test(x)));
 
 s.rpc('files:stat', async ({ path }) => {
@@ -64,19 +81,26 @@ s.rpc('files:load', async ({ path }) => {
   catch (err) { if (err.code === 'ENOENT') return null; throw err }
 });
 
-s.rpc('files:save', async ({ path, data }) => {
+s.rpc('files:save', async ({ ws, path, data }) => {
   await mkdirp(path.split('/').slice(0, -1).join('/'));
   await fsp.writeFile(path, Buffer.from(data, 'base64'));
+  markFileOp(ws, path);
 });
 
 s.rpc('files:mv', async ({ path, newPath }) => await fsp.rename(path, newPath));
-s.rpc('files:rm', async ({ path }) => await rimraf(path));
+s.rpc('files:rm', async ({ ws, path }) => { await rimraf(path); markFileOp(ws, path) });
 
 let watcher = chokidar.watch(workspace, { ignoreInitial: true, ignored: /^node_modules\/|\/\.git\/|\.swp$/ });
-['add', 'change', 'unlink'].forEach(x => watcher.on(x, path => s.broadcast({
-  type: `files:${x === 'unlink' ? 'rm' : x}`,
-  path: path.slice(workspace.length + 1),
-})));
+['add', 'change', 'unlink'].forEach(event => {
+  watcher.on(event, path => {
+    let relPath = path.slice(workspace.length + 1);
+    let type = `files:${event === 'unlink' ? 'rm' : event}`;
+    let now = Date.now();
+    let exclude = new Set();
+    for (let [ws, paths] of lastOps) if (now - (paths.get(path) ?? 0) < 500) exclude.add(ws);
+    s.broadcast({ type, path: relPath }, exclude);
+  });
+});
 
 let terminals = {};
 s.rpc('shell:spawn', async ({ ws, shell, subdir, cols, rows }) => {

@@ -3,8 +3,8 @@ import prettier from '../other/prettier.js';
 import rfiles from '../repos/rfiles.js';
 import rprojects from '../repos/rprojects.js';
 import structuredFiles from '../other/structuredFiles.js';
-import { defaultCtrl, defaultHtml } from '../other/templates.js';
 import { debounce, joinPath, loadman } from '../other/util.js';
+import { defaultCtrl, defaultHtml } from '../other/templates.js';
 import { lookup as mimeLookup } from 'https://cdn.skypack.dev/mrmime';
 
 export default class Files {
@@ -109,7 +109,7 @@ export default class Files {
       let project = state.projects.current;
       let { bus } = state.event;
       bus.emit('files:load:start');
-      let list = (await rfiles.list(project)).filter(x => !/(^index.html$|^wf.uiconfig.json$|^webfoundry\/)/.test(x));
+      let list = (await rfiles.list(project)).filter(x => !/(\..*\.sw.$|^index.html$|^wf.uiconfig.json$|^webfoundry\/)/.test(x));
       if (state.projects.current !== project) return bus.emit('files:load:abort');
       if (!list.includes(this.state.current)) await post('files.select', null);
       this.state.list = structuredFiles(list);
