@@ -443,7 +443,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; /^input|textarea$/.test(state.designer.current.frame.map.get(x).tagName.toLowerCase()))"
+                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; /^input|textarea$/.test(state.designer.current.map.get(x).tagName.toLowerCase()))"
                     wf-onclick="post('designer.toolbar', 'changeInputPlaceholder')"
                   >
                     <div>Placeholder</div>
@@ -455,7 +455,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; state.designer.current.frame.map.get(x).tagName === 'FORM')"
+                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; state.designer.current.map.get(x).tagName === 'FORM')"
                     wf-onclick="post('designer.toolbar', 'changeFormMethod')"
                   >
                     <div>Form Method</div>
@@ -2898,8 +2898,7 @@
             class="text-sm px-4 py-3 text-green-400"
             wf-if="state.collab.rtc.presence.length &gt; 1"
           >
-            Currently collaborating with {{state.collab.rtc.presence.length -
-            1}} clients.
+            Currently collaborating with {{state.collab.rtc.presence.length - 1}} clients.
           </div>
         </div>
         <div

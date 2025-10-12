@@ -52,6 +52,16 @@ export default class Designer {
         if (!path.startsWith(`${name}/`)) return;
         //state.designer.open && state.files.current === path.slice(`${name}/`.length) && await post('designer.repatch');
       });
+      bus.on('files:rm', async ({ path }) => {
+        let name = state.projects.current.split(':')[0];
+        if (!path.startsWith(`${name}/`)) return;
+        path = path.slice(`${name}/`.length);
+        if (state.files.current === path) {
+          await post('files.select', null);
+          this.state.list = this.state.list.filter(x => x.path !== path);
+          d.update();
+        }
+      });
       addEventListener('keydown', async ev => await post('designer.keydown', ev, true), true);
       await post('designer.trackCursors');
     },

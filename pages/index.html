@@ -477,7 +477,7 @@
                   </button>
                   <button
                     class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; state.designer.current.frame.map.get(x).tagName === 'FORM')"
+                    wf-if="state.designer.current.cursors[state.collab.uid]?.some?.(x =&gt; state.designer.current.map.get(x).tagName === 'FORM')"
                     wf-onclick="post('designer.toolbar', 'changeFormMethod')"
                   >
                     <div>Form Method</div>
@@ -2797,7 +2797,6 @@
                   <div class="shrink-0">App Title:</div>
                   <input
                     class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
-                    value="{{state.projects.currentProject.title}}"
                     wf-disabled="loadman.busy()"
                     wf-onkeyup="event.preventDefault(), post('project.titleKeyDown')"
                   />
@@ -3187,8 +3186,7 @@
             class="text-sm px-4 py-3 text-green-400"
             wf-if="state.collab.rtc.presence.length &gt; 1"
           >
-            Currently collaborating with {{state.collab.rtc.presence.length -
-            1}} clients.
+            Currently collaborating with {{state.collab.rtc.presence.length - 1}} clients.
           </div>
         </div>
         <div

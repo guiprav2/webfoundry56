@@ -41,17 +41,16 @@ export default class Files {
         }
       });
       if (state.collab.uid !== 'master') return;
-      bus.on('projects:select:ready', async () => await loadman.run('files.projectSelect', async () => {
+      bus.on('projects:select:ready', async ({ project }) => await loadman.run('files.projectSelect', async () => {
         this.state.list = [];
         this.state.expandedPaths = new Set(['pages/']);
         this.state.current = null;
         d.update();
-        await post('files.load');
-        if (state.app.panel === 'projects') await post('app.selectPanel', 'files');
+        if (project) {
+          await post('files.load');
+          if (state.app.panel === 'projects') await post('app.selectPanel', 'files');
+        }
       }));
-      bus.on('projects:create:ready', async () => await post('files.load'));
-      bus.on('projects:mv:ready', async () => await post('files.load'));
-      bus.on('projects:rm:ready', async () => await post('files.load'));
       bus.on('files:select:ready', ({ path }) => {
         if (!path || path.endsWith('/')) return;
         let parts = path.split('/').slice(0, -1);
@@ -62,8 +61,8 @@ export default class Files {
         }
       });
       bus.on('files:create:ready', async ({ path }) => {
-        await post('files.load');
-        !path.endsWith('/') && await post('files.select', path);
+        await new Promise(pres => setTimeout(pres, 1000));
+        await post('files.select', path);
       });
       bus.on('files:mv:ready', async ({ path, newPath }) => {
         let { current } = this.state;
@@ -83,12 +82,14 @@ export default class Files {
         });
         bus.on(`companion:files:${x}`, ({ event, path }) => {
           let name = path.split('/')[0];
-          let storage = rprojects.storage(state.projects.list.find(x => x.startsWith(`${name}:`)));
+          let project = state.projects.list.find(x => x.startsWith(`${name}:`));
+          if (!project) return;
+          let storage = rprojects.storage(project);
           if (storage !== 'cfs') return;
           bus.emit(event.split(':').slice(1).join(':'), { path });
         });
         bus.on(`files:${x}`, async ({ path }) => {
-          if (!path.startsWith(`${state.projects.current.split(':')[0]}/`)) return;
+          if (!state.projects.current || !path.startsWith(`${state.projects.current.split(':')[0]}/`)) return;
           x !== 'change' && await post('files.load');
           if (!path.endsWith('.html') && !path.endsWith('.js')) return;
           (path.endsWith('.html') || x !== 'change') && await post('files.reflect');

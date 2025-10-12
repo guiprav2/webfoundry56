@@ -18,6 +18,7 @@ export default class Settings {
       if (state.collab.uid !== 'master') return;
       bus.on('projects:select:ready', async () => {
         let project = state.projects.current;
+        if (!project) { this.state.popt = {}; return }
         this.state.popt = await rprojects.config(project);
         this.state.popt.storage = localStorage.getItem(`webfoundry:projects:storage:${project.split(':')[1]}`);
       });
