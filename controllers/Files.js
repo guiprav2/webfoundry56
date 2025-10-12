@@ -150,9 +150,8 @@ export default class Files {
       }
       if (type === 'file') {
         let defaultContent = '';
-        let betterscroll = true;
         if (fullpath.startsWith('controllers/') && fullpath.endsWith('.js')) defaultContent = defaultCtrl(fullpath);
-        if (fullpath.endsWith('.html')) defaultContent = defaultHtml({ betterscroll });
+        if (fullpath.endsWith('.html')) defaultContent = defaultHtml;
         let iext = name.lastIndexOf('.');
         let parser = iext < 0 ? '' : name.slice(iext + 1);
         defaultContent = await prettier(defaultContent, { parser });

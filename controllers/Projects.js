@@ -60,12 +60,13 @@ export default class Projects {
         await Promise.all(['controllers', 'components', 'media', 'pages'].map(async x => await rfiles.save(project, `${x}/.keep`, new Blob([''], { type: 'text/plain' }))));
         await Promise.all([
           'index.html',
+          'webfoundry/wf.config.js',
           'webfoundry/app.js',
           'webfoundry/head.js',
           'webfoundry/dominant.js',
           'webfoundry/tailplay4.dafuq.js',
-        ].map(async x => await rfiles.save(project, x, await (await fetch(x)).blob())));
-        await rfiles.save(project, 'pages/index.html', new Blob([defaultHtml({ betterscroll: true })], { type: 'text/html' }));
+        ].map(async x => await rfiles.save(project, !x.endsWith('/wf.config.js') ? x : 'wf.config.js', await (await fetch(x)).blob())));
+        await rfiles.save(project, 'pages/index.html', new Blob([defaultHtml], { type: 'text/html' }));
         bus.emit('projects:create:ready', { project });
       });
     },

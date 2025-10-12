@@ -47,6 +47,7 @@ export default class Designer {
         if (!/^(components|pages)\/.*\.html$/.test(path)) return;
         await post('designer.select', path);
       });
+      bus.on('settings:projects:option:ready', async () => await post('designer.refresh'));
       bus.on('files:change', async ({ path }) => {
         let name = state.projects.current.split(':')[0];
         if (!path.startsWith(`${name}/`)) return;
@@ -202,7 +203,7 @@ export default class Designer {
       let body = frame.body.cloneNode(true);
       body.style.display = 'none';
       let betterscroll = true;
-      let html = `<!doctype html><html>${defaultHead({ betterscroll })}${body.outerHTML}</html>`;
+      let html = `<!doctype html><html>${defaultHead}${body.outerHTML}</html>`;
       await rfiles.save(project, frame.path, new Blob([html], { type: 'text/html' }));
       let phtml = (await prettier(html, { parser: 'html' })).replace(/\{\{[\s\S]*?\}\}/g, m => m .replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\{\{\s*/g, '{{').replace(/\s*\}\}/g, '}}'));
       if (phtml === html) return;

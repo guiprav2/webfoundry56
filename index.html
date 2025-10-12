@@ -34,14 +34,10 @@
     <script type="module">
       (async () => {
         if (location.pathname.includes('/files/')) return;
-        let prefix = location.pathname.startsWith('/preview/')
-          ? '/' + location.pathname.slice(1).split('/').slice(0, 3).join('/')
-          : '.';
-        // FIXME: Promise.all
-        await import(`${prefix}/webfoundry/head.js`);
-        let { default: App } = await import(`${prefix}/webfoundry/app.js`);
-        let { default: d } = await import(`${prefix}/webfoundry/dominant.js`);
-        document.body.append(d.el(App));
+        window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/');
+        if (rootPrefix === '/') rootPrefix = '.';
+        let [, md, mapp] = await Promise.all([import(`${rootPrefix}/webfoundry/head.js`), import(`${rootPrefix}/webfoundry/dominant.js`), import(`${rootPrefix}/webfoundry/app.js`)]);
+        document.body.append(md.default.el(mapp.default));
       })();
     </script>
   </body>
