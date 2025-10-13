@@ -9,44 +9,7 @@ import {
   deleteLength,
 } from './textOt.js';
 
-const TailwindHex = {
-  'red-600': '#dc2626',
-  'red-800': '#991b1b',
-  'orange-600': '#ea580c',
-  'orange-800': '#9a3412',
-  'amber-600': '#d97706',
-  'amber-800': '#92400e',
-  'yellow-600': '#ca8a04',
-  'yellow-800': '#854d0e',
-  'lime-600': '#65a30d',
-  'lime-800': '#3f6212',
-  'green-600': '#16a34a',
-  'green-800': '#166534',
-  'emerald-600': '#059669',
-  'emerald-800': '#065f46',
-  'teal-600': '#0d9488',
-  'teal-800': '#115e59',
-  'cyan-600': '#0891b2',
-  'cyan-800': '#155e75',
-  'sky-600': '#0284c7',
-  'sky-800': '#075985',
-  'blue-600': '#2563eb',
-  'blue-800': '#1d4ed8',
-  'indigo-600': '#4f46e5',
-  'indigo-800': '#3730a3',
-  'violet-600': '#7c3aed',
-  'violet-800': '#5b21b6',
-  'purple-600': '#9333ea',
-  'purple-800': '#6b21a8',
-  'fuchsia-600': '#c026d3',
-  'fuchsia-800': '#86198f',
-  'pink-600': '#db2777',
-  'pink-800': '#9d174d',
-  'rose-600': '#e11d48',
-  'rose-800': '#9f1239',
-};
-
-const colorClassCache = new Map();
+const DEFAULT_COLLAB_COLOR = 'indigo-600';
 let styleEl;
 
 function ensureStyleSheet() {
@@ -54,45 +17,66 @@ function ensureStyleSheet() {
     styleEl = document.createElement('style');
     styleEl.id = 'ace-collab-styles';
     styleEl.textContent = `
-      .ace_editor .remote-selection { position: absolute; opacity: 0.35; }
-      .ace_editor .remote-caret { position: absolute; width: 2px; }
+      @keyframes ace-collab-caret-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+      .ace_editor .ace-collab-overlays { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
+      .ace_editor .remote-selection { position: absolute; opacity: 0.35; pointer-events: none; border-radius: 2px; }
+      .ace_editor .remote-caret { position: absolute; width: 2px; min-width: 2px; pointer-events: none; opacity: 0.9; animation: ace-collab-caret-blink 1s step-end infinite; border-radius: 1px; }
     `;
     document.head.append(styleEl);
   }
-  return styleEl.sheet;
-}
-
-function hexToRgba(hex, alpha) {
-  if (!hex) return `rgba(99, 102, 241, ${alpha})`;
-  let value = hex.replace('#', '');
-  if (value.length === 3) value = value.split('').map(x => x + x).join('');
-  let bigint = parseInt(value, 16);
-  let r = (bigint >> 16) & 255;
-  let g = (bigint >> 8) & 255;
-  let b = bigint & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function ensureColorClasses(colorName) {
-  if (!colorName) colorName = 'indigo-600';
-  if (colorClassCache.has(colorName)) return colorClassCache.get(colorName);
-  let hex = TailwindHex[colorName] || TailwindHex['indigo-600'];
-  let selection = hexToRgba(hex, 0.25);
-  let caret = hexToRgba(hex, 0.9);
-  let className = `remote-${colorName.replace(/[^a-z0-9]+/gi, '-')}`;
-  let sheet = ensureStyleSheet();
-  try {
-    sheet.insertRule(`.ace_editor .remote-selection.${className} { background: ${selection}; }`, sheet.cssRules.length);
-    sheet.insertRule(`.ace_editor .remote-caret.${className} { background: ${caret}; }`, sheet.cssRules.length);
-  } catch (err) {
-    console.error(err);
-  }
-  let classes = {
-    selection: `remote-selection ${className}`,
-    caret: `remote-caret ${className}`,
+  ensureStyleSheet();
+  let token = (colorName && String(colorName).trim()) || DEFAULT_COLLAB_COLOR;
+  token = token.split(/\s+/)[0];
+  token = token.replace(/[^a-z0-9-\\/]/gi, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!token) token = DEFAULT_COLLAB_COLOR;
+  let bgClass = token.startsWith('bg-') ? token : `bg-${token}`;
+  return {
+    selection: `remote-selection ${bgClass}`,
+    caret: `remote-caret ${bgClass}`,
   };
-  colorClassCache.set(colorName, classes);
-  return classes;
+}
+
+function cloneCursor(cursor) {
+  if (!cursor) return null;
+  return {
+    start: {
+      row: cursor.start?.row ?? 0,
+      column: cursor.start?.column ?? 0,
+    },
+    end: {
+      row: cursor.end?.row ?? 0,
+      column: cursor.end?.column ?? 0,
+    },
+    isEmpty: Boolean(cursor.isEmpty),
+  };
+}
+
+function computeSelectionSegments(session, cursor) {
+  if (!cursor || cursor.isEmpty) return [];
+  let Range = ace.require('ace/range').Range;
+  let docRange = Range.fromPoints(cursor.start, cursor.end);
+  if (docRange.isEmpty()) return [];
+  let screenRange = docRange.toScreenRange(session);
+  let segments = [];
+  let startRow = screenRange.start.row;
+  let endRow = screenRange.end.row;
+  for (let row = startRow; row <= endRow; row++) {
+    let startColumn = row === startRow ? screenRange.start.column : 0;
+    let endColumn;
+    if (row === endRow) {
+      endColumn = screenRange.end.column;
+    } else {
+      let rowEndDoc = session.screenToDocumentPosition(row, Number.POSITIVE_INFINITY);
+      let rowEndScreen = session.documentToScreenPosition(rowEndDoc.row, rowEndDoc.column);
+      endColumn = rowEndScreen.column;
+    }
+    if (typeof endColumn !== 'number' || typeof startColumn !== 'number') continue;
+    segments.push({ row, startColumn, endColumn });
+  }
+  return segments;
 }
 
 function positionToIndex(snapshot, row, column) {
@@ -125,29 +109,6 @@ function deltaToOperation(snapshot, delta, rowAdjust = 0) {
   return normalizeOperation(op);
 }
 
-class RemoteCaretMarker {
-  constructor(className) {
-    let Range = ace.require('ace/range').Range;
-    this.range = new Range(0, 0, 0, 0);
-    this.className = className;
-  }
-
-  setPosition(row, column) {
-    this.range.start.row = row;
-    this.range.start.column = column;
-    this.range.end.row = row;
-    this.range.end.column = column;
-  }
-
-  update(html, markerLayer, session, config) {
-    let screenPos = session.documentToScreenPosition(this.range.start.row, this.range.start.column);
-    let top = markerLayer.$padding + screenPos.row * config.lineHeight;
-    let left = markerLayer.$padding + screenPos.column * config.characterWidth;
-    let height = config.lineHeight;
-    html.push(`<div class="${this.className}" style="left:${left}px;top:${top}px;height:${height}px"></div>`);
-  }
-}
-
 export default class AceCollabBinding {
   constructor({ editor, path, project }) {
     this.editor = editor;
@@ -164,6 +125,7 @@ export default class AceCollabBinding {
     this.disposed = false;
     this.remoteCursors = new Map();
     this.lastCursorPayload = null;
+    this.overlayRoot = null;
 
     state.collab?.codeVersions?.set?.(path, this.version);
 
@@ -172,6 +134,7 @@ export default class AceCollabBinding {
     this.remoteCursorHandler = this.handleRemoteCursor.bind(this);
     this.cursorChangeHandler = this.handleCursorChange.bind(this);
     this.presenceHandler = this.handlePresenceUpdate.bind(this);
+    this.rendererRenderHandler = this.refreshOverlays.bind(this);
     this.cursorTicker = debounce(() => this.broadcastCursor(), 60);
 
     this.session.on('change', this.changeHandler);
@@ -181,6 +144,7 @@ export default class AceCollabBinding {
     this.bus?.on('collab:code:cursor', this.remoteCursorHandler);
     this.bus?.on('collab:presence:update', this.presenceHandler);
     this.bus?.on('collab:leave', this.presenceHandler);
+    this.editor.renderer.on?.('afterRender', this.rendererRenderHandler);
 
     this.broadcastCursor();
   }
@@ -196,8 +160,12 @@ export default class AceCollabBinding {
     this.bus?.off?.('collab:code:cursor', this.remoteCursorHandler);
     this.bus?.off?.('collab:presence:update', this.presenceHandler);
     this.bus?.off?.('collab:leave', this.presenceHandler);
+    this.editor.renderer.off?.('afterRender', this.rendererRenderHandler);
+    this.editor.renderer.removeListener?.('afterRender', this.rendererRenderHandler);
     for (let entry of this.remoteCursors.values()) this.removeRemoteCursor(entry);
     this.remoteCursors.clear();
+    this.overlayRoot?.remove?.();
+    this.overlayRoot = null;
   }
 
   isApplyingRemote() {
@@ -362,51 +330,133 @@ export default class AceCollabBinding {
   handlePresenceUpdate() {
     if (this.disposed) return;
     let presence = state.collab?.rtc?.presence || [];
-    let active = new Set(presence.map(x => x.user));
+    let active = new Map(presence.map(x => [x.user, x]));
     for (let [peer, entry] of this.remoteCursors.entries()) {
-      if (!active.has(peer)) {
+      let info = active.get(peer);
+      if (!info) {
         this.removeRemoteCursor(entry);
         this.remoteCursors.delete(peer);
+        continue;
       }
+      let classes = ensureColorClasses(info.color);
+      let selectionChanged = entry.classes?.selection !== classes.selection;
+      let caretChanged = entry.classes?.caret !== classes.caret;
+      if (!selectionChanged && !caretChanged) continue;
+      entry.classes = classes;
+      this.positionRemoteCursor(peer, entry);
     }
   }
 
   upsertRemoteCursor(peer, cursor, classes) {
     let entry = this.remoteCursors.get(peer);
-    let Range = ace.require('ace/range').Range;
     if (!entry) {
-      let caretMarker = new RemoteCaretMarker(classes.caret);
-      let caretId = this.session.addDynamicMarker(caretMarker, true);
       entry = {
-        caretMarker,
-        caretId,
-        selectionId: null,
+        caretEl: null,
+        selectionEls: [],
         classes,
+        cursor: null,
       };
       this.remoteCursors.set(peer, entry);
     }
     entry.classes = classes;
-    if (entry.selectionId != null) {
-      this.session.removeMarker(entry.selectionId);
-      entry.selectionId = null;
-    }
-    let caretMarker = entry.caretMarker;
-    if (caretMarker instanceof RemoteCaretMarker) {
-      caretMarker.className = classes.caret;
-      caretMarker.setPosition(cursor.end.row, cursor.end.column);
-    }
-    if (!cursor.isEmpty) {
-      let range = new Range(cursor.start.row, cursor.start.column, cursor.end.row, cursor.end.column);
-      entry.selectionId = this.session.addMarker(range, classes.selection, 'text', false);
-    }
+    entry.cursor = cloneCursor(cursor);
+    this.positionRemoteCursor(peer, entry);
   }
 
   removeRemoteCursor(entry) {
     if (!entry) return;
-    if (entry.selectionId != null) this.session.removeMarker(entry.selectionId);
-    if (entry.caretId != null) this.session.removeMarker(entry.caretId);
-    entry.selectionId = null;
-    entry.caretId = null;
-    entry.caretMarker = null;
+    if (entry.selectionEls) {
+      for (let el of entry.selectionEls) el?.remove?.();
+      entry.selectionEls.length = 0;
+    }
+    entry.selectionEls = [];
+    entry.caretEl?.remove?.();
+    entry.caretEl = null;
+    entry.cursor = null;
+    entry.classes = null;
+  }
+
+  ensureOverlayRoot() {
+    if (this.disposed) return null;
+    let renderer = this.editor?.renderer;
+    if (!renderer || !renderer.content) return null;
+    let root = this.overlayRoot;
+    if (!root || !root.isConnected) {
+      root = document.createElement('div');
+      root.className = 'ace-collab-overlays';
+      renderer.content.append(root);
+      this.overlayRoot = root;
+    } else if (root.parentElement !== renderer.content) {
+      renderer.content.append(root);
+    }
+    return this.overlayRoot;
+  }
+
+  getRendererMetrics() {
+    let renderer = this.editor?.renderer;
+    if (!renderer) return null;
+    let lineHeight = renderer.lineHeight || renderer.layerConfig?.lineHeight;
+    let characterWidth = renderer.characterWidth || renderer.layerConfig?.characterWidth;
+    let padding = typeof renderer.$padding === 'number' ? renderer.$padding : renderer.layerConfig?.padding || 0;
+    if (!lineHeight || !characterWidth) return null;
+    return { lineHeight, characterWidth, padding };
+  }
+
+  positionRemoteCursor(peer, entry) {
+    if (!entry || !entry.cursor) return;
+    let root = this.ensureOverlayRoot();
+    if (!root) return;
+    let metrics = this.getRendererMetrics();
+    if (!metrics) return;
+    let { lineHeight, characterWidth, padding } = metrics;
+    let session = this.session;
+    let endPos = session.documentToScreenPosition(entry.cursor.end.row, entry.cursor.end.column);
+    if (!endPos) return;
+
+    let caretEl = entry.caretEl;
+    if (!caretEl || !caretEl.isConnected) {
+      caretEl = document.createElement('div');
+      entry.caretEl = caretEl;
+      root.append(caretEl);
+    }
+    caretEl.className = entry.classes.caret;
+    caretEl.style.top = `${(padding + endPos.row * lineHeight) - 3}px`;
+    caretEl.style.left = `${padding + endPos.column * characterWidth}px`;
+    caretEl.style.height = `${lineHeight}px`;
+
+    let segments = computeSelectionSegments(session, entry.cursor);
+    if (!entry.selectionEls) entry.selectionEls = [];
+    if (!segments.length) {
+      for (let el of entry.selectionEls) el?.remove?.();
+      entry.selectionEls.length = 0;
+      return;
+    }
+    for (let i = 0; i < segments.length; i++) {
+      let seg = segments[i];
+      let el = entry.selectionEls[i];
+      if (!el || !el.isConnected) {
+        el = document.createElement('div');
+        entry.selectionEls[i] = el;
+        root.append(el);
+      }
+      let width = (seg.endColumn - seg.startColumn) * characterWidth;
+      if (width < 0) width = 0;
+      width = Math.max(characterWidth, width);
+      el.className = entry.classes.selection;
+      el.style.top = `${(padding + seg.row * lineHeight) - 3}px`;
+      el.style.left = `${padding + seg.startColumn * characterWidth}px`;
+      el.style.height = `${lineHeight}px`;
+      el.style.width = `${width}px`;
+    }
+    while (entry.selectionEls.length > segments.length) {
+      let el = entry.selectionEls.pop();
+      el?.remove?.();
+    }
+  }
+
+  refreshOverlays() {
+    if (this.disposed) return;
+    if (!this.remoteCursors.size) return;
+    for (let [peer, entry] of this.remoteCursors.entries()) this.positionRemoteCursor(peer, entry);
   }
 }

@@ -26,7 +26,7 @@ export default class CodeEditor {
         .ace_active-line { background-color: #0009 !important }
         .ace_gutter-active-line { background-color: #0009 !important }
       `));
-      let script = d.el('script', { src: 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.4/ace.js' });
+      let script = d.el('script', { src: 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.3/ace.js' });
       let applySelection = async (project, path, opt = {}) => {
         this.state.pendingSelection = null;
         if (!window.ace || !this.state.ready) {
