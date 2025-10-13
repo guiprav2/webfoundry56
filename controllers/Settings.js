@@ -9,12 +9,14 @@ export default class Settings {
       this.state.opt = JSON.parse(localStorage.getItem('webfoundry:config') || 'null');
       if (!this.state.opt) {
         this.state.opt = {
+          brand: true,
           toolbar: true,
           companion: false,
           companionKey: `wf-${crypto.randomUUID()}`,
         };
         await post('settings.save');
       }
+      if (this.state.opt.wallpaper) document.body.style.backgroundImage = `url("${state.settings.opt.wallpaper}")`;
       if (state.collab.uid !== 'master') return;
       bus.on('projects:select:ready', async () => {
         let project = state.projects.current;
@@ -54,6 +56,7 @@ export default class Settings {
       }
       this.state.opt[k] = v;
       await post('settings.save');
+      if (k === 'wallpaper') document.body.style.backgroundImage = v ? `url("${v}")` : '';
       bus.emit('settings:global:option:ready', { k, v });
     },
 

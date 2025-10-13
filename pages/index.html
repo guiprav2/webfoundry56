@@ -12,8 +12,9 @@
     <script type="module" src="../webfoundry/head.js"></script>
   </head>
   <body
-    class="min-h-screen overflow-hidden bg-cover bg-center bg-[#060a0f]"
     style="display: none"
+    class="min-h-screen overflow-hidden bg-cover bg-center bg-[#060a0f]"
+    wf-class="{{replaces bg-[#060a0f]: !state.settings.opt?.wallpaper &amp;&amp; 'bg-[#060a0f]'}}"
   >
     <div
       class="App flex relative h-screen w-screen overflow-hidden"
@@ -2794,9 +2795,56 @@
                     wf-onkeyup="event.preventDefault(), post('app.projectTitleKeyDown')"
                   />
                 </div>
+                <div class="flex items-center gap-3">
+                  <div class="shrink-0">Wallpaper:</div>
+                  <input
+                    class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
+                    value="{{state.settings.opt.wallpaper}}"
+                    wf-disabled="loadman.busy()"
+                    wf-onkeyup="event.preventDefault(), post('settings.option', 'wallpaper', event.target.value)"
+                  />
+                </div>
               </div>
               <div class="space-y-2 mt-2 -ml-3">
                 <label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                >
+                  <div class="shrink-0">Hide brand</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="!state.settings.opt.brand"
+                      wf-onclick="event.preventDefault(), post('settings.option', 'brand')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div> </label
+                ><label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                >
+                  <div class="shrink-0">Hide toolbar</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="!state.settings.opt.toolbar"
+                      wf-onclick="event.preventDefault(), post('settings.option', 'toolbar')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div> </label
+                ><label
                   class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
                   wf-if="state.projects.current"
                 >
@@ -2852,27 +2900,6 @@
                       wf-disabled="loadman.busy()"
                       wf-checked="state.settings.popt.betterscroll"
                       wf-onclick="event.preventDefault(), post('settings.projectOption', 'betterscroll')"
-                    />
-                    <div
-                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
-                    ></div>
-                    <div
-                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
-                    ></div>
-                  </div>
-                </label>
-
-                <label
-                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
-                >
-                  <div class="shrink-0">Hide toolbar</div>
-                  <div class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="peer hidden"
-                      wf-disabled="loadman.busy()"
-                      wf-checked="!state.settings.opt.toolbar"
-                      wf-onclick="event.preventDefault(), post('settings.option', 'toolbar')"
                     />
                     <div
                       class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
@@ -3049,7 +3076,10 @@
               class="flex justify-center items-center px-16 flex-1 select-none bg-black/40 backdrop-blur-[2px]"
               wf-class="{{!state.app.brandCanvas &amp;&amp; 'hidden'}}"
             >
-              <div class="gfont-[Pacifico] text-6xl text-black/70">
+              <div
+                class="gfont-[Pacifico] text-6xl text-black/70"
+                wf-if="state.settings.opt?.brand"
+              >
                 Webfoundry
               </div>
             </div>
@@ -3122,11 +3152,10 @@
           </div>
         </div>
         <div
-          class="border-t border-black/50 flex"
+          class="border-t border-black/50 flex bg-[#060a0fc0]"
           id="DockedShellWrapper"
           wf-class="{{!state.shell.open &amp;&amp; 'hidden'}}"
           wf-if="state.shell.open &amp;&amp; !state.shell.expand"
-          hidden=""
         >
           <div
             class="flex flex-col flex-1 text-neutral-100 max-w-full ShellWrapper"
