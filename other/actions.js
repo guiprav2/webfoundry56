@@ -1008,19 +1008,27 @@ let actions = {
     handler: async ({ cur = 'master', old, cls } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceCssClasses', cur, old, cls });
       let frame = state.designer.current;
-      old = new Set(Array.isArray(old) ? old : old?.split(/\s+/) || []);
-      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      let clsSet = new Set(Array.isArray(cls) ? cls : cls?.split(/\s+/) || []);
+      let removedByElement = null;
       await post('designer.pushHistory', cur, async apply => {
         if (apply) {
-          for (let x of targets) {
-            for (let y of old) x.classList.remove(y);
-            for (let y of cls) x.classList.add(y);
+          removedByElement = new Map();
+          for (let el of targets) {
+            let removed = [];
+            if (old instanceof RegExp) {
+              for (let c of [...el.classList]) if (old.test(c)) { el.classList.remove(c); removed.push(c); }
+            } else {
+              let oldSet = new Set(Array.isArray(old) ? old : old?.split(/\s+/) || []);
+              for (let c of oldSet) if (el.classList.contains(c)) { el.classList.remove(c); removed.push(c) }
+            }
+            for (let c of clsSet) el.classList.add(c);
+            removedByElement.set(el, removed);
           }
         } else {
-          for (let x of targets) {
-            for (let y of cls) x.classList.remove(y);
-            for (let y of old) x.classList.add(y);
+          for (let el of targets) {
+            for (let c of clsSet) el.classList.remove(c);
+            for (let c of removedByElement?.get(el) || []) el.classList.add(c);
           }
         }
         await post('collab.sync');

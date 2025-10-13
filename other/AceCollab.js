@@ -18,12 +18,12 @@ function ensureStyleSheet() {
     styleEl.id = 'ace-collab-styles';
     styleEl.textContent = `
       @keyframes ace-collab-caret-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
-      .ace_editor .ace_text-input { caret-color: transparent }
-      .ace_editor .ace-collab-overlays { position: absolute; inset: 0; pointer-events: none; z-index: 12 }
-      .ace_editor .remote-selection { position: absolute; opacity: 0.35; pointer-events: none; border-radius: 2px }
-      .ace_editor .remote-caret { position: absolute; width: 2px; min-width: 2px; pointer-events: none; opacity: 0.9; animation: ace-collab-caret-blink 1s step-end infinite; border-radius: 1px }
-      .ace_editor .ace_selection { opacity: 0 !important }
-      .ace_editor .ace_cursor { opacity: 0 !important }
+      #Canvas .ace_text-input { caret-color: transparent }
+      #Canvas .ace-collab-overlays { position: absolute; inset: 0; pointer-events: none; z-index: 12 }
+      #Canvas .remote-selection { position: absolute; opacity: 0.35; pointer-events: none; border-radius: 2px }
+      #Canvas .remote-caret { position: absolute; width: 2px; min-width: 2px; pointer-events: none; opacity: 0.9; animation: ace-collab-caret-blink 1s step-end infinite; border-radius: 1px }
+      #Canvas .ace_selection { opacity: 0 !important }
+      #Canvas .ace_cursor { opacity: 0 !important }
     `;
     document.head.append(styleEl);
   }

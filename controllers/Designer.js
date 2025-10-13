@@ -37,6 +37,7 @@ export default class Designer {
     frameWidth: 'calc(100% - 1rem)',
     frameHeight: '100%',
     clipboards: {},
+    selClass: cls => (this.state.current.cursors[state.collab.uid] || []).filter(x => this.state.current.map.get(x).classList.contains(cls)).length,
   };
 
   actions = {
@@ -197,6 +198,22 @@ export default class Designer {
       if (!cmd || cmd?.disabled?.({ cur: state.collab.uid })?.filter?.(Boolean)?.length) return;
       ev.preventDefault();
       await cmd.handler({ cur: state.collab.uid });
+    },
+
+    toggleCssClass: async (cls, conflict) => {
+      let set = (this.state.current.cursors[state.collab.uid] || []).every(x => !this.state.current.map.get(x).classList.contains(cls));
+      if (!set) return await actions.removeCssClasses.handler({ cur: state.collab.uid, cls });
+      await actions.replaceCssClasses.handler({
+        cur: state.collab.uid,
+        old: {
+          textSize: /^text-(xs|sm|base|md|lg|[234567]?xl)$/,
+          fontWeight: /^font-(thin|extralight|light|normal|medium|semibold|bold)$/,
+          italic: /^italic|not-italic$/,
+          tracking: /^tracking-(tighter|tight|normal|wide|wider|widest)$/,
+          decoration: /^underline|line-through$/,
+        }[conflict],
+        cls,
+      });
     },
 
     save: debounce(async frame => {
