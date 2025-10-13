@@ -95,6 +95,17 @@ export default class Designer {
   actions = {
     init: async () => {
       let { bus } = state.event;
+      {
+        let res = await fetch('other/gfonts.json');
+        let raw = await res.json();
+        let idx = { 'Serif': [], 'Sans-serif': [], 'Monospace': [], 'Display': [], 'Handwriting': [] };
+        let mapCat = { 'serif': 'Serif', 'sans-serif': 'Sans-serif', 'monospace': 'Monospace', 'display': 'Display', 'handwriting': 'Handwriting' };
+        for (let [name, meta] of Object.entries(raw || {})) {
+          let key = mapCat[(meta?.category || '').toLowerCase()] || null;
+          if (key) idx[key].push(name);
+        }
+        this.state.gfontsreg = idx;
+      }
       bus.on('projects:select:ready', async () => await post('designer.reset'));
       bus.on('files:select:ready', async ({ path }) => {
         if (!/^(components|pages)\/.*\.html$/.test(path)) return;
@@ -222,6 +233,17 @@ export default class Designer {
       await actions[k].handler({ cur: state.collab.uid, ...params });
     },
 
+    gfontCategory: x => { this.state.gfontCategory = x; this.state.gfonts = []; document.querySelector('#GFontFocus')?.focus?.() },
+
+    gfontKeyUp: ev => {
+      let q = ev.target.value.trim().toLowerCase();
+      let list = this.state.gfontsreg[this.state.gfontCategory] || [];
+      this.state.gfonts = list.filter(x => x.toLowerCase().includes(q)).map(x => ({ name: x }));
+      d.update();
+    },
+
+    gfontSample: (x, fnt) => setTimeout(() => x.classList.add(`gfont-[${fnt.replaceAll(' ', '_')}]`), [...x.parentElement.children].indexOf(x) * 200),
+
     mousedown: async ev => {
       let frame = this.state.current;
       frame.el.focus();
@@ -263,6 +285,7 @@ export default class Designer {
           italic: /^italic|not-italic$/,
           tracking: /^tracking-(tighter|tight|normal|wide|wider|widest)$/,
           decoration: /^underline|line-through$/,
+          gfont: /^gfont-/,
         }[conflict],
         cls,
       });

@@ -1,4 +1,37 @@
 (async () => {
+  {
+    let script = document.createElement('script');
+    script.className = 'wf-gfont-script';
+    script.textContent = `let observer = new MutationObserver(muts => {
+  let gfonts = [];
+  for (let mut of muts) {
+    if (mut.type === 'childList') {
+      for (let x of mut.addedNodes) {
+        if (x.nodeType !== 1) continue;
+        for (let y of [x, ...x.querySelectorAll('*')]) {
+          gfonts.push(...[...y.classList].filter(x => x.match(/^gfont-\\[.+?\\]$/)).map((x) => x.slice('gfont-['.length, -1)));
+        }
+      }
+    } else if (mut.type === 'attributes') {
+      gfonts.push(...[...mut.target.classList].filter((x) => x.match(/^gfont-\\[.+?\\]$/)).map(x => x.slice('gfont-['.length, -1)));
+    }
+  }
+  for (let x of gfonts) {
+    let id = \`gfont-[\${x}]\`;
+    let style = document.getElementById(id);
+    if (style) continue;
+    style = document.createElement('style');
+    style.id = id;
+    style.textContent = \`@import url('https://fonts.googleapis.com/css2?family=\${x.replace(/_/g, '+')}:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+.gfont-\\\\[\${x}\\\\] { font-family: "\${x.replace(/_/g, ' ')}" }
+\`;
+    document.head.append(style);
+  }
+});
+observer.observe(document, { attributes: true, childList: true, subtree: true });
+`;
+    document.head.append(script);
+  }
   let cfg = (await import('../wf.config.js')).default;
   let promises = [];
   let prefix = location.pathname.startsWith('/files/') ? '../' : '';

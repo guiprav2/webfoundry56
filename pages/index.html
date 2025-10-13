@@ -9,7 +9,7 @@
     <script>
       window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/');
     </script>
-    <script type="module" src="../webfoundry/head.js"></script>
+    <script src="../webfoundry/head.js"></script>
   </head>
   <body
     style="display: none"
@@ -30,7 +30,7 @@
         class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0 bg-[#060a0fc0] backdrop-blur-[4px]"
       >
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
+          class="outline-none border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
           wf-if="!loadman.busy()"
         >
           wf</button
@@ -961,7 +961,7 @@
                   >
                     <button
                       class="w-full text-left px-3 py-2 flex justify-between items-center outline-none"
-                      wf-onclick="post('designer.toggleCssClass', null)"
+                      wf-onclick="post('designer.toggleCssClass', null, 'gfont')"
                     >
                       <div>Unset</div></button
                     ><button
@@ -1024,7 +1024,7 @@
                       class="w-full text-left flex justify-between items-center p-3 text-lg outline-none"
                       wf-map="x of state.designer.gfonts || []"
                       wf-onattach="post('designer.gfontSample', _1, x.name)"
-                      wf-onclick="post('designer.toggleCssClass', `gfont-[${x.name.replaceAll(' ', '_')}]`)"
+                      wf-onclick="post('designer.toggleCssClass', `gfont-[${x.name.replaceAll(' ', '_')}]`, 'gfont')"
                     >
                       <div>{{x.name}}</div>
                       <div
