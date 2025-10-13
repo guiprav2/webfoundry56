@@ -10,6 +10,7 @@ export default class Collab {
     get uid() { return location.pathname !== '/collab.html' ? 'master' : this.rtc?.uid },
     ver: 0,
     rpcs: {},
+    codeVersions: new Map(),
   };
 
   actions = {
@@ -31,6 +32,7 @@ export default class Collab {
         this.state.rtc.events.on('sync', async ev => await post('collab.apply', ev));
         this.state.rtc.events.on('rpc:response', async ev => await post('collab.rpcResponse', ev));
         this.state.rtc.events.on('presence:leave', async () => await post('collab.leave'));
+        this.state.rtc.events.on('code:op', async ev => await post('collab.codeApply', ev));
         bus.on('designer:resize:ready', async () => await post('collab.resizeSync'));
       }
     },
@@ -46,6 +48,7 @@ export default class Collab {
       rtc.events.on('resize', async ev => { state.designer.frameWidth = ev.frameWidth; state.designer.frameHeight = ev.frameHeight; d.update() });
       rtc.events.on('cmd', async ev => await actions[ev.k].handler({ cur: null, ...ev, cur: ev.peer }));
       rtc.events.on('teardown', async () => await post('collab.leave'));
+      rtc.events.on('code:op', async ev => await post('collab.codeApply', ev));
       await post('collab.sync', 'full');
     },
 
@@ -111,6 +114,18 @@ export default class Collab {
 
     resizeSync: async () => this.state.rtc?.send?.({ type: 'resize', frameWidth: state.designer.frameWidth, frameHeight: state.designer.frameHeight }),
 
+    codeBroadcast: async payload => {
+      if (!this.state.rtc) return;
+      let { path, project, base, version, ops, value, author } = payload;
+      this.state.codeVersions.set(path, version);
+      await this.state.rtc.send({ type: 'code:op', path, project, base, version, ops, value, author });
+    },
+
+    codeApply: async ev => {
+      if (ev.version != null) this.state.codeVersions.set(ev.path, ev.version);
+      state.event.bus.emit('collab:code:op', ev);
+    },
+
     apply: async ev => {
       if (ev.ver <= this.state.ver) return;
       this.state.ver = ev.ver;
@@ -135,6 +150,7 @@ export default class Collab {
       }
       if (state.designer.open) state.designer.current.cursors = ev.cursors;
       state.designer.clipboards = ev.clipboards;
+      state.event.bus.emit('collab:apply:ready');
     },
 
     leave: async () => {

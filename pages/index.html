@@ -3145,7 +3145,7 @@
             >
               <img
                 src="https://cdn.donmai.us/original/c4/69/__original_drawn_by_keke_kotowari__c469639feef9be77398d542e441fa534.gif"
-                class="w-64 max-h-full object-cover"
+                class="w-64 max-h-full object-cover rounded-lg"
                 wf-if="mimeLookup(state.files.current)?.startsWith?.('image/')"
                 wf-class="{{replaces w-64: !state.files.current &amp;&amp; 'w-64'}}"
                 wf-src="`/files/${sessionStorage.webfoundryTabId}/${state.projects.current}/${state.files.current}`"
@@ -3175,6 +3175,7 @@
           id="DockedShellWrapper"
           wf-class="{{!state.shell.open &amp;&amp; 'hidden'}}"
           wf-if="state.shell.open &amp;&amp; !state.shell.expand"
+          hidden=""
         >
           <div
             class="flex flex-col flex-1 text-neutral-100 max-w-full ShellWrapper border-t border-black/50 bg-black/90 backdrop-blur-[4px]"
@@ -3231,7 +3232,7 @@
         </div>
         <div
           wf-if="state.collab.rtc"
-          class="border-t border-black/50"
+          class="border-t border-black/50 bg-[#060a0fc0] backdrop-blur-[4px]"
           hidden=""
         >
           <div
