@@ -1,6 +1,7 @@
 import rfiles from '../repos/rfiles.js';
 import { debounce, isMedia } from '../other/util.js';
 import AceCollabBinding from '../other/AceCollab.js';
+import * as pako from 'https://esm.sh/pako';
 import { lookup as mimeLookup } from 'https://esm.sh/mrmime';
 
 export default class CodeEditor {
@@ -95,12 +96,8 @@ export default class CodeEditor {
       editor.session.setTabSize(state.settings.opt.codeTabSize || 2);
       editor.session.setOption('useWorker', false);
 
-      if (state.collab.uid === 'master') {
-        let blob = await rfiles.load(project, path);
-        let value = await blob.text();
-        editor.session.setValue(value);
-      }
-
+      let blob = state.collab.uid === 'master' ? await rfiles.load(project, path) : await fetchRemoteBlob(project, path, type);
+      editor.session.setValue(await blob.text());
       editor.session.getUndoManager().reset();
       this.state.binding = new AceCollabBinding({ editor, path, project });
 
@@ -142,4 +139,19 @@ export default class CodeEditor {
       await rfiles.save(state.projects.current, state.files.current, new Blob([this.state.ace.session.getValue()], { type }));
     }, 200),
   };
+}
+
+async function fetchRemoteBlob(project, path, type) {
+  try {
+    let data = await post('collab.rpc', 'fetch', { project, path });
+    if (!data) return null;
+    let chars = atob(data);
+    let nums = new Uint8Array(chars.length);
+    for (let i = 0; i < chars.length; i++) nums[i] = chars.charCodeAt(i);
+    let unpacked = pako.ungzip(nums);
+    return new Blob([unpacked], { type });
+  } catch (err) {
+    console.error('CodeEditor fetchRemoteBlob error', err);
+    return null;
+  }
 }

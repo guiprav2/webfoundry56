@@ -2895,16 +2895,13 @@
             </div>
           </div>
         </div>
-        <div
-          wf-if="state.collab.rtc"
-          class="border-t border-black/50"
-          hidden=""
-        >
+        <div wf-if="state.collab.rtc" class="border-t border-black/50">
           <div
             class="text-sm px-4 py-3 text-green-400"
             wf-if="state.collab.rtc.presence.length &gt; 1"
+            hidden=""
           >
-            Currently collaborating with {{state.collab.rtc.presence.length - 1}} clients.
+            Currently collaborating with {{state.collab.rtc.presence.length - 1}} peers.
           </div>
         </div>
         <div
