@@ -8,6 +8,26 @@ import rfiles from '../repos/rfiles.js';
 import { arrayify, debounce } from '../other/util.js';
 import { defaultHead } from '../other/templates.js';
 
+let TAILWIND_HUES = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'slate', 'gray', 'zinc', 'neutral', 'stone'];
+let TAILWIND_SHADES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
+let TAILWIND_HUE_SET = new Set(TAILWIND_HUES);
+let TAILWIND_SHADE_SET = new Set(TAILWIND_SHADES);
+let TEXT_COLOR_RE = new RegExp(`^text-(${TAILWIND_HUES.join('|')})-(${TAILWIND_SHADES.join('|')})$`);
+let BG_COLOR_RE = new RegExp(`^bg-(${TAILWIND_HUES.join('|')})-(${TAILWIND_SHADES.join('|')})$`);
+let DEFAULT_SHADE = '500';
+
+let parseHueArgs = (args, fallbackCur) => {
+  if (!args.length) return { cur: fallbackCur, hue: null };
+  if (args.length === 1) return { cur: fallbackCur, hue: args[0] };
+  return { cur: args[0] ?? fallbackCur, hue: args[1] };
+};
+
+let parseShadeArgs = (args, fallbackCur) => {
+  if (!args.length) return { cur: fallbackCur, shade: null };
+  if (args.length === 1) return { cur: fallbackCur, shade: args[0] };
+  return { cur: args[0] ?? fallbackCur, shade: args[1] };
+};
+
 export default class Designer {
   state = {
     toolbar: 'manipulation',
@@ -37,8 +57,40 @@ export default class Designer {
     frameWidth: 'calc(100% - 1rem)',
     frameHeight: '100%',
     clipboards: {},
-    selClass: cls => (this.state.current.cursors[state.collab.uid] || []).filter(x => this.state.current.map.get(x).classList.contains(cls)).length,
+
+    selClass: cls => (this.state.current.cursors[state.collab.uid] || []).filter(x => {
+      x = this.state.current.map.get(x);
+      if (typeof cls === 'string') return x.classList.contains(cls);
+      for (let y of x.classList) if (cls.test(y)) return true;
+      return false;
+    }).length,
+
+    get selHue() {
+      let ss = (this.current.cursors[state.collab.uid] || []).map(x => this.current.map.get(x));
+      for (let s of ss) for (let cls of s.classList) { let match = cls.match(TEXT_COLOR_RE); if (match) return match[1] }
+    },
+
+    get selBgHue() {
+      let ss = (this.current.cursors[state.collab.uid] || []).map(x => this.current.map.get(x));
+      for (let s of ss) for (let cls of s.classList) { let match = cls.match(BG_COLOR_RE); if (match) return match[1] }
+    },
   };
+
+  getTailwindColorInfo(prefix, cur = state.collab.uid) {
+    let frame = this.state.current;
+    let regex = prefix === 'bg' ? BG_COLOR_RE : TEXT_COLOR_RE;
+    if (!frame) return { frame: null, elements: [], matches: [], regex };
+    let ids = frame.cursors[cur] || [];
+    let elements = ids.map(id => frame.map.get(id)).filter(Boolean);
+    let matches = elements.map(el => {
+      for (let cls of el?.classList || []) {
+        let match = cls.match(regex);
+        if (match) return { className: match[0], hue: match[1], shade: match[2] };
+      }
+      return null;
+    });
+    return { frame, elements, matches, regex };
+  }
 
   actions = {
     init: async () => {
@@ -214,6 +266,62 @@ export default class Designer {
         }[conflict],
         cls,
       });
+    },
+
+    toggleHue: async (...args) => {
+      let fallbackCur = state.collab?.uid ?? 'master';
+      let { cur, hue } = parseHueArgs(args, fallbackCur);
+      cur ||= fallbackCur;
+      hue = hue?.toString();
+      if (!TAILWIND_HUE_SET.has(hue)) return;
+      let { elements, matches, regex } = this.getTailwindColorInfo('text', cur);
+      if (!elements.length) return;
+      let allSameHue = matches.length && matches.every(m => m && m.hue === hue);
+      if (allSameHue) return await actions.replaceCssClasses.handler({ cur, old: regex, cls: [] });
+      let shade = matches.find(m => m)?.shade;
+      if (!TAILWIND_SHADE_SET.has(shade)) shade = DEFAULT_SHADE;
+      await actions.replaceCssClasses.handler({ cur, old: regex, cls: [`text-${hue}-${shade}`] });
+    },
+
+    setShade: async (...args) => {
+      let fallbackCur = state.collab?.uid ?? 'master';
+      let { cur, shade } = parseShadeArgs(args, fallbackCur);
+      cur ||= fallbackCur;
+      shade = shade?.toString();
+      if (!TAILWIND_SHADE_SET.has(shade)) return;
+      let { elements, matches, regex } = this.getTailwindColorInfo('text', cur);
+      if (!elements.length) return;
+      let match = matches.find(m => m);
+      if (!match || !TAILWIND_HUE_SET.has(match.hue)) return;
+      await actions.replaceCssClasses.handler({ cur, old: regex, cls: [`text-${match.hue}-${shade}`] });
+    },
+
+    toggleBgHue: async (...args) => {
+      let fallbackCur = state.collab?.uid ?? 'master';
+      let { cur, hue } = parseHueArgs(args, fallbackCur);
+      cur ||= fallbackCur;
+      hue = hue?.toString();
+      if (!TAILWIND_HUE_SET.has(hue)) return;
+      let { elements, matches, regex } = this.getTailwindColorInfo('bg', cur);
+      if (!elements.length) return;
+      let allSameHue = matches.length && matches.every(m => m && m.hue === hue);
+      if (allSameHue) return await actions.replaceCssClasses.handler({ cur, old: regex, cls: [] });
+      let shade = matches.find(m => m)?.shade;
+      if (!TAILWIND_SHADE_SET.has(shade)) shade = DEFAULT_SHADE;
+      await actions.replaceCssClasses.handler({ cur, old: regex, cls: [`bg-${hue}-${shade}`] });
+    },
+
+    setBgShade: async (...args) => {
+      let fallbackCur = state.collab?.uid ?? 'master';
+      let { cur, shade } = parseShadeArgs(args, fallbackCur);
+      cur ||= fallbackCur;
+      shade = shade?.toString();
+      if (!TAILWIND_SHADE_SET.has(shade)) return;
+      let { elements, matches, regex } = this.getTailwindColorInfo('bg', cur);
+      if (!elements.length) return;
+      let match = matches.find(m => m);
+      if (!match || !TAILWIND_HUE_SET.has(match.hue)) return;
+      await actions.replaceCssClasses.handler({ cur, old: regex, cls: [`bg-${match.hue}-${shade}`] });
     },
 
     save: debounce(async frame => {
