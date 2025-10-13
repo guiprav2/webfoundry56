@@ -209,7 +209,8 @@ export default class AceCollabBinding {
     this.buffer = null;
     let base = this.version;
     let version = base + 1;
-    this.pending = { op: normalizeOperation(cloneOperation(op)), base };
+    this.pending = { op: normalizeOperation(cloneOperation(op)), base, version };
+    this.version = Math.max(this.version, version);
     state.collab?.codeVersions?.set?.(this.path, version);
     post('collab.codeBroadcast', {
       path: this.path,
@@ -229,12 +230,12 @@ export default class AceCollabBinding {
 
     let incomingVersion = ev.version ?? (ev.base != null ? ev.base + 1 : null);
     if (incomingVersion != null) {
-      if (incomingVersion > this.version) this.version = incomingVersion;
+      this.version = Math.max(this.version, incomingVersion);
       state.collab?.codeVersions?.set?.(this.path, incomingVersion);
     }
 
     if (ev.peer === this.clientId) {
-      if (this.pending && this.pending.base === ev.base) {
+      if (this.pending && (this.pending.base === ev.base || this.pending.version === incomingVersion)) {
         this.pending = null;
         this.flush();
       }
