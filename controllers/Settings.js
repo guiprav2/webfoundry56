@@ -16,6 +16,7 @@ export default class Settings {
         };
         await post('settings.save');
       }
+      document.body.classList.add('bg-cover', 'bg-center');
       if (this.state.opt.wallpaper) document.body.style.backgroundImage = `url("${state.settings.opt.wallpaper}")`;
       if (state.collab.uid !== 'master') return;
       bus.on('projects:select:ready', async () => {
