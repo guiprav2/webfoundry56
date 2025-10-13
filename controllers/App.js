@@ -1,7 +1,7 @@
 import '../other/util.js';
 
 export default class App {
-  actions = { 
+  actions = {
     init: async () => {
       if (top === window) {
         sessionStorage.webfoundryTabId ??= crypto.randomUUID();

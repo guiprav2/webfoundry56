@@ -18,9 +18,12 @@ function ensureStyleSheet() {
     styleEl.id = 'ace-collab-styles';
     styleEl.textContent = `
       @keyframes ace-collab-caret-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
-      .ace_editor .ace-collab-overlays { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
-      .ace_editor .remote-selection { position: absolute; opacity: 0.35; pointer-events: none; border-radius: 2px; }
-      .ace_editor .remote-caret { position: absolute; width: 2px; min-width: 2px; pointer-events: none; opacity: 0.9; animation: ace-collab-caret-blink 1s step-end infinite; border-radius: 1px; }
+      .ace_editor .ace_text-input { caret-color: transparent }
+      .ace_editor .ace-collab-overlays { position: absolute; inset: 0; pointer-events: none; z-index: 12 }
+      .ace_editor .remote-selection { position: absolute; opacity: 0.35; pointer-events: none; border-radius: 2px }
+      .ace_editor .remote-caret { position: absolute; width: 2px; min-width: 2px; pointer-events: none; opacity: 0.9; animation: ace-collab-caret-blink 1s step-end infinite; border-radius: 1px }
+      .ace_editor .ace_selection { opacity: 0 !important }
+      .ace_editor .ace_cursor { opacity: 0 !important }
     `;
     document.head.append(styleEl);
   }
@@ -135,6 +138,8 @@ export default class AceCollabBinding {
     this.cursorChangeHandler = this.handleCursorChange.bind(this);
     this.presenceHandler = this.handlePresenceUpdate.bind(this);
     this.rendererRenderHandler = this.refreshOverlays.bind(this);
+    this.focusHandler = this.syncLocalCursor.bind(this);
+    this.blurHandler = this.syncLocalCursor.bind(this);
     this.cursorTicker = debounce(() => this.broadcastCursor(), 60);
 
     this.session.on('change', this.changeHandler);
@@ -145,7 +150,10 @@ export default class AceCollabBinding {
     this.bus?.on('collab:presence:update', this.presenceHandler);
     this.bus?.on('collab:leave', this.presenceHandler);
     this.editor.renderer.on?.('afterRender', this.rendererRenderHandler);
+    this.editor.on?.('focus', this.focusHandler);
+    this.editor.on?.('blur', this.blurHandler);
 
+    this.syncLocalCursor();
     this.broadcastCursor();
   }
 
@@ -162,6 +170,10 @@ export default class AceCollabBinding {
     this.bus?.off?.('collab:leave', this.presenceHandler);
     this.editor.renderer.off?.('afterRender', this.rendererRenderHandler);
     this.editor.renderer.removeListener?.('afterRender', this.rendererRenderHandler);
+    this.editor.off?.('focus', this.focusHandler);
+    this.editor.off?.('blur', this.blurHandler);
+    this.editor.removeListener?.('focus', this.focusHandler);
+    this.editor.removeListener?.('blur', this.blurHandler);
     for (let entry of this.remoteCursors.values()) this.removeRemoteCursor(entry);
     this.remoteCursors.clear();
     this.overlayRoot?.remove?.();
@@ -292,6 +304,7 @@ export default class AceCollabBinding {
 
   handleCursorChange() {
     if (this.disposed) return;
+    this.syncLocalCursor();
     this.cursorTicker();
   }
 
@@ -321,9 +334,7 @@ export default class AceCollabBinding {
     if (ev.peer === this.clientId) return;
     let cursor = ev.cursor;
     if (!cursor) return;
-    let presence = state.collab?.rtc?.presence || [];
-    let peerInfo = presence.find(x => x.user === ev.peer) || {};
-    let classes = ensureColorClasses(peerInfo.color);
+    let classes = ensureColorClasses(this.resolvePeerColor(ev.peer));
     this.upsertRemoteCursor(ev.peer, cursor, classes);
   }
 
@@ -331,6 +342,9 @@ export default class AceCollabBinding {
     if (this.disposed) return;
     let presence = state.collab?.rtc?.presence || [];
     let active = new Map(presence.map(x => [x.user, x]));
+    if (!active.has(this.clientId)) {
+      active.set(this.clientId, { user: this.clientId, color: this.resolvePeerColor(this.clientId) });
+    }
     for (let [peer, entry] of this.remoteCursors.entries()) {
       let info = active.get(peer);
       if (!info) {
@@ -338,13 +352,14 @@ export default class AceCollabBinding {
         this.remoteCursors.delete(peer);
         continue;
       }
-      let classes = ensureColorClasses(info.color);
+      let classes = ensureColorClasses(this.resolvePeerColor(peer) ?? info.color);
       let selectionChanged = entry.classes?.selection !== classes.selection;
       let caretChanged = entry.classes?.caret !== classes.caret;
       if (!selectionChanged && !caretChanged) continue;
       entry.classes = classes;
       this.positionRemoteCursor(peer, entry);
     }
+    this.syncLocalCursor();
   }
 
   upsertRemoteCursor(peer, cursor, classes) {
@@ -423,6 +438,7 @@ export default class AceCollabBinding {
     caretEl.style.top = `${(padding + endPos.row * lineHeight) - 3}px`;
     caretEl.style.left = `${padding + endPos.column * characterWidth}px`;
     caretEl.style.height = `${lineHeight}px`;
+    caretEl.style.display = peer === this.clientId && !this.editor.isFocused?.() ? 'none' : 'block';
 
     let segments = computeSelectionSegments(session, entry.cursor);
     if (!entry.selectionEls) entry.selectionEls = [];
@@ -458,5 +474,27 @@ export default class AceCollabBinding {
     if (this.disposed) return;
     if (!this.remoteCursors.size) return;
     for (let [peer, entry] of this.remoteCursors.entries()) this.positionRemoteCursor(peer, entry);
+  }
+
+  resolvePeerColor(peer) {
+    let presence = state.collab?.rtc?.presence || [];
+    let info = presence.find(x => x.user === peer);
+    if (info?.color) return info.color;
+    if (peer === this.clientId) return state.collab?.rtc?.color;
+    return undefined;
+  }
+
+  syncLocalCursor() {
+    if (this.disposed) return;
+    if (!this.editor?.selection) return;
+    let range = this.editor.selection.getRange?.();
+    if (!range) return;
+    let cursor = {
+      start: { row: range.start.row, column: range.start.column },
+      end: { row: range.end.row, column: range.end.column },
+      isEmpty: range.isEmpty(),
+    };
+    let classes = ensureColorClasses(this.resolvePeerColor(this.clientId));
+    this.upsertRemoteCursor(this.clientId, cursor, classes);
   }
 }
