@@ -11,9 +11,12 @@
     </script>
     <script type="module" src="../webfoundry/head.js"></script>
   </head>
-  <body class="min-h-screen overflow-hidden" style="display: none">
+  <body
+    class="min-h-screen overflow-hidden bg-cover bg-center bg-[#060a0f]"
+    style="display: none"
+  >
     <div
-      class="App flex relative h-screen w-screen bg-[#060a0f] overflow-hidden"
+      class="App flex relative h-screen w-screen overflow-hidden"
       wf-onattach="post('app.init')"
     >
       <style>
@@ -23,7 +26,7 @@
       </style>
 
       <div
-        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0"
+        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0 bg-[#060a0fc0] backdrop-blur-[4px]"
       >
         <button
           class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
@@ -93,7 +96,7 @@
 
       <div class="flex-1 flex flex-col min-w-0 basis-0">
         <div
-          class="text-neutral-100 text-center bg-[#091017] py-3.5 border-b border-black/50"
+          class="text-neutral-100 text-center py-3.5 border-b border-black/50 bg-[#060a0fc0] backdrop-blur-[4px]"
           wf-if="state.projects.current"
         >
           {{state.projects.current?.split?.(':')?.[0]}}
@@ -101,9 +104,10 @@
 
         <div
           wf-if="state.designer.open &amp;&amp; !state.designer.current.preview &amp;&amp; state.settings.opt.toolbar"
+          class="bg-[#060a0fc0] backdrop-blur-[4px]"
         >
           <div
-            class="text-neutral-100 bg-[#091017] border-b border-black/50 flex px-4 items-center py-3 gap-4"
+            class="text-neutral-100 border-b border-black/50 flex px-4 items-center py-3 gap-4"
             wf-if="state.designer.toolbar === 'manipulation'"
           >
             <div class="relative inline-block group">
@@ -908,7 +912,7 @@
           </div>
 
           <div
-            class="text-neutral-100 bg-[#091017] border-b border-black/50 flex px-4 items-center py-3 gap-4"
+            class="text-neutral-100 border-b border-black/50 flex px-4 items-center py-3 gap-4"
             wf-if="state.designer.toolbar === 'tw'"
           >
             <div class="relative inline-block group">
@@ -2576,7 +2580,7 @@
 
         <div class="flex flex-1 min-w-0 basis-0 overflow-auto">
           <div
-            class="ProjectsPanel flex flex-col bg-[#091017] text-neutral-100 w-96 border-r border-black/50 select-none shrink-0"
+            class="ProjectsPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
             wf-if="state.app.panel === 'projects'"
           >
             <button
@@ -2625,7 +2629,7 @@
             </div>
           </div>
           <div
-            class="FilesPanel flex flex-col bg-[#091017] text-neutral-100 w-96 border-r border-black/50 select-none shrink-0"
+            class="FilesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
             wf-if="state.app.panel === 'files'"
           >
             <button
@@ -2691,7 +2695,7 @@
             </div>
           </div>
           <div
-            class="StylesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 shrink-0 bg-[#091017]"
+            class="StylesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
             wf-if="state.app.panel === 'styles'"
           >
             <div
@@ -2761,7 +2765,7 @@
           </div>
 
           <div
-            class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 bg-[#091017] overflow-auto"
+            class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 overflow-auto bg-[#091017c0] backdrop-blur-[4px]"
             wf-if="state.app.panel === 'settings'"
           >
             <div>Settings &amp; More</div>
@@ -3042,7 +3046,7 @@
 
           <div class="flex flex-1" id="Canvas">
             <div
-              class="flex justify-center items-center px-16 flex-1 select-none"
+              class="flex justify-center items-center px-16 flex-1 select-none bg-black/40 backdrop-blur-[2px]"
               wf-class="{{!state.app.brandCanvas &amp;&amp; 'hidden'}}"
             >
               <div class="gfont-[Pacifico] text-6xl text-black/70">
@@ -3050,7 +3054,7 @@
               </div>
             </div>
             <div
-              class="Designer-leftPadder flex-1"
+              class="Designer-leftPadder flex-1 bg-black/40 backdrop-blur-[2px]"
               wf-if="document.querySelector('.Designer-activeFrame')"
             ></div>
 
@@ -3076,7 +3080,7 @@
             </div>
 
             <div
-              class="Designer-rightPadder flex shrink-0 flex-1"
+              class="Designer-rightPadder flex shrink-0 flex-1 bg-black/40 backdrop-blur-[2px]"
               wf-if="document.querySelector('.Designer-activeFrame')"
             >
               <div class="Designer-rightPadderPole flex items-center px-1">
@@ -3087,7 +3091,7 @@
               </div>
             </div>
             <div
-              class="min-w-96 flex justify-center items-center flex-1 overflow-hidden"
+              class="min-w-96 flex justify-center items-center flex-1 overflow-hidden bg-[#091017c0] backdrop-blur-[4px]"
               wf-if="isMedia(state.files.current)"
             >
               <img
@@ -3111,7 +3115,7 @@
               ></audio>
             </div>
             <div
-              class="min-w-96 flex-1"
+              class="min-w-96 flex-1 bg-[#091017c0] backdrop-blur-[4px]"
               wf-if="/^text\/(?!html$).+$/.test(mimeLookup(state.files.current))"
               id="CodeEditor"
             ></div>

@@ -11,8 +11,8 @@ export default class CodeEditor {
     init: () => {
       let { bus } = state.event;
       document.head.append(d.el('style', `
-        .ace_editor { background-color: #040609 !important }
-        .ace_gutter { background-color: #060a0f !important }
+        .ace_editor { background-color: #04060960 !important }
+        .ace_gutter { background-color: #060a0f60 !important }
         .ace_active-line { background-color: #0009 !important }
         .ace_gutter-active-line { background-color: #0009 !important }
       `));
