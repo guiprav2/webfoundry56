@@ -2846,6 +2846,25 @@
                   </div> </label
                 ><label
                   class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                >
+                  <div class="shrink-0">Vim bindings</div>
+                  <div class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="peer hidden"
+                      wf-disabled="loadman.busy()"
+                      wf-checked="state.settings.opt.vim"
+                      wf-onclick="event.preventDefault(), post('settings.option', 'vim')"
+                    />
+                    <div
+                      class="w-11 h-6 rounded-full peer-checked:bg-green-500 bg-black/50"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"
+                    ></div>
+                  </div> </label
+                ><label
+                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
                   wf-if="state.projects.current"
                 >
                   <div class="shrink-0">Enable NerdFonts</div>
@@ -3084,7 +3103,7 @@
               </div>
             </div>
             <div
-              class="Designer-leftPadder flex-1 bg-black/40 backdrop-blur-[2px]"
+              class="Designer-leftPadder flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
               wf-if="document.querySelector('.Designer-activeFrame')"
             ></div>
 
@@ -3110,7 +3129,7 @@
             </div>
 
             <div
-              class="Designer-rightPadder flex shrink-0 flex-1 bg-black/40 backdrop-blur-[2px]"
+              class="Designer-rightPadder flex shrink-0 flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
               wf-if="document.querySelector('.Designer-activeFrame')"
             >
               <div class="Designer-rightPadderPole flex items-center px-1">
@@ -3152,14 +3171,13 @@
           </div>
         </div>
         <div
-          class="border-t border-black/50 flex bg-[#04060960]"
+          class="flex"
           id="DockedShellWrapper"
           wf-class="{{!state.shell.open &amp;&amp; 'hidden'}}"
           wf-if="state.shell.open &amp;&amp; !state.shell.expand"
-          hidden=""
         >
           <div
-            class="flex flex-col flex-1 text-neutral-100 max-w-full ShellWrapper"
+            class="flex flex-col flex-1 text-neutral-100 max-w-full ShellWrapper border-t border-black/50 bg-black/90 backdrop-blur-[4px]"
             id="ShellWrapper"
           >
             <div

@@ -32,6 +32,7 @@ export default class CodeEditor {
           let editor = this.state.ace = ace.edit(el);
           editor.setFontSize(state.settings.opt.codeFontSize || '16px');
           editor.setTheme(`ace/theme/${state.settings.opt.codeTheme || 'monokai'}`);
+          state.settings.opt.vim && editor.setKeyboardHandler('ace/keyboard/vim');
           let mode = { html: 'html', css: 'css', js: 'javascript', md: 'markdown' }[path.split('.').pop()];
           mode && editor.session.setMode(`ace/mode/${mode}`);
           editor.session.setTabSize(state.settings.opt.codeTabSize || 2);
@@ -44,6 +45,10 @@ export default class CodeEditor {
       };
       script.onerror = err => bus.emit('codeEditor:script:error', { error: err });
       document.head.append(script);
+      bus.on('settings:global:option:ready', ({ k, v}) => {
+        if (k !== 'vim') return;
+        this.state.ace?.setKeyboardHandler?.(v ? 'ace/keyboard/vim' : null);
+      });
     },
 
     change: debounce(async () => await rfiles.save(state.projects.current, state.files.current, new Blob([this.state.ace.session.getValue()], { type: mimeLookup(state.files.current) })), 200),
