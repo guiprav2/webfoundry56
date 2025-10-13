@@ -49,6 +49,7 @@ export default class Designer {
       });
       bus.on('settings:projects:option:ready', async () => await post('designer.refresh'));
       bus.on('files:change', async ({ path }) => {
+        if (!state.projects.current) return; // ???
         let name = state.projects.current.split(':')[0];
         if (!path.startsWith(`${name}/`)) return;
         //state.designer.open && state.files.current === path.slice(`${name}/`.length) && await post('designer.repatch');
