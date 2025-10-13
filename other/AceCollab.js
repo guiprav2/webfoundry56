@@ -1,4 +1,3 @@
-import diff from 'https://esm.sh/fast-diff';
 import { debounce } from '../other/util.js';
 import {
   applyOperation,
@@ -96,17 +95,33 @@ function ensureColorClasses(colorName) {
   return classes;
 }
 
-function diffToOperation(oldText, newText) {
-  if (oldText === newText) return [];
-  let diffs = diff(oldText, newText);
+function positionToIndex(snapshot, row, column) {
+  row = Math.max(0, row);
+  column = Math.max(0, column);
+  let index = 0;
+  let lines = snapshot.split('\n');
+  for (let i = 0; i < row && i < lines.length; i++) index += lines[i].length + 1;
+  if (row >= lines.length) return snapshot.length;
+  let line = lines[row] ?? '';
+  index += Math.min(column, line.length);
+  return index;
+}
+
+function deltaToOperation(snapshot, delta, rowAdjust = 0) {
+  if (!delta) return [];
+  let row = (delta.start?.row ?? 0) + rowAdjust;
+  let column = delta.start?.column ?? 0;
+  let startIndex = positionToIndex(snapshot, row, column);
   let op = [];
-  for (let [kind, text] of diffs) {
-    if (!text) continue;
-    if (kind === 0) op.push(text.length);
-    else if (kind === 1) op.push(text);
-    else if (kind === -1) op.push({ d: text });
+  if (startIndex > 0) op.push(startIndex);
+  let text = Array.isArray(delta.lines) ? delta.lines.join('\n') : '';
+  if (delta.action === 'insert') {
+    if (text.length) op.push(text);
+  } else if (delta.action === 'remove') {
+    if (text.length) op.push({ d: text });
+  } else {
+    return [];
   }
-  if (op.length && typeof op[op.length - 1] === 'number') op.pop();
   return normalizeOperation(op);
 }
 
@@ -143,8 +158,8 @@ export default class AceCollabBinding {
     this.clientId = state.collab?.rtc?.uid || state.collab?.uid || 'master';
     this.version = state.collab?.codeVersions?.get?.(path) ?? 0;
     this.doc = this.session.getValue();
-    this.pending = null;
     this.buffer = null;
+    this.outstanding = [];
     this.applyingRemote = false;
     this.disposed = false;
     this.remoteCursors = new Map();
@@ -189,27 +204,27 @@ export default class AceCollabBinding {
     return this.applyingRemote;
   }
 
-  handleChange() {
+  handleChange(delta) {
     if (this.disposed || this.applyingRemote) return;
-    let newValue = this.session.getValue();
-    let op = diffToOperation(this.doc, newValue);
+    let op = deltaToOperation(this.doc, delta);
     if (!op.length || isEmptyOperation(op)) {
-      this.doc = newValue;
+      this.doc = this.session.getValue();
       return;
     }
-    this.doc = newValue;
+    this.doc = this.session.getValue();
     this.buffer = this.buffer ? composeOperations(this.buffer, op) : op;
     this.buffer = normalizeOperation(this.buffer);
     this.flush();
   }
 
   flush() {
-    if (this.disposed || this.pending || !this.buffer || !this.buffer.length) return;
+    if (this.disposed || !this.buffer || !this.buffer.length) return;
     let op = normalizeOperation(cloneOperation(this.buffer));
     this.buffer = null;
     let base = this.version;
     let version = base + 1;
-    this.pending = { op: normalizeOperation(cloneOperation(op)), base, version };
+    let outstanding = { op: normalizeOperation(cloneOperation(op)), base, version };
+    this.outstanding.push(outstanding);
     this.version = Math.max(this.version, version);
     state.collab?.codeVersions?.set?.(this.path, version);
     post('collab.codeBroadcast', {
@@ -235,10 +250,9 @@ export default class AceCollabBinding {
     }
 
     if (ev.peer === this.clientId) {
-      if (this.pending && (this.pending.base === ev.base || this.pending.version === incomingVersion)) {
-        this.pending = null;
-        this.flush();
-      }
+      let idx = this.outstanding.findIndex(entry => entry.version === incomingVersion || entry.base === ev.base);
+      if (idx >= 0) this.outstanding.splice(idx, 1);
+      this.flush();
       return;
     }
 
@@ -250,9 +264,9 @@ export default class AceCollabBinding {
     }
 
     try {
-      if (this.pending) {
-        let [pendingPrime, remotePrime] = transformOperations(this.pending.op, remoteOp);
-        this.pending.op = normalizeOperation(pendingPrime);
+      for (let entry of this.outstanding) {
+        let [localPrime, remotePrime] = transformOperations(entry.op, remoteOp);
+        entry.op = normalizeOperation(localPrime);
         remoteOp = normalizeOperation(remotePrime);
       }
 
@@ -264,6 +278,10 @@ export default class AceCollabBinding {
 
       let oldDoc = this.doc;
       let newDoc = applyOperation(oldDoc, remoteOp);
+      if (typeof ev.value === 'string' && newDoc !== ev.value) {
+        this.resetTo(ev.value);
+        return;
+      }
       this.doc = newDoc;
       this.applyToSession(remoteOp);
     } catch (err) {
@@ -300,7 +318,7 @@ export default class AceCollabBinding {
     this.session.setValue(value ?? '', -1);
     this.applyingRemote = false;
     this.doc = this.session.getValue();
-    this.pending = null;
+    this.outstanding = [];
     this.buffer = null;
   }
 
