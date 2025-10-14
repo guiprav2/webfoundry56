@@ -352,7 +352,7 @@ export default class Designer {
       let body = frame.body.cloneNode(true);
       body.style.display = 'none';
       let betterscroll = true;
-      let html = `<!doctype html><html>${defaultHead}${body.outerHTML}</html>`;
+      let html = `<!doctype html><html>${defaultHead({ title: frame.head.querySelector('title')?.textContent })}${body.outerHTML}</html>`;
       await rfiles.save(project, frame.path, new Blob([html], { type: 'text/html' }));
       let phtml = (await prettier(html, { parser: 'html' })).replace(/\{\{[\s\S]*?\}\}/g, m => m .replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\{\{\s*/g, '{{').replace(/\s*\}\}/g, '}}'));
       if (phtml === html) return;

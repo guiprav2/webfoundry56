@@ -1,0 +1,337 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>prefabs.html</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <script>
+      window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/');
+    </script>
+    <script src="../webfoundry/head.js"></script>
+  </head>
+  <body
+    style="display: none; min-height: 100vh"
+    class="p-16 flex! flex-col gap-8 bg-gray-100"
+  >
+    <div class="text-4xl">Bulma</div>
+    <div class="grid xl:grid-cols-3 gap-8">
+      <div class="flex flex-col gap-4 xl:col-span-3">
+        <div class="text-3xl">Navbar</div>
+        <div class="flex justify-between bg-white">
+          <div class="flex gap-3">
+            <div class="px-5 py-3 rounded hover:bg-gray-200 transition m-2">
+              <svg
+                width="640"
+                height="160"
+                viewBox="0 0 640 160"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-min h-6"
+              >
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M170 132.571V27.5908C170 25.5451 170.915 23.93 172.746 22.7456C174.576 21.5612 176.729 20.969 179.206 20.969H210.377C232.019 20.969 242.84 30.4441 242.84 49.3943C242.84 62.5303 238.264 71.0902 229.112 75.074C234.603 77.2275 238.748 80.2692 241.548 84.1992C244.347 88.1292 245.747 93.8627 245.747 101.4V104.791C245.747 116.743 242.84 125.437 237.026 130.875C231.211 136.312 223.351 139.031 213.445 139.031H179.206C176.514 139.031 174.307 138.385 172.584 137.093C170.861 135.801 170 134.293 170 132.571ZM190.834 120.619H209.085C219.529 120.619 224.751 114.751 224.751 103.015V100.431C224.751 94.401 223.432 90.0404 220.794 87.3486C218.156 84.6568 214.253 83.3109 209.085 83.3109H190.834V120.619ZM190.834 66.8371H208.923C213.122 66.8371 216.326 65.5989 218.533 63.1225C220.74 60.646 221.844 57.2544 221.844 52.9475C221.844 48.7483 220.686 45.4374 218.371 43.0148C216.057 40.5922 212.853 39.3809 208.762 39.3809H190.834V66.8371ZM260.283 103.015V27.4293C260.283 25.2759 261.306 23.6608 263.351 22.5841C265.397 21.5074 267.873 20.969 270.781 20.969C273.688 20.969 276.164 21.5074 278.21 22.5841C280.256 23.6608 281.279 25.2759 281.279 27.4293V103.015C281.279 115.397 287.2 121.588 299.044 121.588C310.888 121.588 316.81 115.397 316.81 103.015V27.4293C316.81 25.2759 317.833 23.6608 319.879 22.5841C321.925 21.5074 324.401 20.969 327.308 20.969C330.215 20.969 332.692 21.5074 334.738 22.5841C336.783 23.6608 337.806 25.2759 337.806 27.4293V103.015C337.806 115.72 334.28 125.061 327.227 131.036C320.175 137.012 310.781 140 299.044 140C287.308 140 277.914 137.039 270.861 131.117C263.809 125.195 260.283 115.828 260.283 103.015ZM356.703 132.409V27.4293C356.703 25.2759 357.725 23.6608 359.771 22.5841C361.817 21.5074 364.293 20.969 367.201 20.969C370.108 20.969 372.584 21.5074 374.63 22.5841C376.676 23.6608 377.699 25.2759 377.699 27.4293V120.619H417.106C419.044 120.619 420.579 121.534 421.709 123.365C422.84 125.195 423.405 127.349 423.405 129.825C423.405 132.301 422.84 134.455 421.709 136.285C420.579 138.116 419.044 139.031 417.106 139.031H365.908C363.432 139.031 361.279 138.439 359.448 137.254C357.618 136.07 356.703 134.455 356.703 132.409ZM434.872 132.409V31.467C434.872 27.9138 435.868 25.2759 437.86 23.5532C439.852 21.8304 442.355 20.969 445.37 20.969C449.354 20.969 452.423 21.6689 454.576 23.0686C456.729 24.4684 459.098 27.4832 461.682 32.1131L481.548 68.2907L501.413 32.1131C503.997 27.4832 506.393 24.4684 508.6 23.0686C510.808 21.6689 513.903 20.969 517.887 20.969C520.902 20.969 523.405 21.8304 525.397 23.5532C527.389 25.2759 528.385 27.9138 528.385 31.467V132.409C528.385 134.455 527.335 136.07 525.236 137.254C523.136 138.439 520.686 139.031 517.887 139.031C514.98 139.031 512.503 138.439 510.458 137.254C508.412 136.07 507.389 134.455 507.389 132.409V62.961L488.493 96.5545C486.985 99.354 484.616 100.754 481.386 100.754C478.264 100.754 475.949 99.354 474.441 96.5545L455.868 61.6689V132.409C455.868 134.455 454.818 136.07 452.719 137.254C450.619 138.439 448.17 139.031 445.37 139.031C442.463 139.031 439.987 138.439 437.941 137.254C435.895 136.07 434.872 134.455 434.872 132.409ZM539.529 130.31C539.529 130.094 539.637 129.556 539.852 128.694L571.023 27.1063C571.669 24.8452 573.257 23.0956 575.787 21.8573C578.318 20.6191 581.198 20 584.428 20C587.658 20 590.565 20.6191 593.149 21.8573C595.734 23.0956 597.349 24.8452 597.995 27.1063L629.166 128.694C629.381 129.556 629.489 130.094 629.489 130.31C629.489 132.678 628.035 134.724 625.128 136.447C622.221 138.17 619.26 139.031 616.245 139.031C612.261 139.031 609.892 137.631 609.139 134.832L603.001 113.351H566.016L559.879 134.832C559.125 137.631 556.756 139.031 552.773 139.031C549.65 139.031 546.662 138.197 543.809 136.528C540.956 134.859 539.529 132.786 539.529 130.31ZM570.377 96.8775H598.479L584.428 47.2948L570.377 96.8775Z"
+                  fill="black"
+                  class="bd-svg-black"
+                ></path>
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M0 110L10 40L50 0L100 50L70 80L110 120L50 160L0 110Z"
+                  fill="#00D1B2"
+                ></path>
+              </svg>
+            </div>
+            <div class="hidden xl:flex">
+              <a
+                class="h-full block flex justify-center items-center px-5 py-3 hover:bg-gray-200 cursor-default"
+                ><div>Home</div></a
+              ><a
+                class="h-full block flex justify-center items-center px-5 py-3 hover:bg-gray-200 cursor-default"
+                ><div>Documentation</div></a
+              ><a
+                class="h-full block flex justify-center items-center px-5 py-3 hover:bg-gray-200 cursor-default gap-3 relative group"
+                ><div>More</div>
+                <div
+                  class="nf nf-fa-chevron_down text-indigo-700 opacity-70"
+                ></div>
+                <div
+                  class="absolute min-w-full top-full hidden group-hover:flex flex-col rounded-b-xl bg-white overflow-hidden text-sm z-10 whitespace-nowrap left-0 border-t shadow *:hover:bg-gray-200 *:transition border-gray-300"
+                >
+                  <a class="px-4 py-3" href="#"><div>About</div></a
+                  ><a
+                    class="px-4 py-3 bg-indigo-600 hover:bg-indigo-700! text-white"
+                    href="#"
+                    ><div>Jobs</div></a
+                  ><a class="px-4 py-3" href="#"><div>Contact</div></a>
+                  <div class="min-h-0! border-t border-gray-300"></div>
+                  <a class="px-4 py-3" href="#"><div>Report an issue</div></a>
+                </div></a
+              >
+            </div>
+          </div>
+          <div class="gap-3 items-center pr-5 m-2 hidden xl:flex">
+            <button
+              class="px-4 rounded-lg bg-teal-400 font-bold transition hover:bg-teal-500 py-2"
+            >
+              <div>Sign up</div></button
+            ><button
+              class="px-4 rounded-lg transition bg-gray-200 hover:bg-gray-300 py-2"
+            >
+              <div>Log in</div>
+            </button>
+          </div>
+          <button
+            class="xl:hidden flex justify-center items-center nf nf-md-menu text-neutral-500 m-2 p-4 rounded-lg hover:bg-gray-200 transition hover:text-neutral-900"
+          ></button>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="text-3xl">Breadcrumb</div>
+        <div class="flex gap-3 flex-wrap whitespace-nowrap">
+          <div class="flex gap-3">
+            <div class="text-indigo-600">Bulma</div>
+            <div class="text-gray-300">/</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="text-indigo-600">Docs</div>
+            <div class="text-gray-300">/</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="text-indigo-600">Components</div>
+            <div class="text-gray-300">/</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="text-indigo-600">Breadcrumb</div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="text-3xl">Tabs</div>
+        <div class="border-b border-gray-200">
+          <div class="flex relative -bottom-px whitespace-nowrap">
+            <div class="p-3 border-b border-indigo-700/70">
+              <div class="text-indigo-600">Pictures</div>
+            </div>
+            <div class="p-3 border-b border-transparent">
+              <div class="">Music</div>
+            </div>
+            <div class="p-3 border-b border-transparent">
+              <div class="">Videos</div>
+            </div>
+            <div class="p-3 border-b border-transparent">
+              <div class="">Documents</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="text-3xl">Dropdown</div>
+        <div>
+          <a
+            class="justify-center items-center px-5 py-3 gap-3 relative group text-neutral-900 bg-white rounded-md shadow inline-flex border border-gray-200 hover:bg-gray-200"
+            ><div class="font-bold">Dropdown button</div>
+            <div class="nf nf-fa-chevron_down"></div>
+            <div
+              class="absolute min-w-full top-full hidden group-hover:block pt-1.5"
+            >
+              <div
+                class="flex flex-col bg-white overflow-hidden text-sm z-10 whitespace-nowrap left-0 shadow *:hover:bg-gray-200 *:transition border-gray-300 border rounded-xl"
+              >
+                <a class="px-4 py-3" href="#"><div>Dropdown item</div></a
+                ><a class="px-4 py-3" href="#"><div>Other dropdown item</div></a
+                ><a
+                  class="px-4 py-3 bg-indigo-600 hover:bg-indigo-700! text-white"
+                  href="#"
+                  ><div>Active dropdown item</div></a
+                ><a class="px-4 py-3" href="#"
+                  ><div>Other dropdown item</div></a
+                >
+                <div class="min-h-0! border-t border-gray-300"></div>
+                <a class="px-4 py-3" href="#"><div>With a divider</div></a>
+              </div>
+            </div></a
+          >
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="text-3xl">Menu</div>
+        <div class="flex flex-col text-neutral-800 gap-1.5">
+          <div class="uppercase text-slate-400 text-sm"><div>General</div></div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div class="">Dashboard</div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Customers</div>
+          </div>
+          <div class="uppercase text-slate-400 text-sm">
+            <div>Administration</div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Team Settings</div>
+          </div>
+          <div
+            class="px-3 py-2 rounded bg-indigo-500 text-neutral-100 hover:bg-indigo-600"
+          >
+            <div>Manage Your Team</div>
+          </div>
+          <div class="p-3">
+            <div class="border-l-2 border-gray-300 flex flex-col gap-1.5 pl-4">
+              <div class="px-3 py-2 rounded hover:bg-gray-200">
+                <div class="">Members</div>
+              </div>
+              <div class="px-3 py-2 rounded hover:bg-gray-200">
+                <div class="">Plugins</div>
+              </div>
+              <div class="px-3 py-2 rounded hover:bg-gray-200">
+                <div class="">Add a member</div>
+              </div>
+            </div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Invitations</div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Cloud Storage Environment Settings</div>
+          </div>
+          <div class="uppercase text-slate-400 text-sm">
+            <div>Transactions</div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Payments</div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Transfers</div>
+          </div>
+          <div class="px-3 py-2 rounded hover:bg-gray-200">
+            <div>Balance</div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="text-3xl">Card</div>
+        <div class="rounded-lg bg-white shadow flex flex-col overflow-hidden">
+          <div
+            class="flex justify-between p-4 items-center border-b shadow border-gray-200"
+          >
+            <div class="font-bold">Card Header</div>
+            <div class="nf nf-fa-chevron_down"></div>
+          </div>
+          <img
+            class=""
+            src="https://bulma.io/assets/images/placeholders/1280x960.png"
+          />
+          <div class="flex flex-col gap-4 text-md text-neutral-800 p-6">
+            <div class="flex items-center gap-4">
+              <img
+                class="w-14 h-14 bg-gray-300"
+                src="https://bulma.io/assets/images/placeholders/96x96.png"
+              />
+              <div>
+                <div class="font-bold text-2xl">John Smith</div>
+                <div class="text-gray-700">@johnsmith</div>
+              </div>
+            </div>
+            <div class="">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus
+              nec iaculis mauris.
+              <a class="text-blue-500 hover:underline">@bulmaio</a>.
+              <a href="#" class="text-blue-500 hover:underline">#css</a>
+              <a href="#" class="text-blue-500 hover:underline">#responsive</a>
+              <br />
+              <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
+            </div>
+          </div>
+          <div
+            class="flex *:flex-1 [&amp;:not(:first-child)]:border-t [&amp;:not(:last-child)]:border-b divide-x divide-gray-200 border-gray-200"
+          >
+            <button class="p-3"><div class="text-indigo-600">Save</div></button
+            ><button class="p-3"><div class="text-indigo-600">Edit</div></button
+            ><button class="p-3">
+              <div class="text-indigo-600">Delete</div>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="text-3xl">Panel</div>
+        <div
+          class="rounded-lg bg-white shadow flex flex-col overflow-hidden divide-y divide-gray-200"
+        >
+          <div
+            class="flex justify-between items-center shadow text-white text-xl px-6 py-4 bg-sky-950"
+          >
+            <div class="font-bold">Repositories</div>
+          </div>
+          <div class="px-4 py-3">
+            <label
+              class="rounded-lg w-full flex items-center border border-gray-300 text-gray-400 gap-3 h-10 overflow-hidden"
+              ><div
+                class="nf nf-fa-magnifying_glass px-3 h-full flex items-center justify-center"
+              ></div>
+              <input class="flex-1 h-full"
+            /></label>
+          </div>
+          <div
+            class="px-4 flex justify-center text-sm text-neutral-900 border-b border-gray-200 pt-0.5"
+          >
+            <div class="flex relative -bottom-px">
+              <div class="p-3 border-b border-sky-950/50"><div>All</div></div>
+              <div class="p-3 border-b border-transparent">
+                <div class="text-indigo-600">Public</div>
+              </div>
+              <div class="p-3 border-b border-transparent">
+                <div class="text-indigo-600">Private</div>
+              </div>
+              <div class="p-3 border-b border-transparent">
+                <div class="text-indigo-600">Sources</div>
+              </div>
+              <div class="p-3 border-b border-transparent">
+                <div class="text-indigo-600">Forks</div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col divide-y divide-gray-200 text-neutral-800">
+            <button class="px-4 py-3 flex gap-4 items-center text-sm">
+              <div class="nf nf-fa-book relative top-px"></div>
+              <div>bulma</div></button
+            ><button class="px-4 py-3 flex gap-4 items-center text-sm">
+              <div class="nf nf-fa-book relative top-px text-neutral-500"></div>
+              <div>marksheet</div></button
+            ><button class="px-4 py-3 flex gap-4 items-center text-sm">
+              <div class="nf nf-fa-book relative top-px text-neutral-500"></div>
+              <div>minireset.css</div></button
+            ><button class="px-4 py-3 flex gap-4 items-center text-sm">
+              <div class="nf nf-fa-book relative top-px text-neutral-500"></div>
+              <div>jgthms.github.io</div></button
+            ><button class="px-4 py-3 flex gap-4 items-center text-sm">
+              <div
+                class="nf relative top-px text-neutral-500 nf-md-source_branch"
+              ></div>
+              <div>daniellowtw/infboard</div></button
+            ><button class="px-4 py-3 flex gap-4 items-center text-sm">
+              <div
+                class="nf relative top-px text-neutral-500 nf-md-source_branch"
+              ></div>
+              <div>mojs</div></button
+            ><label class="px-4 py-3 flex gap-4 items-center text-sm"
+              ><input type="checkbox" class="" />
+              <div>Remember me</div></label
+            >
+          </div>
+          <div class="px-4 py-3">
+            <button
+              class="w-full px-6 py-2 rounded-md border text-indigo-700 border-indigo-600/70 text-sm ring-indigo-600/70 hover:ring"
+            >
+              Reset all filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <title></title>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1"
@@ -2785,14 +2786,13 @@
                 </div>
                 <div
                   class="flex items-center gap-3"
-                  wf-if="state.projects.current"
+                  wf-if="state.designer.open &amp;&amp; state.designer.current.ready"
                 >
                   <div class="shrink-0">Page Title:</div>
                   <input
                     class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
-                    value=""
+                    value="{{state.designer.current.head.querySelector('title').textContent}}"
                     wf-disabled="loadman.busy()"
-                    wf-onkeyup="event.preventDefault(), post('app.projectTitleKeyDown')"
                   />
                 </div>
                 <div class="flex items-center gap-3">

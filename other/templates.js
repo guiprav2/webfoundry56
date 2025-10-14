@@ -1,13 +1,14 @@
-export let defaultHead = `<head>
+export let defaultHead = ({ title } = {}) =>`<head>
   <meta charset="utf-8">
+  <title>${esc(title)}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <script>window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/')</script>
   <script src="../webfoundry/head.js"></script>
 </head>`;
 
-export let defaultHtml = `<!doctype html>
+export let defaultHtml = opt =>`<!doctype html>
 <html>
-  ${defaultHead}
+  ${defaultHead(opt)}
   <body style="display: none; min-height: 100vh">
     <div class="bu box tw m-8">
       <div class="tw p-16 text-center font-sm italic">Component intentionally left blank.</div>
@@ -26,3 +27,5 @@ export function defaultCtrl(path) {
 };
 `;
 }
+
+function esc(str) { return str == null ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') }

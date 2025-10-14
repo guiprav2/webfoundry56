@@ -265,9 +265,9 @@ class App {
     }
     templRoot.innerHTML = templDoc.body.innerHTML;
     this.content = compile(templRoot);
-    let title = templDoc.querySelector('head > title');
+    let title = templDoc.querySelector('head > title')?.textContent;
     if (title) {
-      document.querySelector('head > title').textContent = title.textContent;
+      document.querySelector('head > title').textContent = title;
     }
     for (let x of document.querySelectorAll('dialog')) {
       x.remove();
