@@ -1,8 +1,10 @@
+import { esc } from './util.js';
+
 export let defaultHead = ({ title } = {}) =>`<head>
   <meta charset="utf-8">
   <title>${esc(title)}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <script>window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'</script>
+  <script>window.rootPrefix = /^\\/(files|preview)\\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'</script>
   <script src="../webfoundry/head.js"></script>
 </head>`;
 
@@ -27,5 +29,3 @@ export function defaultCtrl(path) {
 };
 `;
 }
-
-function esc(str) { return str == null ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') }

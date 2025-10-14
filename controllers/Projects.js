@@ -1,6 +1,7 @@
 import rfiles from '../repos/rfiles.js';
 import rprojects from '../repos/rprojects.js';
 import { defaultHtml } from '../other/templates.js';
+import { esc } from '../other/util.js';
 
 export default class Projects {
   state = { list: [] };
@@ -65,7 +66,11 @@ export default class Projects {
           'webfoundry/head.js',
           'webfoundry/dominant.js',
           'webfoundry/tailplay4.dafuq.js',
-        ].map(async x => await rfiles.save(project, !x.endsWith('/wf.config.js') ? x : 'wf.config.js', await (await fetch(x)).blob())));
+        ].map(async x => {
+          let text = await (await fetch(x)).text();
+          if (x === 'index.html') text = text.replace('<title>Webfoundry</title>', `<title>${esc(name)}</title>`);
+          await rfiles.save(project, !x.endsWith('/wf.config.js') ? x : 'wf.config.js', new Blob([text], { type: mimeLookup(x) }));
+        }));
         await rfiles.save(project, 'pages/index.html', new Blob([defaultHtml], { type: 'text/html' }));
         bus.emit('projects:create:ready', { project });
       });

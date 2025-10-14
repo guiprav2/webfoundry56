@@ -1,9 +1,12 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Webfoundry</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
     <style>
       ::-webkit-scrollbar {
         width: 8px;
@@ -35,9 +38,16 @@
     <script type="module">
       (async () => {
         if (location.pathname.includes('/files/')) return;
-        window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/';
-        if (rootPrefix === '/' || rootPrefix === '/collab.html') rootPrefix = '.';
-        let [, md, mapp] = await Promise.all([import(`${rootPrefix}/webfoundry/head.js`), import(`${rootPrefix}/webfoundry/dominant.js`), import(`${rootPrefix}/webfoundry/app.js`)]);
+        window.rootPrefix = /^\/(files|preview)\//.test(location.pathname)
+          ? location.pathname.split('/').slice(0, 4).join('/')
+          : '/';
+        if (rootPrefix === '/' || rootPrefix === '/collab.html')
+          rootPrefix = '.';
+        let [, md, mapp] = await Promise.all([
+          import(`${rootPrefix}/webfoundry/head.js`),
+          import(`${rootPrefix}/webfoundry/dominant.js`),
+          import(`${rootPrefix}/webfoundry/app.js`),
+        ]);
         document.body.append(md.default.el(mapp.default));
       })();
     </script>

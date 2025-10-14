@@ -1,3 +1,5 @@
+import prettier from '../other/prettier.js';
+import rfiles from '../repos/rfiles.js';
 import rprojects from '../repos/rprojects.js';
 
 export default class Settings {
@@ -24,7 +26,13 @@ export default class Settings {
         if (!project) { this.state.popt = {}; return }
         this.state.popt = await rprojects.config(project);
         this.state.popt.storage = localStorage.getItem(`webfoundry:projects:storage:${project.split(':')[1]}`);
+        await post('settings.fetchProjectTitle');
       });
+      ['add', 'change'].forEach(x => bus.on(`files:${x}`, async ({ path }) => {
+        let parts = path.split('/');
+        if (state.projects.current.split(':')[0] !== parts[0] || parts.slice(1).join('/') !== 'index.html') return;
+        await post('settings.fetchProjectTitle');
+      }));
       ['save', 'rm'].forEach(x => bus.on(`files:${x}`, async ({ event, path }) => {
         let project = state.projects.current;
         let name = project.split(':')[0];
@@ -43,6 +51,20 @@ export default class Settings {
         d.update();
         bus.emit('settings:projects:reload:ready', { project, opt: this.state.popt });
       }));
+    },
+
+    fetchProjectTitle: async () => {
+      let index = new DOMParser().parseFromString(await (await rfiles.load(state.projects.current, 'index.html')).text(), 'text/html');
+      this.state.projectTitle = index.head?.querySelector?.('title')?.textContent;
+    },
+
+    projectTitleChanged: async () => {
+      let project = state.projects.current;
+      let index = new DOMParser().parseFromString(await (await rfiles.load(project, 'index.html')).text(), 'text/html');
+      if (!index.head) index.documentElement.insertAdjacentHTML('afterbegin', '<head></head>');
+      if (!index.head.querySelector('title')) index.head.insertAdjacentHTML('beforeend', '<title></title>');
+      index.head.querySelector('title').textContent = this.state.projectTitle;
+      await rfiles.save(project, 'index.html', new Blob([await prettier(`<!doctype html>${index.documentElement.outerHTML}`, { parser: 'html' })], { type: 'text/html' }));
     },
 
     save: () => localStorage.setItem('webfoundry:config', JSON.stringify(this.state.opt)),

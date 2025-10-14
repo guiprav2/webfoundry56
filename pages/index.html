@@ -8,7 +8,9 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <script>
-      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'
+      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname)
+        ? location.pathname.split('/').slice(0, 4).join('/')
+        : '/';
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>
@@ -2782,11 +2784,12 @@
                   class="flex items-center gap-3"
                   wf-if="state.projects.current"
                 >
-                  <div class="shrink-0">App Title:</div>
+                  <div class="shrink-0">Project Title:</div>
                   <input
                     class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
+                    value="{{state.settings.projectTitle}}"
                     wf-disabled="loadman.busy()"
-                    wf-onkeyup="event.preventDefault(), post('project.titleKeyDown')"
+                    wf-onchange="event.preventDefault(), post('settings.projectTitleChanged')"
                   />
                 </div>
                 <div
@@ -2798,6 +2801,7 @@
                     class="flex-1 bg-black/50 outline-none rounded-md px-4 py-2 min-w-0"
                     value="{{state.designer.current.head.querySelector('title').textContent}}"
                     wf-disabled="loadman.busy()"
+                    placeholder="Blank uses project title"
                   />
                 </div>
                 <div class="flex items-center gap-3">
@@ -2807,6 +2811,7 @@
                     value="{{state.settings.opt.wallpaper}}"
                     wf-disabled="loadman.busy()"
                     wf-onkeyup="event.preventDefault(), post('settings.option', 'wallpaper', event.target.value)"
+                    placeholder="Public URL"
                   />
                 </div>
               </div>
