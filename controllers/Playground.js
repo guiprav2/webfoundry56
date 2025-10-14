@@ -1,3 +1,5 @@
+import confetti from 'https://esm.sh/canvas-confetti';
+
 export default class Playground {
   state = {
     nameInput: '',
@@ -30,6 +32,7 @@ export default class Playground {
     fireGreeting: () => {
       let name = this.state.nameInput.trim();
       this.state.greeting = `Hello, ${name || 'Webfoundry Explorer'}!`;
+      name.trim() && confetti();
     },
 
     toggleTask: id => {
