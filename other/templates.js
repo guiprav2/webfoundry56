@@ -2,7 +2,7 @@ export let defaultHead = ({ title } = {}) =>`<head>
   <meta charset="utf-8">
   <title>${esc(title)}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <script>window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/')</script>
+  <script>window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'</script>
   <script src="../webfoundry/head.js"></script>
 </head>`;
 

@@ -35,7 +35,7 @@
     <script type="module">
       (async () => {
         if (location.pathname.includes('/files/')) return;
-        window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/');
+        window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/';
         if (rootPrefix === '/' || rootPrefix === '/collab.html') rootPrefix = '.';
         let [, md, mapp] = await Promise.all([import(`${rootPrefix}/webfoundry/head.js`), import(`${rootPrefix}/webfoundry/dominant.js`), import(`${rootPrefix}/webfoundry/app.js`)]);
         document.body.append(md.default.el(mapp.default));

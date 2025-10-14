@@ -3,7 +3,9 @@ import '../other/util.js';
 export default class App {
   actions = {
     init: async () => {
-      if (top === window) {
+      this.state.demo = location.search.includes('demo');
+      if (this.state.demo) document.body.classList.add('text-xs');
+      if (top === window || this.state.demo) {
         sessionStorage.webfoundryTabId ??= crypto.randomUUID();
         await navigator.serviceWorker.register('sw.js');
         await navigator.serviceWorker.ready;
@@ -27,7 +29,7 @@ export default class App {
       await post('styles.init');
       await post('designer.init');
       await post('app.brandCanvasMonitor');
-      state.collab.uid === 'master' && await post('app.selectPanel', 'projects');
+      (!this.state.demo && state.collab.uid === 'master') && await post('app.selectPanel', 'projects');
       state.event.bus.on('designer:togglePreview:ready', async ({ preview }) => preview && this.state.panel === 'styles' && await post('app.selectPanel', null));
     },
 

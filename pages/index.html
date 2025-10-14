@@ -8,7 +8,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <script>
-      window.rootPrefix = location.pathname.split('/').slice(0, 4).join('/');
+      window.rootPrefix = /^/(files | preview); //.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>
@@ -28,15 +28,16 @@
       </style>
 
       <div
-        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0 bg-[#060a0fc0] backdrop-blur-[4px]"
+        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0 bg-[#060a0fc0] backdrop-blur-[4px] text-xl"
+        wf-class="{{replaces text-xl: !state.app.demo &amp;&amp; 'text-xl'}}"
       >
         <button
-          class="outline-none border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
+          class="outline-none border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
           wf-if="!loadman.busy()"
         >
           wf</button
         ><button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 gfont-[Pacifico] relative flex justify-center IconsSidebar-spinner items-center"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 gfont-[Pacifico] relative flex justify-center IconsSidebar-spinner items-center"
           wf-if="loadman.busy()"
           hidden=""
         >
@@ -48,48 +49,48 @@
         </button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-projectsBtn nf-fa-sitemap"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-projectsBtn nf-fa-sitemap"
           wf-class="{{state.app.panel === 'projects' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'projects')"
         ></button>
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-filesBtn nf-fa-folder"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-filesBtn nf-fa-folder"
           wf-class="{{state.app.panel === 'files' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'files')"
           wf-if="state.projects.current &amp;&amp; !loadman.ops['files.load']?.length"
         ></button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-stylesBtn nf-fa-paint_brush"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-stylesBtn nf-fa-paint_brush"
           wf-class="{{state.app.panel === 'styles' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'styles')"
           wf-if="state.designer.open &amp;&amp; !state.designer.current?.preview"
         ></button>
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-oct-command_palette IconsSidebar-shellBtn"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 nf-oct-command_palette IconsSidebar-shellBtn"
           wf-class="{{state.shell.open &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('shell.toggle')"
           wf-if="/^connected|auth_fail$/.test(state.companion.client?.status) || state.shell.list.length"
         ></button>
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-playBtn nf-fa-play"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-playBtn nf-fa-play"
           wf-if="state.designer.open &amp;&amp; !state.designer.current?.preview"
           wf-onclick="post('designer.togglePreview')"
         ></button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-fa-pause IconsSidebar-pauseBtn"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 nf-fa-pause IconsSidebar-pauseBtn"
           wf-if="state.designer.open &amp;&amp; state.designer.current?.preview"
           wf-onclick="post('designer.togglePreview')"
         ></button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 nf-md-dots_vertical_circle IconsSidebar-settingsBtn"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 nf-md-dots_vertical_circle IconsSidebar-settingsBtn"
           wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'settings')"
         ></button
         ><button
-          class="outline-none nf border-b border-black/50 transition-all text-xl hover:bg-black/70 w-16 h-16 IconsSidebar-closeBtn nf-oct-x"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-closeBtn nf-oct-x"
           wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', null)"
           wf-if="state.app.panel"
@@ -105,7 +106,7 @@
         </div>
 
         <div
-          wf-if="state.designer.open &amp;&amp; !state.designer.current.preview &amp;&amp; state.settings.opt.toolbar"
+          wf-if="state.designer.open &amp;&amp; !state.designer.current.preview &amp;&amp; state.settings.opt.toolbar &amp;&amp; !state.app.demo"
           class="bg-[#060a0fc0] backdrop-blur-[4px] z-10"
         >
           <div
@@ -2583,6 +2584,7 @@
         <div class="flex flex-1 min-w-0 basis-0 overflow-auto">
           <div
             class="ProjectsPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'projects'"
           >
             <button
@@ -2632,6 +2634,7 @@
           </div>
           <div
             class="FilesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'files'"
           >
             <button
@@ -2698,6 +2701,7 @@
           </div>
           <div
             class="StylesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'styles'"
           >
             <div
@@ -2768,6 +2772,7 @@
 
           <div
             class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 overflow-auto bg-[#091017c0] backdrop-blur-[4px]"
+            wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'settings'"
           >
             <div>Settings &amp; More</div>
@@ -2827,6 +2832,7 @@
                   </div> </label
                 ><label
                   class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  wf-if="!state.app.demo"
                 >
                   <div class="shrink-0">Hide toolbar</div>
                   <div class="relative inline-flex items-center cursor-pointer">
@@ -3046,7 +3052,7 @@
                   class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
                   wf-disabled="loadman.busy()"
                   wf-onclick="event.preventDefault(), post('collab.setup')"
-                  wf-if="!state.collab.rtc &amp;&amp; state.projects.current"
+                  wf-if="!state.collab.rtc &amp;&amp; state.projects.current &amp;&amp; !state.app.demo"
                 >
                   <div>Collaborate</div>
                 </button>
@@ -3055,7 +3061,7 @@
                   class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none"
                   wf-disabled="loadman.busy()"
                   wf-onclick="event.preventDefault(), post('collab.stop')"
-                  wf-if="state.collab.rtc &amp;&amp; state.projects.current"
+                  wf-if="state.collab.rtc &amp;&amp; state.projects.current &amp;&amp; !state.app.demo"
                 >
                   <div>Stop collaboration</div>
                 </button>
@@ -3104,13 +3110,13 @@
             </div>
             <div
               class="Designer-leftPadder flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
-              wf-if="document.querySelector('.Designer-activeFrame')"
+              wf-if="document.querySelector('.Designer-activeFrame') &amp;&amp; !state.app.demo"
             ></div>
 
             <div
               class="grow-0 shrink-1"
               wf-onattach="post('designer.hookFrameWidth', _1)"
-              wf-class="{{!state.designer.current?.ready &amp;&amp; 'hidden'}}"
+              wf-class="{{!state.designer.current?.ready &amp;&amp; 'hidden'}} {{state.app.demo &amp;&amp; 'w-full!'}}"
             >
               <div
                 class="flex flex-col justify-center h-full"
@@ -3130,7 +3136,7 @@
 
             <div
               class="Designer-rightPadder flex shrink-0 flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
-              wf-if="document.querySelector('.Designer-activeFrame')"
+              wf-if="document.querySelector('.Designer-activeFrame') &amp;&amp; !state.app.demo"
             >
               <div class="Designer-rightPadderPole flex items-center px-1">
                 <button

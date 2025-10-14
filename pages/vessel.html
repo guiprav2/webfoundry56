@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Vessel Software</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <script>
+      window.rootPrefix = /^/(files | preview); //.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'
+    </script>
+    <script src="../webfoundry/head.js"></script>
+  </head>
+  <body
+    style="display: none; min-height: 100vh"
+    class="bg-slate-950 text-slate-100"
+  >
+    <div class="flex min-h-screen flex-col">
+      <header class="relative overflow-hidden">
+        <div
+          class="absolute inset-0 bg-gradient-to-b from-indigo-900/50 via-slate-900 to-slate-950"
+        ></div>
+        <div
+          class="relative mx-auto flex max-w-6xl flex-col gap-10 px-6 pb-20 pt-24 text-center lg:px-10"
+        >
+          <span
+            class="self-center rounded-full border border-indigo-400/50 px-4 py-1 text-xs uppercase tracking-[0.3em] text-indigo-100/70"
+          >
+            vessel software
+          </span>
+          <h1
+            class="text-4xl font-semibold leading-snug text-white sm:text-5xl lg:text-6xl"
+          >
+            Software experiences sculpted for performance and longevity.
+          </h1>
+          <p class="mx-auto max-w-3xl text-lg text-slate-200/80">
+            Vessel Software is the product studio behind Dominant and
+            Webfoundry. We pair low-level craftsmanship with pragmatic tooling
+            so teams can ship fast, run lean, and stay future-proof.
+          </p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <a
+              class="inline-flex items-center justify-center rounded-full bg-indigo-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-300"
+              href="https://dominant-demos.netlify.app/1kcomponents"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Explore Dominant
+            </a>
+            <a
+              class="inline-flex items-center justify-center rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-indigo-300 hover:text-white"
+              href="https://webfoundry56.netlify.app/?demo"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Try Webfoundry
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 bg-slate-950">
+        <section class="mx-auto max-w-5xl px-6 py-16 lg:px-10">
+          <div
+            class="grid gap-10 rounded-3xl border border-slate-800 bg-slate-900/50 p-10 text-left shadow-2xl shadow-blue-900/30 lg:grid-cols-3"
+          >
+            <div class="space-y-4 lg:col-span-1">
+              <h2 class="text-2xl font-semibold text-white">How we ship</h2>
+              <p class="text-sm text-slate-300">
+                Vessel delivers end-to-end product engagements: from idea
+                validation to production rollout. Every engagement is anchored
+                in maintainable code and observable delivery metrics.
+              </p>
+            </div>
+            <div
+              class="grid gap-6 text-sm text-slate-200 lg:col-span-2 lg:grid-cols-2"
+            >
+              <div
+                class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
+              >
+                <h3 class="text-base font-semibold text-white">
+                  Co-designed stacks
+                </h3>
+                <p class="mt-2 leading-relaxed text-slate-300">
+                  We tailor Dom-based and reactive architectures so your team
+                  inherits a stack that fits how you ship, not the other way
+                  around.
+                </p>
+              </div>
+              <div
+                class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
+              >
+                <h3 class="text-base font-semibold text-white">
+                  Performance-first
+                </h3>
+                <p class="mt-2 leading-relaxed text-slate-300">
+                  From animation-heavy canvases to data-dense dashboards, our
+                  toolchain keeps frame times predictable and experiences
+                  resilient.
+                </p>
+              </div>
+              <div
+                class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
+              >
+                <h3 class="text-base font-semibold text-white">
+                  Embedded collaboration
+                </h3>
+                <p class="mt-2 leading-relaxed text-slate-300">
+                  We embed with your product and engineering leads to maintain
+                  shared context and unblock delivery in real time.
+                </p>
+              </div>
+              <div
+                class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
+              >
+                <h3 class="text-base font-semibold text-white">
+                  Long-term stewardship
+                </h3>
+                <p class="mt-2 leading-relaxed text-slate-300">
+                  After launch, we provide governance playbooks, knowledge
+                  transfer, and instrumentation so the velocity keeps
+                  compounding.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="mx-auto flex max-w-6xl flex-col gap-16 px-6 pb-20 lg:px-10"
+        >
+          <article
+            class="grid gap-8 rounded-3xl border border-slate-900 bg-slate-900/60 p-8 lg:grid-cols-[1.1fr_1fr] lg:items-center"
+          >
+            <div class="space-y-5">
+              <span
+                class="rounded-full border border-indigo-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-indigo-100/70"
+              >
+                Dominant
+              </span>
+              <h2 class="text-3xl font-semibold text-white mt-4">
+                High-performance rendering without the baggage
+              </h2>
+              <p class="text-slate-300">
+                Dominant gives you direct control of DOM updates with a
+                lightweight state binding system. No virtual DOM, no runtime
+                gymnastics, just mutable state and a global update loop when you
+                need it.
+              </p>
+              <ul class="flex flex-col gap-2 text-sm text-slate-300">
+                <li>- Compose UI with vanilla DOM, JSX, or hyperscript.</li>
+                <li>
+                  - Lifecycle hooks that interoperate with any DOM-driven
+                  library.
+                </li>
+                <li>
+                  - Proof-tested at scale by Vessel's real-world client
+                  deliveries.
+                </li>
+              </ul>
+            </div>
+            <div
+              class="overflow-hidden rounded-2xl border border-slate-800 shadow-lg shadow-indigo-900/40"
+            >
+              <iframe
+                src="https://dominant-demos.netlify.app/1kcomponents"
+                title="Dominant 1k components demo"
+                loading="lazy"
+                class="h-[360px] w-full bg-black"
+              ></iframe>
+            </div>
+          </article>
+
+          <article
+            class="grid gap-8 rounded-3xl border border-slate-900 bg-slate-900/60 p-8 lg:grid-cols-[1fr_1.1fr] lg:items-center"
+          >
+            <div class="order-2 space-y-5 lg:order-1">
+              <span
+                class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-emerald-100/70"
+              >
+                Webfoundry
+              </span>
+              <h2 class="text-3xl font-semibold text-white mt-4">
+                Visual web authoring with full JavaScript support
+              </h2>
+              <p class="text-slate-300">
+                Webfoundry lets teams design, prototype, and ship
+                production-grade pages with Tailwind, JavaScript controllers,
+                and lifecycle directives. Design in the editor, extend in code,
+                deploy to Netlify—no handoff friction.
+              </p>
+              <ul class="flex flex-col gap-2 text-sm text-slate-300">
+                <li>
+                  - Bind text and HTML properties to shared controller state.
+                </li>
+                <li>
+                  - Mix visual editing with Tailwind utilities and custom
+                  scripts.
+                </li>
+                <li>
+                  - Drop-in friendly for marketing, dashboards, and internal
+                  tools.
+                </li>
+              </ul>
+            </div>
+            <div
+              class="order-1 overflow-hidden rounded-2xl border border-slate-800 shadow-lg shadow-emerald-900/40 lg:order-2"
+            >
+              <iframe
+                src="https://webfoundry56.netlify.app/?demo"
+                title="Webfoundry demo"
+                loading="lazy"
+                class="h-[360px] w-full bg-black"
+              ></iframe>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <footer class="border-t border-slate-900/60 bg-slate-950/95 py-12">
+        <div
+          class="mx-auto flex max-w-5xl flex-col gap-6 px-6 text-center text-sm text-slate-400 lg:px-10"
+        >
+          <p class="text-base font-medium text-white">
+            Ready to build what's next? Vessel partners with product leaders to
+            launch ambitious software faster.
+          </p>
+          <div
+            class="flex flex-wrap justify-center gap-4 text-xs uppercase tracking-[0.3em] text-slate-500"
+          >
+            <span>Strategy</span>
+            <span>Architecture</span>
+            <span>Delivery</span>
+            <span>Stewardship</span>
+          </div>
+          <p>
+            Drop us a line at
+            <a
+              class="text-indigo-300 hover:text-indigo-200"
+              href="mailto:hello@vessel.software"
+              >hello@vessel.software</a
+            >
+            to start the conversation.
+          </p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
