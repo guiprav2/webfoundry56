@@ -92,25 +92,40 @@ function diffToOperation(oldText, newText, userId) {
   return hasMeaningfulOps(operation) ? operation : null;
 }
 
-function deserializeOperation(serialized) {
+function deserializeOperation(serialized, fallbackUserId) {
   if (!serialized) return null;
   if (serialized && typeof serialized === 'object' && !Array.isArray(serialized)) {
-    let operation = new TextOperation(serialized.userId);
+    let operation = new TextOperation(serialized.userId ?? fallbackUserId);
     return operation.deserialize(serialized) ? operation : null;
   }
   if (!Array.isArray(serialized)) return null;
-  let operation = new TextOperation();
+  let operation = new TextOperation(fallbackUserId);
   for (let component of serialized) {
-    if (typeof component === 'number' && component > 0) {
-      operation.retain(component);
-    } else if (typeof component === 'string' && component.length) {
-      operation.insert(component);
+    if (typeof component === 'number') {
+      let amount = Number.isFinite(component) ? Math.max(0, component) : 0;
+      if (amount > 0) operation.retain(amount);
+    } else if (typeof component === 'string') {
+      if (component.length) operation.insert(component);
     } else if (component && component.d != null) {
-      let text = typeof component.d === 'string' ? component.d : '';
-      if (text.length) operation.delete(text);
+      let len;
+      let text;
+      if (typeof component.d === 'number') {
+        len = Math.max(0, component.d);
+        text = len > 0 ? ' '.repeat(len) : '';
+      } else if (typeof component.d === 'string') {
+        text = component.d;
+        len = text.length;
+      } else {
+        text = String(component.d ?? '');
+        len = text.length;
+      }
+      if (len > 0) {
+        if (!text || text.length !== len) text = ' '.repeat(len);
+        operation.delete(text);
+      }
     }
   }
-  return hasMeaningfulOps(operation) ? operation : operation;
+  return hasMeaningfulOps(operation) ? operation : null;
 }
 
 function serializeOperation(operation) {
@@ -264,7 +279,7 @@ export default class AceCollabBinding {
       return;
     }
 
-    let remoteOp = deserializeOperation(ev.opsV2 ?? ev.ops);
+    let remoteOp = deserializeOperation(ev.opsV2 ?? ev.ops, ev.author ?? ev.peer ?? this.clientId);
 
     if (!remoteOp) {
       if (typeof ev.value === 'string') this.resetTo(ev.value);
@@ -287,12 +302,23 @@ export default class AceCollabBinding {
       let oldDoc = this.doc;
       let newDoc = remoteOp.apply(oldDoc);
       let hasPending = this.outstanding.length > 0 || (this.buffer && hasMeaningfulOps(this.buffer));
+      this.doc = newDoc;
+      this.applyToSession(remoteOp);
+
       if (!hasPending && typeof ev.value === 'string' && newDoc !== ev.value) {
+        let reconcileOp = diffToOperation(newDoc, ev.value, ev.author ?? ev.peer ?? this.clientId);
+        if (reconcileOp && hasMeaningfulOps(reconcileOp)) {
+          try {
+            this.doc = reconcileOp.apply(this.doc);
+            this.applyToSession(reconcileOp);
+            return;
+          } catch (reconcileErr) {
+            console.warn('AceCollab reconcile diff failed', reconcileErr);
+          }
+        }
         this.resetTo(ev.value);
         return;
       }
-      this.doc = newDoc;
-      this.applyToSession(remoteOp);
     } catch (err) {
       console.error('AceCollab remote apply error', err);
       if (typeof ev.value === 'string') this.resetTo(ev.value);
@@ -328,12 +354,33 @@ export default class AceCollabBinding {
   }
 
   resetTo(value) {
+    if (!this.session) return;
+    let Range = ace.require('ace/range').Range;
+    let doc = this.session.getDocument();
+    let sel = this.editor?.selection?.getRange?.();
+    let startIndex;
+    let endIndex;
+    if (sel) {
+      startIndex = doc.positionToIndex(sel.start, 0);
+      endIndex = doc.positionToIndex(sel.end, 0);
+    }
     this.applyingRemote = true;
-    this.session.setValue(value ?? '', -1);
+    let target = value ?? '';
+    if (this.session.getValue() !== target) this.session.setValue(target, -1);
     this.applyingRemote = false;
     this.doc = this.session.getValue();
     this.outstanding = [];
     this.buffer = null;
+    if (sel) {
+      doc = this.session.getDocument();
+      let maxIndex = doc.getValue().length;
+      let clampedStart = Math.min(startIndex ?? 0, maxIndex);
+      let clampedEnd = Math.min(endIndex ?? 0, maxIndex);
+      let startPos = doc.indexToPosition(clampedStart, 0);
+      let endPos = doc.indexToPosition(clampedEnd, 0);
+      this.editor?.selection?.setSelectionRange?.(Range.fromPoints(startPos, endPos), false);
+    }
+    this.syncLocalCursor();
   }
 
   handleCursorChange() {
