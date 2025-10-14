@@ -54,6 +54,12 @@ let actions = {
       if (!s.length) frame.lastCursors[cur] = frame.cursors[cur];
       frame.cursors[cur] = s;
       d.update();
+      if (state.collab.uid === cur) {
+        let first = frame.map.get(s[0]);
+        let rect = first.getBoundingClientRect();
+        let visible = rect.top >= 20 && rect.bottom <= window.innerHeight - 20;
+        !visible && first.scrollIntoView({ block: 'center' });
+      }
       await post('collab.sync');
     },
   },
