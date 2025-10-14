@@ -1,13 +1,5 @@
 import { debounce } from '../other/util.js';
-import {
-  applyOperation,
-  composeOperations,
-  transformOperations,
-  isEmptyOperation,
-  cloneOperation,
-  normalizeOperation,
-  deleteLength,
-} from './textOt.js';
+import { TextOperation } from 'https://esm.sh/operational-transform@0.2.3?bundle';
 
 const DEFAULT_COLLAB_COLOR = 'indigo-600';
 let styleEl;
@@ -94,22 +86,38 @@ function positionToIndex(snapshot, row, column) {
   return index;
 }
 
-function deltaToOperation(snapshot, delta, rowAdjust = 0) {
-  if (!delta) return [];
+function deltaToOperation(snapshot, delta, userId, rowAdjust = 0) {
+  if (!delta) return null;
   let row = (delta.start?.row ?? 0) + rowAdjust;
   let column = delta.start?.column ?? 0;
   let startIndex = positionToIndex(snapshot, row, column);
-  let op = [];
-  if (startIndex > 0) op.push(startIndex);
+  let operation = new TextOperation(userId);
+  if (startIndex > 0) operation.retain(startIndex);
+
   let text = Array.isArray(delta.lines) ? delta.lines.join('\n') : '';
   if (delta.action === 'insert') {
-    if (text.length) op.push(text);
+    if (text.length) operation.insert(text);
   } else if (delta.action === 'remove') {
-    if (text.length) op.push({ d: text });
+    if (text.length) operation.delete(text);
   } else {
-    return [];
+    return null;
   }
-  return normalizeOperation(op);
+
+  let remainder = snapshot.length - startIndex - (delta.action === 'remove' ? text.length : 0);
+  if (remainder > 0) operation.retain(remainder);
+
+  return hasMeaningfulOps(operation) ? operation : null;
+}
+
+function hasMeaningfulOps(operation) {
+  if (!operation) return false;
+  return operation.ops.some(component => component?.type !== 'retain');
+}
+
+function deserializeOperation(serialized) {
+  if (!serialized) return null;
+  let operation = new TextOperation();
+  return operation.deserialize(serialized) ? operation : null;
 }
 
 export default class AceCollabBinding {
@@ -186,24 +194,24 @@ export default class AceCollabBinding {
 
   handleChange(delta) {
     if (this.disposed || this.applyingRemote) return;
-    let op = deltaToOperation(this.doc, delta);
-    if (!op.length || isEmptyOperation(op)) {
+    let op = deltaToOperation(this.doc, delta, this.clientId);
+    if (!op) {
       this.doc = this.session.getValue();
       return;
     }
     this.doc = this.session.getValue();
-    this.buffer = this.buffer ? composeOperations(this.buffer, op) : op;
-    this.buffer = normalizeOperation(this.buffer);
+    this.buffer = this.buffer ? this.buffer.compose(op) : op;
     this.flush();
   }
 
   flush() {
-    if (this.disposed || !this.buffer || !this.buffer.length) return;
-    let op = normalizeOperation(cloneOperation(this.buffer));
+    if (this.disposed || !this.buffer || !hasMeaningfulOps(this.buffer)) return;
+    let op = this.buffer;
     this.buffer = null;
     let base = this.version;
     let version = base + 1;
-    let outstanding = { op: normalizeOperation(cloneOperation(op)), base, version };
+    let outstandingOp = op.clone();
+    let outstanding = { op: outstandingOp, base, version };
     this.outstanding.push(outstanding);
     this.version = Math.max(this.version, version);
     state.collab?.codeVersions?.set?.(this.path, version);
@@ -212,7 +220,7 @@ export default class AceCollabBinding {
       project: this.project,
       base,
       version,
-      ops: op,
+      ops: outstandingOp.serialize(),
       value: this.doc,
       author: this.clientId,
     });
@@ -236,29 +244,30 @@ export default class AceCollabBinding {
       return;
     }
 
-    let remoteOp = Array.isArray(ev.ops) ? normalizeOperation(ev.ops.slice()) : [];
+    let remoteOp = deserializeOperation(ev.ops);
 
-    if (!remoteOp.length) {
+    if (!remoteOp) {
       if (typeof ev.value === 'string') this.resetTo(ev.value);
       return;
     }
 
     try {
       for (let entry of this.outstanding) {
-        let [localPrime, remotePrime] = transformOperations(entry.op, remoteOp);
-        entry.op = normalizeOperation(localPrime);
-        remoteOp = normalizeOperation(remotePrime);
+        let [localPrime, remotePrime] = entry.op.transform(remoteOp);
+        entry.op = localPrime;
+        remoteOp = remotePrime;
       }
 
-      if (this.buffer) {
-        let [bufferPrime, remotePrime] = transformOperations(this.buffer, remoteOp);
-        this.buffer = normalizeOperation(bufferPrime);
-        remoteOp = normalizeOperation(remotePrime);
+      if (this.buffer && hasMeaningfulOps(this.buffer)) {
+        let [bufferPrime, remotePrime] = this.buffer.transform(remoteOp);
+        this.buffer = hasMeaningfulOps(bufferPrime) ? bufferPrime : null;
+        remoteOp = remotePrime;
       }
 
       let oldDoc = this.doc;
-      let newDoc = applyOperation(oldDoc, remoteOp);
-      if (typeof ev.value === 'string' && newDoc !== ev.value) {
+      let newDoc = remoteOp.apply(oldDoc);
+      let hasPending = this.outstanding.length > 0 || (this.buffer && hasMeaningfulOps(this.buffer));
+      if (!hasPending && typeof ev.value === 'string' && newDoc !== ev.value) {
         this.resetTo(ev.value);
         return;
       }
@@ -276,15 +285,20 @@ export default class AceCollabBinding {
     let doc = this.session.getDocument();
     let Range = ace.require('ace/range').Range;
     let index = 0;
-    for (let component of op) {
-      if (typeof component === 'number') {
-        index += component;
-      } else if (typeof component === 'string') {
+    for (let component of op.ops) {
+      if (!component) continue;
+      if (component.type === 'retain') {
+        index += component.attributes?.amount ?? 0;
+      } else if (component.type === 'insert') {
+        let text = component.attributes?.text ?? '';
+        if (!text) continue;
         let pos = doc.indexToPosition(index, 0);
-        doc.insert(pos, component);
-        index += component.length;
-      } else if (component && component.d != null) {
-        let len = deleteLength(component);
+        doc.insert(pos, text);
+        index += text.length;
+      } else if (component.type === 'delete') {
+        let text = component.attributes?.text ?? '';
+        let len = text.length;
+        if (!len) continue;
         let start = doc.indexToPosition(index, 0);
         let end = doc.indexToPosition(index + len, 0);
         doc.remove(new Range(start.row, start.column, end.row, end.column));
