@@ -1,5 +1,6 @@
 import { debounce } from '../other/util.js';
 import { TextOperation } from 'https://esm.sh/operational-transform@0.2.3?bundle';
+import diff from 'https://esm.sh/fast-diff';
 
 const DEFAULT_COLLAB_COLOR = 'indigo-600';
 let styleEl;
@@ -74,50 +75,66 @@ function computeSelectionSegments(session, cursor) {
   return segments;
 }
 
-function positionToIndex(snapshot, row, column) {
-  row = Math.max(0, row);
-  column = Math.max(0, column);
-  let index = 0;
-  let lines = snapshot.split('\n');
-  for (let i = 0; i < row && i < lines.length; i++) index += lines[i].length + 1;
-  if (row >= lines.length) return snapshot.length;
-  let line = lines[row] ?? '';
-  index += Math.min(column, line.length);
-  return index;
-}
-
-function deltaToOperation(snapshot, delta, userId, rowAdjust = 0) {
-  if (!delta) return null;
-  let row = (delta.start?.row ?? 0) + rowAdjust;
-  let column = delta.start?.column ?? 0;
-  let startIndex = positionToIndex(snapshot, row, column);
-  let operation = new TextOperation(userId);
-  if (startIndex > 0) operation.retain(startIndex);
-
-  let text = Array.isArray(delta.lines) ? delta.lines.join('\n') : '';
-  if (delta.action === 'insert') {
-    if (text.length) operation.insert(text);
-  } else if (delta.action === 'remove') {
-    if (text.length) operation.delete(text);
-  } else {
-    return null;
-  }
-
-  let remainder = snapshot.length - startIndex - (delta.action === 'remove' ? text.length : 0);
-  if (remainder > 0) operation.retain(remainder);
-
-  return hasMeaningfulOps(operation) ? operation : null;
-}
-
 function hasMeaningfulOps(operation) {
   if (!operation) return false;
-  return operation.ops.some(component => component?.type !== 'retain');
+  return Array.isArray(operation.ops) && operation.ops.some(component => component?.type !== 'retain');
+}
+
+function diffToOperation(oldText, newText, userId) {
+  if (oldText === newText) return null;
+  let operation = new TextOperation(userId);
+  for (let [kind, chunk] of diff(oldText, newText)) {
+    if (!chunk) continue;
+    if (kind === 0) operation.retain(chunk.length);
+    else if (kind === 1) operation.insert(chunk);
+    else if (kind === -1) operation.delete(chunk);
+  }
+  return hasMeaningfulOps(operation) ? operation : null;
 }
 
 function deserializeOperation(serialized) {
   if (!serialized) return null;
+  if (serialized && typeof serialized === 'object' && !Array.isArray(serialized)) {
+    let operation = new TextOperation(serialized.userId);
+    return operation.deserialize(serialized) ? operation : null;
+  }
+  if (!Array.isArray(serialized)) return null;
   let operation = new TextOperation();
-  return operation.deserialize(serialized) ? operation : null;
+  for (let component of serialized) {
+    if (typeof component === 'number' && component > 0) {
+      operation.retain(component);
+    } else if (typeof component === 'string' && component.length) {
+      operation.insert(component);
+    } else if (component && component.d != null) {
+      let text = typeof component.d === 'string' ? component.d : '';
+      if (text.length) operation.delete(text);
+    }
+  }
+  return hasMeaningfulOps(operation) ? operation : operation;
+}
+
+function serializeOperation(operation) {
+  if (!operation) return null;
+  return operation.serialize?.() ?? null;
+}
+
+function operationToLegacyArray(operation) {
+  if (!operation) return [];
+  let components = [];
+  for (let component of operation.ops || []) {
+    if (!component) continue;
+    if (component.type === 'retain') {
+      let amount = component.attributes?.amount ?? 0;
+      if (amount > 0) components.push(amount);
+    } else if (component.type === 'insert') {
+      let text = component.attributes?.text ?? '';
+      if (text.length) components.push(text);
+    } else if (component.type === 'delete') {
+      let text = component.attributes?.text ?? '';
+      if (text.length) components.push({ d: text });
+    }
+  }
+  return components;
 }
 
 export default class AceCollabBinding {
@@ -192,14 +209,16 @@ export default class AceCollabBinding {
     return this.applyingRemote;
   }
 
-  handleChange(delta) {
+  handleChange() {
     if (this.disposed || this.applyingRemote) return;
-    let op = deltaToOperation(this.doc, delta, this.clientId);
+    let oldDoc = this.doc;
+    let newDoc = this.session.getValue();
+    let op = diffToOperation(oldDoc, newDoc, this.clientId);
     if (!op) {
-      this.doc = this.session.getValue();
+      this.doc = newDoc;
       return;
     }
-    this.doc = this.session.getValue();
+    this.doc = newDoc;
     this.buffer = this.buffer ? this.buffer.compose(op) : op;
     this.flush();
   }
@@ -220,7 +239,8 @@ export default class AceCollabBinding {
       project: this.project,
       base,
       version,
-      ops: outstandingOp.serialize(),
+      ops: operationToLegacyArray(outstandingOp),
+      opsV2: serializeOperation(outstandingOp),
       value: this.doc,
       author: this.clientId,
     });
@@ -244,7 +264,7 @@ export default class AceCollabBinding {
       return;
     }
 
-    let remoteOp = deserializeOperation(ev.ops);
+    let remoteOp = deserializeOperation(ev.opsV2 ?? ev.ops);
 
     if (!remoteOp) {
       if (typeof ev.value === 'string') this.resetTo(ev.value);
