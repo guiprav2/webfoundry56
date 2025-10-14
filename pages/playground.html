@@ -2,13 +2,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Webfoundry Playground</title>
+    <title>Playground</title>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <script>
-      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/';
+      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname)
+        ? location.pathname.split('/').slice(0, 4).join('/')
+        : '/';
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>
@@ -25,7 +27,7 @@
           >
             Welcome editors
           </p>
-          <h1 class="text-4xl font-semibold leading-tight md:text-5xl">
+          <h1 class="text-4xl leading-tight md:text-5xl font-semibold">
             Use the toolbar or keybindings to remix this hero section
           </h1>
           <p class="text-base leading-relaxed text-white/80">
@@ -187,14 +189,14 @@
           >
             <h2 class="text-2xl font-semibold">Image Grid</h2>
             <p class="mt-2 text-sm text-white/70">
-              Select images below and swap them from the Manipulation toolbar or
-              by pressing 'S' (uppercase for uploads, lowercase for custom
-              URLs):
+              Select images below and swap them with your own uploads using the
+              Manipulation toolbar → Text &amp; Media → Media Gallery or by
+              pressing 'S' (uppercase for uploads, lowercase for custom URLs):
             </p>
             <div class="mt-5 grid gap-4 md:grid-cols-2">
               <img
                 class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-white/70 w-full object-cover h-[60vh] hover:scale-105 transition hover:-rotate-2"
-                src="https://cdn.donmai.us/original/bd/bb/__drawn_by_miyao_gaku__bdbbbc5afa719269b373b1ffe6f321bf.jpg"
+                src="https://cdn.donmai.us/original/4a/98/__pikachu_pokemon_drawn_by_mugita_konomi__4a982de36216357883658faa970e72f0.jpg"
               /><img
                 class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-white/70 w-full object-cover h-[60vh] hover:scale-105 transition hover:-rotate-2"
                 src="https://cdn.donmai.us/original/ae/9e/__kawaragi_momoka_and_rupa_girls_band_cry_drawn_by_n_nai_nai_n__ae9e1059b4a12493be5a79071197450d.jpg"
