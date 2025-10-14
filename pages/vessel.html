@@ -8,7 +8,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <script>
-      window.rootPrefix = /^/(files | preview); //.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'
+      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>
@@ -26,18 +26,17 @@
         >
           <span
             class="self-center rounded-full border border-indigo-400/50 px-4 py-1 text-xs uppercase tracking-[0.3em] text-indigo-100/70"
+            >Vessel Software</span
           >
-            vessel software
-          </span>
           <h1
             class="text-4xl font-semibold leading-snug text-white sm:text-5xl lg:text-6xl"
           >
-            Software experiences sculpted for performance and longevity.
+            One developer, two custom frameworks, production-grade results.
           </h1>
           <p class="mx-auto max-w-3xl text-lg text-slate-200/80">
-            Vessel Software is the product studio behind Dominant and
-            Webfoundry. We pair low-level craftsmanship with pragmatic tooling
-            so teams can ship fast, run lean, and stay future-proof.
+            I built Dominant and Webfoundry after React handcoding slowed my
+            clients down. Now I ship full sites and apps about 10x faster, with
+            cleaner code and lower delivery cost than a traditional agency.
           </p>
           <div class="flex flex-wrap justify-center gap-4">
             <a
@@ -46,7 +45,7 @@
               target="_blank"
               rel="noreferrer"
             >
-              Explore Dominant
+              Watch the Dominant demo
             </a>
             <a
               class="inline-flex items-center justify-center rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-indigo-300 hover:text-white"
@@ -54,7 +53,7 @@
               target="_blank"
               rel="noreferrer"
             >
-              Try Webfoundry
+              Preview Webfoundry builds
             </a>
           </div>
         </div>
@@ -66,11 +65,11 @@
             class="grid gap-10 rounded-3xl border border-slate-800 bg-slate-900/50 p-10 text-left shadow-2xl shadow-blue-900/30 lg:grid-cols-3"
           >
             <div class="space-y-4 lg:col-span-1">
-              <h2 class="text-2xl font-semibold text-white">How we ship</h2>
+              <h2 class="text-2xl font-semibold text-white">How I deliver</h2>
               <p class="text-sm text-slate-300">
-                Vessel delivers end-to-end product engagements: from idea
-                validation to production rollout. Every engagement is anchored
-                in maintainable code and observable delivery metrics.
+                Work directly with the engineer who built the tooling. I own
+                discovery, implementation, and iteration without the overhead of
+                agency layers or handoffs.
               </p>
             </div>
             <div
@@ -80,47 +79,47 @@
                 class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
               >
                 <h3 class="text-base font-semibold text-white">
-                  Co-designed stacks
+                  Custom stack advantage
                 </h3>
                 <p class="mt-2 leading-relaxed text-slate-300">
-                  We tailor Dom-based and reactive architectures so your team
-                  inherits a stack that fits how you ship, not the other way
-                  around.
+                  Dominant and Webfoundry exist because React handcoding was a
+                  bottleneck. You get architecture that fits your product
+                  instead of conforming to a generic framework.
                 </p>
               </div>
               <div
                 class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
               >
                 <h3 class="text-base font-semibold text-white">
-                  Performance-first
+                  10x delivery speed
                 </h3>
                 <p class="mt-2 leading-relaxed text-slate-300">
-                  From animation-heavy canvases to data-dense dashboards, our
-                  toolchain keeps frame times predictable and experiences
-                  resilient.
+                  Visual building plus code-level control takes ideas to
+                  production in a fraction of the time it takes to handcraft
+                  React screens.
                 </p>
               </div>
               <div
                 class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
               >
                 <h3 class="text-base font-semibold text-white">
-                  Embedded collaboration
+                  Embedded partnership
                 </h3>
                 <p class="mt-2 leading-relaxed text-slate-300">
-                  We embed with your product and engineering leads to maintain
-                  shared context and unblock delivery in real time.
+                  I plug into your roadmap, keep feedback loops tight, and use
+                  live editing sessions so stakeholders always see real
+                  progress.
                 </p>
               </div>
               <div
                 class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-6"
               >
                 <h3 class="text-base font-semibold text-white">
-                  Long-term stewardship
+                  Lean budget impact
                 </h3>
                 <p class="mt-2 leading-relaxed text-slate-300">
-                  After launch, we provide governance playbooks, knowledge
-                  transfer, and instrumentation so the velocity keeps
-                  compounding.
+                  A solo delivery model with proprietary tooling means agency
+                  polish at a fraction of the cost, no surprise staffing fees.
                 </p>
               </div>
             </div>
@@ -139,24 +138,27 @@
               >
                 Dominant
               </span>
-              <h2 class="text-3xl font-semibold text-white mt-4">
-                High-performance rendering without the baggage
+              <h2 class="text-3xl font-semibold text-white mt-10">
+                Dominant: my lean engine for complex interfaces
               </h2>
               <p class="text-slate-300">
-                Dominant gives you direct control of DOM updates with a
-                lightweight state binding system. No virtual DOM, no runtime
-                gymnastics, just mutable state and a global update loop when you
-                need it.
+                I wrote Dominant because React's abstractions slowed client work
+                to a crawl. Mutable state, direct DOM bindings, and a single
+                update call keep performance tight and the codebase easy to
+                reason about.
               </p>
               <ul class="flex flex-col gap-2 text-sm text-slate-300">
-                <li>- Compose UI with vanilla DOM, JSX, or hyperscript.</li>
                 <li>
-                  - Lifecycle hooks that interoperate with any DOM-driven
-                  library.
+                  - Mutate plain objects and call `d.update()` when you want the
+                  DOM to react.
                 </li>
                 <li>
-                  - Proof-tested at scale by Vessel's real-world client
-                  deliveries.
+                  - Blend with any DOM API, vanilla JS widget, or legacy
+                  surface.
+                </li>
+                <li>
+                  - Battle-tested on dashboards, marketing sites, and heavy
+                  animation demos.
                 </li>
               </ul>
             </div>
@@ -181,26 +183,26 @@
               >
                 Webfoundry
               </span>
-              <h2 class="text-3xl font-semibold text-white mt-4">
-                Visual web authoring with full JavaScript support
+              <h2 class="text-3xl font-semibold text-white mt-10">
+                Webfoundry: 10x faster sites and apps
               </h2>
               <p class="text-slate-300">
-                Webfoundry lets teams design, prototype, and ship
-                production-grade pages with Tailwind, JavaScript controllers,
-                and lifecycle directives. Design in the editor, extend in code,
-                deploy to Netlify—no handoff friction.
+                Webfoundry is my visual builder layered on Dominant. I iterate
+                with clients in the canvas, wire state through controllers, and
+                push production-ready deploys in days, not months.
               </p>
               <ul class="flex flex-col gap-2 text-sm text-slate-300">
                 <li>
-                  - Bind text and HTML properties to shared controller state.
+                  - Visual Tailwind canvas backed by real JavaScript
+                  controllers.
                 </li>
                 <li>
-                  - Mix visual editing with Tailwind utilities and custom
-                  scripts.
+                  - `wf-` bindings keep copy, data, and actions in sync as we
+                  iterate.
                 </li>
                 <li>
-                  - Drop-in friendly for marketing, dashboards, and internal
-                  tools.
+                  - Netlify-ready builds with code quality that holds up long
+                  after launch.
                 </li>
               </ul>
             </div>
@@ -223,25 +225,26 @@
           class="mx-auto flex max-w-5xl flex-col gap-6 px-6 text-center text-sm text-slate-400 lg:px-10"
         >
           <p class="text-base font-medium text-white">
-            Ready to build what's next? Vessel partners with product leaders to
-            launch ambitious software faster.
+            I help founders and product teams ship polished software at a
+            fraction of traditional agency cost. Bring an idea or a backlog and
+            I will move it into production quickly.
           </p>
           <div
             class="flex flex-wrap justify-center gap-4 text-xs uppercase tracking-[0.3em] text-slate-500"
           >
-            <span>Strategy</span>
-            <span>Architecture</span>
-            <span>Delivery</span>
-            <span>Stewardship</span>
+            <span>Discovery</span>
+            <span>Design</span>
+            <span>Build</span>
+            <span>Coach</span>
           </div>
           <p>
-            Drop us a line at
+            Reach me directly at
             <a
               class="text-indigo-300 hover:text-indigo-200"
               href="mailto:hello@vessel.software"
               >hello@vessel.software</a
             >
-            to start the conversation.
+            and let's scope your build.
           </p>
         </div>
       </footer>
