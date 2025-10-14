@@ -71,7 +71,7 @@ export default class Projects {
           if (x === 'index.html') text = text.replace('<title>Webfoundry</title>', `<title>${esc(name)}</title>`);
           await rfiles.save(project, !x.endsWith('/wf.config.js') ? x : 'wf.config.js', new Blob([text], { type: mimeLookup(x) }));
         }));
-        await rfiles.save(project, 'pages/index.html', new Blob([defaultHtml], { type: 'text/html' }));
+        await rfiles.save(project, 'pages/index.html', new Blob([defaultHtml()], { type: 'text/html' }));
         bus.emit('projects:create:ready', { project });
       });
     },

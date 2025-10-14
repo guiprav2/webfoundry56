@@ -8,7 +8,9 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <script>
-      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname) ? location.pathname.split('/').slice(0, 4).join('/') : '/'
+      window.rootPrefix = /^\/(files|preview)\//.test(location.pathname)
+        ? location.pathname.split('/').slice(0, 4).join('/')
+        : '/';
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>

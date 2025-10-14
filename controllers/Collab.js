@@ -166,7 +166,15 @@ export default class Collab {
         morphdom(state.designer.current.html, patched);
         this.state.lastSnap = patched;
       }
-      if (state.designer.open) state.designer.current.cursors = ev.cursors;
+      if (state.designer.open) {
+        if (JSON.stringify(ev.cursors[state.collab.uid]) !== JSON.stringify(state.designer.current.cursors[state.collab.uid]) && ev.cursors[state.collab.uid].length) {
+          let first = state.designer.current.map.get(ev.cursors[state.collab.uid][0]);
+          let rect = first.getBoundingClientRect();
+          let visible = rect.top >= 20 && rect.bottom <= innerHeight - 20;
+          !visible && first.scrollIntoView({ block: rect.height <= innerHeight ? 'center' : 'nearest', inline: rect.width <= innerWidth ? 'center' : 'nearest' });
+        }
+        state.designer.current.cursors = ev.cursors;
+      }
       state.designer.clipboards = ev.clipboards;
       state.event.bus.emit('collab:apply:ready');
     },
