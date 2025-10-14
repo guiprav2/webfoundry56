@@ -101,7 +101,10 @@ class FilesRepository {
 
   async exportZip(project, extraFiles = {}) {
     let zip = new JSZip();
-    for (let path of await this.list(project)) zip.file(path, await this.load(project, path));
+    for (let path of await this.list(project)) {
+      if (/(^\.git\/|(^|\/)node_modules\/)/.test(path)) continue;
+      zip.file(path, await this.load(project, path));
+    }
     for (let [k, v] of Object.entries(extraFiles)) zip.file(k, v);
     return await zip.generateAsync({ type: 'blob' });
   }

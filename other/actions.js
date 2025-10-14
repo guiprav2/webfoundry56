@@ -1006,7 +1006,8 @@ let actions = {
       required: ['cls'],
     },
     handler: async ({ cur = 'master', old, cls } = {}) => {
-      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceCssClasses', cur, old, cls });
+      if (old?.startsWith?.('wfregexp:')) old = new RegExp(old.slice('wfregexp:'.length + 1, -1));
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceCssClasses', cur, old: old instanceof RegExp ? `wfregexp:${old}` : old, cls });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       let clsSet = new Set(Array.isArray(cls) ? cls : cls?.split(/\s+/) || []);
