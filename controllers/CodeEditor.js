@@ -1,6 +1,5 @@
 import rfiles from '../repos/rfiles.js';
 import { debounce, isMedia } from '../other/util.js';
-import AceCollabBinding from '../other/AceCollab.js';
 import * as pako from 'https://esm.sh/pako';
 import { lookup as mimeLookup } from 'https://esm.sh/mrmime';
 
@@ -10,7 +9,6 @@ export default class CodeEditor {
     ace: null,
     session: null,
     changeHandler: null,
-    binding: null,
     currentPath: null,
     currentProject: null,
     pendingSelection: null,
@@ -27,23 +25,14 @@ export default class CodeEditor {
         .ace_gutter-active-line { background-color: #0009 !important }
       `));
       let script = d.el('script', { src: 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.3/ace.js' });
-      let applySelection = async (project, path, opt = {}) => {
-        this.state.pendingSelection = null;
-        if (!window.ace || !this.state.ready) {
-          this.state.pendingSelection = { project, path, opt };
-          return;
-        }
-        await this.actions.open(project, path, opt);
-      };
-      bus.on('files:select:ready', async ({ project, path }) => {
-        await applySelection(project, path);
-      });
+      bus.on('files:select:ready', async ({ project, path }) => await post('codeEditor.open'));
+      /*
       bus.on('collab:apply:ready', async () => {
         if (state.collab.uid === 'master') return;
         if (!state.files.current) return;
-        let force = !this.state.currentPath || this.state.currentPath !== state.files.current;
-        await applySelection(state.projects.current, state.files.current, { force });
+        await post('codeEditor.open');
       });
+      */
       script.onload = async () => {
         this.state.ready = true;
         if (this.state.pendingSelection) {
@@ -61,33 +50,24 @@ export default class CodeEditor {
       });
     },
 
-    open: async (project, path, { force = false } = {}) => {
-      if (!path) {
-        await this.actions.reset();
-        return;
-      }
+    open: async () => {
+      let project = state.projects.current;
+      let path = state.files.current;
+      if (!path) return await post('codeEditor.reset');
       if (!this.state.target(path)) return;
       let type = mimeLookup(path);
       if (!type?.startsWith?.('text/') || type === 'text/html') return;
-      project ??= state.projects.current;
-      if (!window.ace || !this.state.ready) {
-        this.state.pendingSelection = { project, path, opt: { force } };
-        return;
-      }
-      if (!force && this.state.currentPath === path) return;
-      await this.actions.reset();
-
+      if (this.state.currentPath === path) return;
+      await post('codeEditor.reset');
       d.updateSync();
       let wrapper = document.querySelector('#CodeEditor');
       if (!wrapper) return;
       let el = d.el('div', { class: 'w-full h-full' });
       wrapper.replaceChildren(el);
-
       let editor = ace.edit(el);
       this.state.ace = editor;
       this.state.currentPath = path;
       this.state.currentProject = project;
-
       editor.setFontSize(state.settings.opt.codeFontSize || '16px');
       editor.setTheme(`ace/theme/${state.settings.opt.codeTheme || 'monokai'}`);
       state.settings.opt.vim && editor.setKeyboardHandler('ace/keyboard/vim');
@@ -95,28 +75,21 @@ export default class CodeEditor {
       mode && editor.session.setMode(`ace/mode/${mode}`);
       editor.session.setTabSize(state.settings.opt.codeTabSize || 2);
       editor.session.setOption('useWorker', false);
-
       let blob = state.collab.uid === 'master' ? await rfiles.load(project, path) : await fetchRemoteBlob(project, path, type);
       editor.session.setValue(await blob.text());
       editor.session.getUndoManager().reset();
-      this.state.binding = new AceCollabBinding({ editor, path, project });
-
       let changeHandler = async () => {
         if (!this.state.ace) return;
         if (state.collab.uid !== 'master') return;
-        if (this.state.binding?.isApplyingRemote?.()) return;
         await post('codeEditor.change');
       };
       editor.session.on('change', changeHandler);
       this.state.session = editor.session;
       this.state.changeHandler = changeHandler;
-
       editor.focus();
     },
 
     reset: async () => {
-      this.state.binding?.destroy?.();
-      this.state.binding = null;
       if (this.state.session && this.state.changeHandler) {
         this.state.session.off?.('change', this.state.changeHandler);
         this.state.session.removeListener?.('change', this.state.changeHandler);
