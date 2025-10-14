@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <title>Webfoundry Playground</title>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1"
@@ -11,54 +12,276 @@
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>
-  <body style="display: none; min-height: 100vh" class="">
-    <div class="bu box tw m-4 my-4 mt-4 mb-4 mx-4 m-8 my-8 mt-8 mb-8 mx-8">
-      <div
-        class="p-16 text-center font-sm italic text-red-500"
-        wf-onclick="foo"
+  <body style="display: none" class="min-h-screen bg-slate-950 text-slate-100">
+    <div
+      class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-16 px-6 py-12 lg:px-10"
+    >
+      <section
+        class="rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600 via-sky-500 to-fuchsia-500 p-10 text-white shadow-2xl"
       >
-        Component intentionally left blank.
-      </div>
+        <div class="max-w-2xl space-y-6">
+          <p
+            class="text-sm font-semibold uppercase tracking-[0.35em] text-white/80"
+          >
+            Welcome editors
+          </p>
+          <h1 class="text-4xl font-semibold leading-tight md:text-5xl">
+            Use the toolbar or keybindings to remix this hero section
+          </h1>
+          <p class="text-base leading-relaxed text-white/80">
+            Select the headline and try swapping text colors from the Tailwind
+            toolbar above or the styles panel (pencil icon on the sidebar →
+            change e.g. `text-white` → `text-yellow-100`), experiment with
+            different gradients, and add a Google Font also from the Tailwind
+            toolbar or styles panel (e.g. add `gfont-[Poppins]`).
+          </p>
+          <div class="grid gap-3 text-sm text-white/80 md:grid-cols-2">
+            <div
+              class="rounded-2xl border border-white/25 bg-white/10 p-4 flex"
+            >
+              Change the background colors by editing the gradient utilities on
+              this section element.
+            </div>
+            <div
+              class="rounded-2xl border border-white/25 bg-white/10 p-4 flex"
+            >
+              Tweak font sizes (`text-4xl`, `md:text-5xl`) and weights to feel
+              how Tailwind classes update instantly.
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div class="p-16 text-center font-sm italic text-green-500" style="">
-        Component intentionally left blank.
-      </div>
-      <div class="p-16 text-center font-sm italic text-blue-500" style="">
-        Component intentionally left blank.
-      </div>
-      <div class="grid gap-6 sm:grid-cols-3 xl:grid-cols-5">
-        <img
-          src="https://cdn.donmai.us/original/96/6d/__kagiyama_hina_touhou_drawn_by_kageharu__966df12e2422075322bd0fc9a33b87e8.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/ca/59/__ouro_kronii_hololive_and_1_more_drawn_by_hunk_404__ca59468ca7a4ffee5b7a77f921981245.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/10/3a/__original_drawn_by_blackbox_blackbox9158__103a60cf6e681456be22c166f848e968.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/a2/71/__selia_original_and_2_more_drawn_by_hiramine_akira__a27109fa6bfeca1710c5a89376094289.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/c1/04/__almond_eye_umamusume_drawn_by_hakazero__c1049d0d69f31cc8fedf55d305e90589.png"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/63/58/__idolmaster_drawn_by_blackbox_blackbox9158__63586fb1337d5aee8207adc6b8b85369.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/84/8a/__idolmaster_drawn_by_blackbox_blackbox9158__848a327f8ec12ff7edea53d9a62c9656.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/ca/21/__takamatsu_tomori_and_toyama_kasumi_bang_dream_and_1_more_drawn_by_zuki_user_mzpz5848__ca2161163c7812093e1c9c12d89d7f9b.jpg"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/68/b3/__jane_mahjong_soul__68b3c672b09f84e359e4a7e012dca71a.png"
-          class="h-96 object-cover w-full"
-        /><img
-          src="https://cdn.donmai.us/original/0f/fa/__hikari_and_nozomi_blue_archive_drawn_by_renoahh__0ffac9363104a95aca58041bbf223bc2.png"
-          class="h-96 object-cover w-full"
-        />
-      </div>
+      <section class="grid gap-10 lg:grid-cols-[1.1fr,0.9fr]">
+        <div class="space-y-10">
+          <article
+            class="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-lg"
+          >
+            <h2 class="text-2xl font-semibold">Tailwind utility playground</h2>
+            <p class="mt-2 text-sm text-white/70">
+              Select the instruction cards in this column and try stacking
+              utilities:
+            </p>
+            <div class="mt-5 grid gap-4 md:grid-cols-2">
+              <div
+                class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-white/70"
+              >
+                Swap `rounded-3xl` for sharper corners or add `ring-2` to
+                outline the card.
+              </div>
+              <div
+                class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-white/70"
+              >
+                Change `p-8` to `p-6` or `p-10` and pair it with responsive
+                padding classes like `md:p-12`.
+              </div>
+              <div
+                class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-white/70"
+              >
+                Apply `gfont-[Playfair_Display]` and adjust `tracking-[0.3em]`
+                to customize typography.
+              </div>
+              <div
+                class="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-white/70"
+              >
+                Insert `hover:-translate-y-1` and `transition` utilities to demo
+                interactive states.
+              </div>
+            </div>
+          </article>
+
+          <article
+            class="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-lg"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 class="text-2xl font-semibold">
+                Keybindings quick reference
+              </h2>
+            </div>
+            <p class="mt-2 text-sm text-white/70">
+              Prefer the keyboard? These shortcuts mirror the ones available in
+              the main app and `/collab.html`:
+            </p>
+            <dl class="mt-5 space-y-3 text-sm text-white/70">
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  Ctrl/⌘ + Z
+                </dt>
+                <dd class="flex-1">Undo the last change.</dd>
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  Ctrl/⌘ + Y
+                </dt>
+                <dd class="flex-1">Redo in shared history.</dd>
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  H / J / K / L
+                </dt>
+                <dd class="flex-1">
+                  Move selection to parent, next, previous, or child element
+                  (also works with arrow keys).
+                </dd>
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  Escape
+                </dt>
+                <dd class="flex-1">
+                  Clear the current selection, then press again to restore it.
+                </dd>
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  t
+                </dt>
+                <dd class="flex-1">Change text content of selected element.</dd>
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  Ctrl/⌘ + C
+                </dt>
+                <dd class="flex-1">Copy the focused element(s).</dd>
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3"
+              >
+                <dt
+                  class="rounded border border-white/20 bg-slate-900 px-2 py-1 font-mono text-xs"
+                >
+                  p / P / o / O
+                </dt>
+                <dd class="flex-1">
+                  Paste copied elements around or inside current selection.
+                </dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+
+        <div class="space-y-10">
+          <article
+            class="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-lg"
+          >
+            <h2 class="text-2xl font-semibold">Hello, Webfoundry!</h2>
+            <p class="mt-2 text-sm text-white/70">
+              This card is wired to `controllers/Playground.js`. Update the
+              input to see bindings in action, then launch some celebratory
+              confetti.
+            </p>
+            <div
+              class="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-6"
+            >
+              <div class="text-sm uppercase tracking-[0.3em] text-white/50">
+                Greeting output
+              </div>
+              <div class="mt-3 text-3xl font-semibold text-white/90">
+                {{state.playground.greeting}}
+              </div>
+              <div class="mt-5 flex flex-col gap-3 text-sm text-white/70">
+                <label class="text-xs font-semibold uppercase tracking-[0.2em]">
+                  Enter your name
+                </label>
+                <input
+                  class="rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-base text-white placeholder:text-white/40 focus:border-emerald-300/70 focus:outline-none focus:ring-2 focus:ring-emerald-300/40"
+                  value="{{state.playground.nameInput}}"
+                  placeholder="Type your name"
+                  wf-oninput="post('playground.updateName', _1.value)"
+                />
+                <button
+                  class="self-start rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-900 shadow-md shadow-emerald-500/40 transition hover:bg-emerald-300"
+                  wf-onclick="(() =&gt; { post('playground.fireGreeting'); launchPlaygroundConfetti?.(); })()"
+                >
+                  Say hello
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article
+            class="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-lg"
+          >
+            <h2 class="text-2xl font-semibold">Tasklist demo</h2>
+            <p class="mt-2 text-sm text-white/70">
+              Add lightweight tasks to track what you still want to tweak. These
+              states live only in preview, so collaborators can create their own
+              lists without collisions.
+            </p>
+            <div class="mt-4 space-y-3" wf-map="task of state.playground.tasks">
+              <button
+                class="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-left text-sm text-white/80 transition hover:border-emerald-400/70 hover:text-white"
+                wf-class="{{task.done &amp;&amp; 'border-emerald-400/70 text-emerald-200'}}"
+                wf-onclick="post('playground.toggleTask', task.id)"
+              >
+                <span
+                  class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/40 text-xs"
+                  wf-class="{{task.done &amp;&amp; 'border-emerald-300/80 bg-emerald-300/30 text-emerald-100'}}"
+                >
+                  <span class="nf nf-md-check" wf-if="task.done"></span>
+                </span>
+                <span class="flex-1">{{task.label}}</span>
+              </button>
+            </div>
+            <div
+              class="mt-6 flex flex-col gap-3 text-sm text-white/70 sm:flex-row"
+            >
+              <input
+                class="flex-1 rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-base text-white placeholder:text-white/40 focus:border-emerald-300/70 focus:outline-none focus:ring-2 focus:ring-emerald-300/40"
+                value="{{state.playground.newTask}}"
+                placeholder="Add another task..."
+                wf-oninput="state.playground.newTask = _1.value"
+              />
+              <button
+                class="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-md shadow-emerald-500/40 transition hover:bg-emerald-300"
+                wf-onclick="post('playground.addTask')"
+              >
+                Add task
+              </button>
+            </div>
+            <button
+              class="mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-white/50 transition hover:text-white"
+              wf-onclick="post('playground.clearCompleted')"
+            >
+              Clear completed tasks
+            </button>
+          </article>
+        </div>
+      </section>
     </div>
+
+    <script type="module">
+      import confetti from 'https://cdn.skypack.dev/canvas-confetti';
+      window.launchPlaygroundConfetti = () =>
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+    </script>
   </body>
 </html>
