@@ -10,7 +10,6 @@ export default class Collab {
     get uid() { return location.pathname !== '/collab.html' ? 'master' : this.rtc?.uid },
     ver: 0,
     rpcs: {},
-    codeVersions: new Map(),
   };
 
   actions = {
@@ -37,8 +36,6 @@ export default class Collab {
         });
         this.state.rtc.events.on('presence:update', async () => state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence }));
         this.state.rtc.events.on('presence:join', async () => state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence }));
-        this.state.rtc.events.on('code:op', async ev => await post('collab.codeApply', ev));
-        this.state.rtc.events.on('code:cursor', async ev => await post('collab.codeCursorApply', ev));
         bus.on('designer:resize:ready', async () => await post('collab.resizeSync'));
       }
     },
@@ -55,8 +52,6 @@ export default class Collab {
       rtc.events.on('resize', async ev => { state.designer.frameWidth = ev.frameWidth; state.designer.frameHeight = ev.frameHeight; d.update() });
       rtc.events.on('cmd', async ev => await actions[ev.k].handler({ cur: null, ...ev, cur: ev.peer }));
       rtc.events.on('teardown', async () => await post('collab.leave'));
-      rtc.events.on('code:op', async ev => await post('collab.codeApply', ev));
-      rtc.events.on('code:cursor', async ev => await post('collab.codeCursorApply', ev));
       await post('collab.sync', 'full');
     },
 
@@ -121,28 +116,6 @@ export default class Collab {
     },
 
     resizeSync: async () => this.state.rtc?.send?.({ type: 'resize', frameWidth: state.designer.frameWidth, frameHeight: state.designer.frameHeight }),
-
-    codeBroadcast: async payload => {
-      if (!this.state.rtc) return;
-      let { path, project, base, version, ops, value, author } = payload;
-      if (version != null) this.state.codeVersions.set(path, version);
-      await this.state.rtc.send({ type: 'code:op', path, project, base, version, ops, value, author });
-    },
-
-    codeApply: async ev => {
-      if (ev.version != null) this.state.codeVersions.set(ev.path, ev.version);
-      else if (ev.base != null) this.state.codeVersions.set(ev.path, ev.base + 1);
-      state.event.bus.emit('collab:code:op', ev);
-    },
-
-    codeCursorBroadcast: async payload => {
-      if (!this.state.rtc) return;
-      await this.state.rtc.send({ type: 'code:cursor', ...payload });
-    },
-
-    codeCursorApply: async ev => {
-      state.event.bus.emit('collab:code:cursor', ev);
-    },
 
     apply: async ev => {
       if (ev.ver <= this.state.ver) return;
