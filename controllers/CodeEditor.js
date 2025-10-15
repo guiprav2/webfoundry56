@@ -1,13 +1,14 @@
 import rfiles from '../repos/rfiles.js';
 import { debounce, isMedia } from '../other/util.js';
 import { loadCodeMirrorBase, mountCodeMirror } from '../other/codemirror.js';
-import * as pako from 'https://esm.sh/pako';
+import { createYjsBackend } from '../components/CodeEditor.js';
 import { lookup as mimeLookup } from 'https://esm.sh/mrmime';
 
 export default class CodeEditor {
   state = {
     target(path) { return (path && !isMedia(path) && !(/^components\/|pages\//.test(path) && path.endsWith('.html'))) },
     editorHandle: null,
+    yBackend: null,
     changeHandler: null,
     currentPath: null,
     currentProject: null,
@@ -28,13 +29,11 @@ export default class CodeEditor {
         `));
       }
       bus.on('files:select:ready', async ({ project, path }) => await post('codeEditor.open'));
-      /*
       bus.on('collab:apply:ready', async () => {
         if (state.collab.uid === 'master') return;
         if (!state.files.current) return;
         await post('codeEditor.open');
       });
-      */
       loadCodeMirrorBase()
         .then(async () => {
           this.state.ready = true;
@@ -108,9 +107,22 @@ export default class CodeEditor {
       this.state.editorHandle = { editor, destroy, setTheme, setKeyMap, setMode };
       this.state.currentPath = path;
       this.state.currentProject = project;
-      let blob = state.collab.uid === 'master' ? await rfiles.load(project, path) : await fetchRemoteBlob(project, path, type);
-      let text = blob ? await blob.text() : '';
-      editor.setValue(text || '');
+      let initialText = '';
+      if (state.collab.uid === 'master') {
+        let blob = await rfiles.load(project, path);
+        initialText = blob ? await blob.text() : '';
+      }
+      this.state.yBackend?.destroy?.();
+      this.state.yBackend = createYjsBackend({
+        editor,
+        project,
+        path,
+        initialValue: initialText,
+        clientId: state.collab.uid,
+        isMaster: state.collab.uid === 'master',
+        getRTC: () => state.collab.rtc,
+        bus: state.event?.bus,
+      });
       editor.getWrapperElement?.().classList?.add?.('w-full', 'h-full');
       editor.getDoc?.().clearHistory?.();
       let changeHandler = async () => {
@@ -127,6 +139,8 @@ export default class CodeEditor {
       if (this.state.editorHandle?.editor && this.state.changeHandler) {
         this.state.editorHandle.editor.off('change', this.state.changeHandler);
       }
+      this.state.yBackend?.destroy?.();
+      this.state.yBackend = null;
       this.state.editorHandle?.destroy?.();
       this.state.editorHandle = null;
       this.state.changeHandler = null;
@@ -142,19 +156,4 @@ export default class CodeEditor {
       await rfiles.save(state.projects.current, state.files.current, new Blob([this.state.editorHandle.editor.getValue()], { type }));
     }, 200),
   };
-}
-
-async function fetchRemoteBlob(project, path, type) {
-  try {
-    let data = await post('collab.rpc', 'fetch', { project, path });
-    if (!data) return null;
-    let chars = atob(data);
-    let nums = new Uint8Array(chars.length);
-    for (let i = 0; i < chars.length; i++) nums[i] = chars.charCodeAt(i);
-    let unpacked = pako.ungzip(nums);
-    return new Blob([unpacked], { type });
-  } catch (err) {
-    console.error('CodeEditor fetchRemoteBlob error', err);
-    return null;
-  }
 }
