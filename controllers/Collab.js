@@ -57,8 +57,10 @@ export default class Collab {
     },
 
     stop: () => {
+      if (!this.state.rtc) return;
       this.state.rtc.teardown();
       this.state.rtc = null;
+      state.event.bus.emit('collab:presence:update', { presence: [] });
     },
 
     rpc: async (proc, data = {}) => {
