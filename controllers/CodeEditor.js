@@ -21,11 +21,11 @@ export default class CodeEditor {
       let { bus } = state.event;
       if (!document.getElementById('CodeEditorStyles')) {
         document.head.append(d.el('style', { id: 'CodeEditorStyles' }, `
-          .CodeMirror { height: 100%; background-color: #04060960 !important; height: 100%; }
+          .CodeMirror { height: 100%; background-color: #04060960 !important }
           .CodeMirror-gutters { background-color: #060a0f60 !important; }
           .CodeMirror-activeline-background { background-color: #0009 !important; }
           .CodeMirror-activeline .CodeMirror-gutter-elt { background-color: #0009 !important; }
-          .CodeMirror-lines > div > :nth-child(3) { display: none }
+          .CodeMirror-code { position: absolute; top: 0 }
         `));
       }
       bus.on('files:select:ready', async ({ project, path }) => await post('codeEditor.open'));
