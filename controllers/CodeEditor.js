@@ -23,6 +23,7 @@ export default class CodeEditor {
     cursorRTC: null,
     cursorRTCHandler: null,
     lastCursorBroadcast: 0,
+    cursorBroadcastTimeout: null,
     presenceListener: null,
   };
 
@@ -81,7 +82,21 @@ export default class CodeEditor {
     let doc = editor.getDoc?.();
     if (!doc?.listSelections) return;
     let now = performance.now();
-    if (!force && now - this.state.lastCursorBroadcast < CURSOR_BROADCAST_MIN_INTERVAL) return;
+    let elapsed = now - this.state.lastCursorBroadcast;
+    if (!force && elapsed < CURSOR_BROADCAST_MIN_INTERVAL) {
+      if (!this.state.cursorBroadcastTimeout) {
+        let delay = Math.max(0, CURSOR_BROADCAST_MIN_INTERVAL - elapsed);
+        this.state.cursorBroadcastTimeout = setTimeout(() => {
+          this.state.cursorBroadcastTimeout = null;
+          this.broadcastCursor(true);
+        }, delay);
+      }
+      return;
+    }
+    if (this.state.cursorBroadcastTimeout) {
+      clearTimeout(this.state.cursorBroadcastTimeout);
+      this.state.cursorBroadcastTimeout = null;
+    }
     this.state.lastCursorBroadcast = now;
     let ranges = doc.listSelections().map(sel => ({
       anchor: { line: sel.anchor.line, ch: sel.anchor.ch },
@@ -182,10 +197,8 @@ export default class CodeEditor {
     let cursorNodes = wrap.querySelectorAll(`.CodeMirror-remote-cursor-${peerCls}`);
     let selectionColor = color || FALLBACK_CURSOR_COLOR;
     for (let node of selectionNodes) {
-      for (let cls of [...node.classList]) {
-        if (/^bg-.*!$/.test(cls) || cls === 'opacity-30' || cls === 'opacity-40') node.classList.remove(cls);
-      }
-      node.classList.add(`bg-${selectionColor}!`, 'opacity-30');
+      for (let cls of [...node.classList]) if (/^bg-.*!$/.test(cls) || cls === 'opacity-20') node.classList.remove(cls);
+      node.classList.add(`bg-${selectionColor}!`, 'opacity-20');
       node.dataset.peer = peer;
     }
     let lineHeight = editor.defaultTextHeight?.() ?? 16;
@@ -410,6 +423,10 @@ export default class CodeEditor {
       }
       if (this.state.editorHandle?.editor && this.state.cursorStyleHandler) {
         this.state.editorHandle.editor.off('cursorActivity', this.state.cursorStyleHandler);
+      }
+      if (this.state.cursorBroadcastTimeout) {
+        clearTimeout(this.state.cursorBroadcastTimeout);
+        this.state.cursorBroadcastTimeout = null;
       }
       if (state.collab.rtc && this.state.currentProject && this.state.currentPath) {
         try {
