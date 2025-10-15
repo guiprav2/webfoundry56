@@ -2790,12 +2790,12 @@
                   Please standby...
                 </div>
                 <img
-                  wf-if="state.collab.rtc?.sync &amp;&amp; !state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
+                  wf-if="state.collab.rtc?.sync &amp;&amp; state.collab.sessionEnded"
                   src="https://cdn.donmai.us/original/d7/06/__natasha_cats_crypts_drawn_by_moshimoshi_mo_518_mo__d706d9b1d5daca6ab9e808221a435c39.gif"
                   class="w-48 rounded-lg"
                 />
                 <div
-                  wf-if="state.collab.rtc?.sync &amp;&amp; !state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
+                  wf-if="state.collab.rtc?.sync &amp;&amp; state.collab.sessionEnded"
                   class="text-white text-center text-sm italic"
                 >
                   Session ended.
@@ -2916,7 +2916,7 @@
           </div>
         </div>
         <div
-          wf-if="state.collab.rtc"
+          wf-if="state.collab.rtc &amp;&amp; !state.collab.sessionEnded"
           class="border-t border-black/50 bg-[#060a0fc0] backdrop-blur-[4px]"
           hidden=""
         >

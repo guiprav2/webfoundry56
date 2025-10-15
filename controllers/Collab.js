@@ -33,6 +33,7 @@ export default class Collab {
         this.state.rtc.events.on('presence:leave', async () => {
           await post('collab.leave');
           state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence });
+          if (!state.collab.rtc.presence.some(x => x.user === 'master')) { state.projects.current = null; state.files.list = []; this.state.sessionEnded = true }
         });
         this.state.rtc.events.on('presence:update', async () => state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence }));
         this.state.rtc.events.on('presence:join', async () => state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence }));
