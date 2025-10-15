@@ -14,6 +14,7 @@ export default class CodeEditor {
     currentProject: null,
     pendingSelection: null,
     ready: false,
+    cursorStyleHandler: null,
   };
 
   actions = {
@@ -26,6 +27,7 @@ export default class CodeEditor {
           .CodeMirror-activeline-background { background-color: #0009 !important; }
           .CodeMirror-activeline .CodeMirror-gutter-elt { background-color: #0009 !important; }
           .CodeMirror-code { position: absolute; top: 0 }
+          .CodeMirror-cursor { margin-top: -16px }
         `));
       }
       bus.on('files:select:ready', async ({ project, path }) => await post('codeEditor.open'));
@@ -125,6 +127,18 @@ export default class CodeEditor {
       });
       editor.getWrapperElement?.().classList?.add?.('w-full', 'h-full');
       editor.getDoc?.().clearHistory?.();
+      let syncCursorSelectionClasses = () => {
+        let color = state.collab.rtc?.presence?.find?.(x => x.user === state.collab.uid)?.color;
+        let wrap = editor.getWrapperElement?.();
+        if (!color || !wrap) return;
+        let cursor = wrap.querySelector('.CodeMirror-cursor');
+        if (cursor) cursor.classList.add(`border-${color}!`);
+        wrap.querySelectorAll('.CodeMirror-selected').forEach(sel => sel.classList.add(`bg-${color}!`, 'opacity-30'));
+      };
+      let scheduleCursorSelectionSync = () => queueMicrotask(syncCursorSelectionClasses);
+      editor.on('cursorActivity', scheduleCursorSelectionSync);
+      this.state.cursorStyleHandler = scheduleCursorSelectionSync;
+      scheduleCursorSelectionSync();
       let changeHandler = async () => {
         if (!this.state.editorHandle?.editor) return;
         if (state.collab.uid !== 'master') return;
@@ -139,11 +153,15 @@ export default class CodeEditor {
       if (this.state.editorHandle?.editor && this.state.changeHandler) {
         this.state.editorHandle.editor.off('change', this.state.changeHandler);
       }
+      if (this.state.editorHandle?.editor && this.state.cursorStyleHandler) {
+        this.state.editorHandle.editor.off('cursorActivity', this.state.cursorStyleHandler);
+      }
       this.state.yBackend?.destroy?.();
       this.state.yBackend = null;
       this.state.editorHandle?.destroy?.();
       this.state.editorHandle = null;
       this.state.changeHandler = null;
+      this.state.cursorStyleHandler = null;
       this.state.currentPath = null;
       this.state.currentProject = null;
       let wrapper = document.querySelector('#CodeEditor');
