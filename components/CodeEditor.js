@@ -27,7 +27,7 @@ export function createYjsBackend({
     }, 'initial-load');
   }
 
-  let provider = new SupabaseYProvider({
+  let provider = new TrysteroYProvider({
     doc,
     project,
     path,
@@ -49,7 +49,7 @@ export function createYjsBackend({
   };
 }
 
-class SupabaseYProvider {
+class TrysteroYProvider {
   constructor({ doc, project, path, clientId, isMaster, getRTC, bus }) {
     this.doc = doc;
     this.project = project;
