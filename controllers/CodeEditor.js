@@ -197,8 +197,8 @@ export default class CodeEditor {
     let cursorNodes = wrap.querySelectorAll(`.CodeMirror-remote-cursor-${peerCls}`);
     let selectionColor = color || FALLBACK_CURSOR_COLOR;
     for (let node of selectionNodes) {
-      for (let cls of [...node.classList]) if (/^bg-.*!$/.test(cls) || cls === 'opacity-20') node.classList.remove(cls);
-      node.classList.add(`bg-${selectionColor}!`, 'opacity-20');
+      for (let cls of [...node.classList]) if (/^bg-.*!$/.test(cls)) node.classList.remove(cls);
+      node.classList.add(`bg-${selectionColor}/30!`);
       node.dataset.peer = peer;
     }
     let lineHeight = editor.defaultTextHeight?.() ?? 16;
@@ -391,11 +391,11 @@ export default class CodeEditor {
           for (let cls of [...cursor.classList]) if (/^border-.*!$/.test(cls)) cursor.classList.remove(cls);
         }
         wrap.querySelectorAll('.CodeMirror-selected').forEach(sel => {
-          for (let cls of [...sel.classList]) if (/^bg-.*!$/.test(cls) || cls === 'opacity-30') sel.classList.remove(cls);
+          for (let cls of [...sel.classList]) if (/^bg-.*!$/.test(cls)) sel.classList.remove(cls);
         });
         if (!color) return;
         if (cursor) cursor.classList.add(`border-${color}!`);
-        wrap.querySelectorAll('.CodeMirror-selected').forEach(sel => sel.classList.add(`bg-${color}!`, 'opacity-30'));
+        wrap.querySelectorAll('.CodeMirror-selected').forEach(sel => { sel.classList.add(`bg-${color}/30!`) });
       };
       this.state.syncLocalCursorStyles = syncCursorSelectionClasses;
       let handleCursorActivity = () => {
