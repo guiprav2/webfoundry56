@@ -1,13 +1,13 @@
 import rfiles from '../repos/rfiles.js';
 import { debounce, isMedia } from '../other/util.js';
+import { loadCodeMirrorBase, mountCodeMirror } from '../other/codemirror.js';
 import * as pako from 'https://esm.sh/pako';
 import { lookup as mimeLookup } from 'https://esm.sh/mrmime';
 
 export default class CodeEditor {
   state = {
     target(path) { return (path && !isMedia(path) && !(/^components\/|pages\//.test(path) && path.endsWith('.html'))) },
-    ace: null,
-    session: null,
+    editorHandle: null,
     changeHandler: null,
     currentPath: null,
     currentProject: null,
@@ -18,13 +18,15 @@ export default class CodeEditor {
   actions = {
     init: () => {
       let { bus } = state.event;
-      document.head.append(d.el('style', `
-        .ace_editor { background-color: #04060960 !important }
-        .ace_gutter { background-color: #060a0f60 !important }
-        .ace_active-line { background-color: #0009 !important }
-        .ace_gutter-active-line { background-color: #0009 !important }
-      `));
-      let script = d.el('script', { src: 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.43.3/ace.js' });
+      if (!document.getElementById('CodeEditorStyles')) {
+        document.head.append(d.el('style', { id: 'CodeEditorStyles' }, `
+          .CodeMirror { height: 100%; background-color: #04060960 !important; height: 100%; }
+          .CodeMirror-gutters { background-color: #060a0f60 !important; }
+          .CodeMirror-activeline-background { background-color: #0009 !important; }
+          .CodeMirror-activeline .CodeMirror-gutter-elt { background-color: #0009 !important; }
+          .CodeMirror-lines > div > :nth-child(3) { display: none }
+        `));
+      }
       bus.on('files:select:ready', async ({ project, path }) => await post('codeEditor.open'));
       /*
       bus.on('collab:apply:ready', async () => {
@@ -33,20 +35,44 @@ export default class CodeEditor {
         await post('codeEditor.open');
       });
       */
-      script.onload = async () => {
-        this.state.ready = true;
-        if (this.state.pendingSelection) {
-          let { project, path, opt } = this.state.pendingSelection;
-          this.state.pendingSelection = null;
-          await this.actions.open(project, path, opt);
+      loadCodeMirrorBase()
+        .then(async () => {
+          this.state.ready = true;
+          if (this.state.pendingSelection) {
+            this.state.pendingSelection = null;
+            await this.actions.open();
+          }
+          bus.emit('codeEditor:init:ready');
+        })
+        .catch(err => bus.emit('codeEditor:script:error', { error: err }));
+      bus.on('settings:global:option:ready', async ({ k, v }) => {
+        switch (k) {
+          case 'vim':
+            await this.state.editorHandle?.setKeyMap?.(v ? 'vim' : 'default');
+            break;
+          case 'codeTheme': {
+            let theme = v || state.settings.opt.codeTheme || 'monokai';
+            await this.state.editorHandle?.setTheme?.(theme);
+            break;
+          }
+          case 'codeFontSize': {
+            let size = state.settings.opt.codeFontSize || v || '16px';
+            let wrap = this.state.editorHandle?.editor?.getWrapperElement?.();
+            if (wrap) {
+              wrap.style.fontSize = typeof size === 'number' ? `${size}px` : size;
+              this.state.editorHandle.editor.refresh();
+            }
+            break;
+          }
+          case 'codeTabSize': {
+            let size = Number(v ?? state.settings.opt.codeTabSize) || 2;
+            this.state.editorHandle?.editor?.setOption?.('tabSize', size);
+            this.state.editorHandle?.editor?.setOption?.('indentUnit', size);
+            break;
+          }
+          default:
+            break;
         }
-        bus.emit('codeEditor:init:ready');
-      };
-      script.onerror = err => bus.emit('codeEditor:script:error', { error: err });
-      document.head.append(script);
-      bus.on('settings:global:option:ready', ({ k, v}) => {
-        if (k !== 'vim') return;
-        this.state.ace?.setKeyboardHandler?.(v ? 'ace/keyboard/vim' : null);
       });
     },
 
@@ -58,48 +84,52 @@ export default class CodeEditor {
       let type = mimeLookup(path);
       if (!type?.startsWith?.('text/') || type === 'text/html') return;
       if (this.state.currentPath === path) return;
+      if (!this.state.ready) {
+        this.state.pendingSelection = true;
+        return;
+      }
       await post('codeEditor.reset');
       d.updateSync();
       let wrapper = document.querySelector('#CodeEditor');
       if (!wrapper) return;
       let el = d.el('div', { class: 'w-full h-full' });
       wrapper.replaceChildren(el);
-      let editor = ace.edit(el);
-      this.state.ace = editor;
+      let tabSize = state.settings.opt.codeTabSize || 2;
+      let fontSize = state.settings.opt.codeFontSize || '16px';
+      let modeKey = { html: 'html', css: 'css', js: 'javascript', md: 'markdown' }[path.split('.').pop()?.toLowerCase?.()] ?? null;
+      let { editor, destroy, setTheme, setKeyMap, setMode } = await mountCodeMirror(el, {
+        mode: modeKey,
+        theme: state.settings.opt.codeTheme || 'monokai',
+        keyMap: state.settings.opt.vim ? 'vim' : 'default',
+        tabSize,
+        fontSize,
+        lineWrapping: false,
+      });
+      this.state.editorHandle = { editor, destroy, setTheme, setKeyMap, setMode };
       this.state.currentPath = path;
       this.state.currentProject = project;
-      editor.setFontSize(state.settings.opt.codeFontSize || '16px');
-      editor.setTheme(`ace/theme/${state.settings.opt.codeTheme || 'monokai'}`);
-      state.settings.opt.vim && editor.setKeyboardHandler('ace/keyboard/vim');
-      let mode = { html: 'html', css: 'css', js: 'javascript', md: 'markdown' }[path.split('.').pop()];
-      mode && editor.session.setMode(`ace/mode/${mode}`);
-      editor.session.setTabSize(state.settings.opt.codeTabSize || 2);
-      editor.session.setOption('useWorker', false);
       let blob = state.collab.uid === 'master' ? await rfiles.load(project, path) : await fetchRemoteBlob(project, path, type);
-      editor.session.setValue(await blob.text());
-      editor.session.getUndoManager().reset();
+      let text = blob ? await blob.text() : '';
+      editor.setValue(text || '');
+      editor.getWrapperElement?.().classList?.add?.('w-full', 'h-full');
+      editor.getDoc?.().clearHistory?.();
       let changeHandler = async () => {
-        if (!this.state.ace) return;
+        if (!this.state.editorHandle?.editor) return;
         if (state.collab.uid !== 'master') return;
         await post('codeEditor.change');
       };
-      editor.session.on('change', changeHandler);
-      this.state.session = editor.session;
+      editor.on('change', changeHandler);
       this.state.changeHandler = changeHandler;
       editor.focus();
     },
 
     reset: async () => {
-      if (this.state.session && this.state.changeHandler) {
-        this.state.session.off?.('change', this.state.changeHandler);
-        this.state.session.removeListener?.('change', this.state.changeHandler);
+      if (this.state.editorHandle?.editor && this.state.changeHandler) {
+        this.state.editorHandle.editor.off('change', this.state.changeHandler);
       }
-      this.state.session = null;
+      this.state.editorHandle?.destroy?.();
+      this.state.editorHandle = null;
       this.state.changeHandler = null;
-      if (this.state.ace) {
-        this.state.ace.destroy();
-        this.state.ace = null;
-      }
       this.state.currentPath = null;
       this.state.currentProject = null;
       let wrapper = document.querySelector('#CodeEditor');
@@ -107,9 +137,9 @@ export default class CodeEditor {
     },
 
     change: debounce(async () => {
-      if (!this.state.ace || !state.files.current) return;
+      if (!this.state.editorHandle?.editor || !state.files.current) return;
       let type = mimeLookup(state.files.current);
-      await rfiles.save(state.projects.current, state.files.current, new Blob([this.state.ace.session.getValue()], { type }));
+      await rfiles.save(state.projects.current, state.files.current, new Blob([this.state.editorHandle.editor.getValue()], { type }));
     }, 200),
   };
 }

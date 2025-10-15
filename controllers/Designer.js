@@ -261,7 +261,7 @@ export default class Designer {
     keydown: async (ev, external) => {
       // FIXME: Slave support
       if (/^input|textarea|button$/i.test(external ? document.activeElement.tagName : this.state.current.doc.activeElement.tagName)) {
-        if (ev.key === 'Escape' && !ev.target.closest('.ace_editor')) ev.target.blur();
+        if (ev.key === 'Escape' && !ev.target.closest('.CodeMirror')) ev.target.blur();
         return;
       }
       let key = ev.key;
