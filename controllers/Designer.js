@@ -128,11 +128,11 @@ export default class Designer {
           d.update();
         }
       });
-      addEventListener('keydown', async ev => await post('designer.keydown', ev, true), true);
+      addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev, true), true);
       await post('designer.trackCursors');
     },
 
-    reset: () => this.state.list = [],
+    reset: async () => { this.state.list = []; await post('designer.toggleMobileKeyboard') },
 
     select: async path => {
       if (this.state.list.find(x => x.path === path)) return;
@@ -195,7 +195,7 @@ export default class Designer {
         frame.html.addEventListener('mousedown', async ev => await post('designer.mousedown', ev), true);
         frame.html.addEventListener('click', ev => ev.preventDefault(), true);
         frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
-        frame.html.addEventListener('keydown', async ev => await post('designer.keydown', ev), true);
+        frame.html.addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev), true);
       }
       if (!frame.heightHooked) { d.el(frame.el, { style: { height: () => this.state.frameHeight } }); frame.heightHooked = true }
       frame.ready = true;
@@ -260,11 +260,14 @@ export default class Designer {
 
     keydown: async (ev, external) => {
       // FIXME: Slave support
-      if (/^input|textarea|button$/i.test(external ? document.activeElement.tagName : this.state.current.doc.activeElement.tagName)) {
+      let activeEl = external ? document.activeElement : this.state.current?.doc?.activeElement;
+      let activeTag = activeEl?.tagName || '';
+      let isLockInput = activeEl?.id === 'DesignerMobileKeyboardLock';
+      if (!isLockInput && /^input|textarea|button$/i.test(activeTag)) {
         if (ev.key === 'Escape' && !ev.target.closest('.CodeMirror')) ev.target.blur();
         return;
       }
-      let key = ev.key;
+      let key = ev.key || ev.data;
       if (ev.altKey && ev.key !== 'Alt') key = `Alt-${key}`;
       if (ev.ctrlKey && ev.key !== 'Control') key = `Ctrl-${key}`;
       if (key === 'Control') key = 'Ctrl';
@@ -272,6 +275,30 @@ export default class Designer {
       if (!cmd || cmd?.disabled?.({ cur: state.collab.uid })?.filter?.(Boolean)?.length) return;
       ev.preventDefault();
       await cmd.handler({ cur: state.collab.uid });
+    },
+
+    toggleMobileKeyboard: async () => {
+      if (!state.app.mobile) return;
+      let input = (() => {
+        if (this.state.mobileKeyboardInput) return this.state.mobileKeyboardInput;
+        let input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'DesignerMobileKeyboardLock';
+        input.inputMode = 'text';
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('autocapitalize', 'off');
+        Object.assign(input.style, { position: 'fixed', top: '50vh', left: 0, width: '1px', height: '1px', opacity: 0, pointerEvents: 'none', border: 0, padding: 0 });
+        input.addEventListener('focus', () => input.setSelectionRange?.(input.value.length, input.value.length));
+        input.addEventListener('input', () => { input.value = ''; input.setSelectionRange?.(input.value.length, input.value.length) });
+        document.body.append(input);
+        input.addEventListener('blur', () => { input.remove(); this.state.mobileKeyboardInput = null });
+        this.state.mobileKeyboardInput = input;
+        return input;
+      })();
+      if (this.state.current.cursors[state.collab.uid]?.length && document.activeElement !== input) {
+        input.focus({ preventScroll: true });
+        input.setSelectionRange?.(input.value.length, input.value.length);
+      }
     },
 
     toggleCssClass: async (cls, conflict) => {

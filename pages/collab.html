@@ -14,9 +14,9 @@
     </script>
     <script src="../webfoundry/head.js"></script>
   </head>
-  <body class="min-h-screen overflow-hidden" style="display: none">
+  <body class="overflow-hidden h-screen" style="display: none">
     <div
-      class="App flex relative h-screen w-screen bg-[#060a0f] overflow-hidden"
+      class="App flex relative w-screen bg-[#060a0f] overflow-hidden h-[100dvh]"
       wf-class="{{replaces bg-[#060a0f]: !state.settings.opt?.wallpaper &amp;&amp; 'bg-[#060a0f]'}}"
       wf-onattach="post('app.init')"
     >
@@ -75,14 +75,14 @@
 
       <div class="flex-1 flex flex-col min-w-0 basis-0">
         <div
-          class="text-neutral-100 text-center py-3.5 border-b border-black/50 bg-[#060a0fc0] backdrop-blur-[4px]"
+          class="text-neutral-100 text-center border-b border-black/50 bg-[#060a0fc0] backdrop-blur-[4px] py-2 md:py-3.5"
           wf-if="state.projects.current"
         >
           {{state.projects.current?.split?.(':')?.[0]}}
         </div>
         <div
           wf-if="state.designer.open &amp;&amp; !state.designer.current.preview &amp;&amp; state.settings.opt.toolbar &amp;&amp; !state.app.demo"
-          class="bg-[#060a0fc0] backdrop-blur-[4px] z-10"
+          class="bg-[#060a0fc0] backdrop-blur-[4px] z-10 hidden md:block"
         >
           <div
             class="text-neutral-100 border-b border-black/50 flex px-4 items-center py-3 gap-4"
@@ -2556,9 +2556,11 @@
           <div class="hidden">HELLO</div>
         </div>
 
-        <div class="flex flex-1 min-w-0 basis-0 overflow-auto">
+        <div
+          class="flex flex-1 min-w-0 basis-0 overflow-hidden md:overflow-auto"
+        >
           <div
-            class="FilesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            class="FilesPanel flex flex-col text-neutral-100 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-if="state.app.panel === 'files'"
           >
             <div
@@ -2600,7 +2602,7 @@
             </div>
           </div>
           <div
-            class="StylesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            class="StylesPanel flex flex-col text-neutral-100 border-r border-black/50 shrink-0 bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-if="state.app.panel === 'styles'"
           >
             <div
@@ -2642,6 +2644,7 @@
                     wf-onattach="_1.value = x, _1.select()"
                     wf-onkeydown="post('styles.replaceKeyDown', event)"
                     wf-onblur="post('styles.replaceBlur', event)"
+                    autocapitalize="off"
                   />
                 </div>
                 <div class="flex">
@@ -2664,12 +2667,13 @@
                   class="StylesPanel-addStyleInput outline-none w-full placeholder:text-inherit bg-transparent"
                   placeholder="add class"
                   wf-onkeyup="post('styles.addKeyUp', event)"
+                  autocapitalize="off"
                 />
               </div>
             </div>
           </div>
           <div
-            class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 overflow-auto bg-[#091017c0] backdrop-blur-[4px]"
+            class="MorePanel flex flex-col text-neutral-100 border-r border-black/50 p-6 space-y-4 select-none shrink-0 overflow-auto bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-if="state.app.panel === 'settings'"
           >
             <div>Settings &amp; More</div>
@@ -2777,7 +2781,7 @@
               class="flex justify-center items-center px-16 flex-1 select-none flex-col gap-8 min-w-96 bg-black/40 backdrop-blur-[2px]"
               wf-class="{{!state.app.brandCanvas &amp;&amp; 'hidden'}}"
             >
-              <div class="gap-6 flex flex-col">
+              <div class="gap-6 flex flex-col relative -left-12 md:left-0">
                 <img
                   wf-if="!state.collab.rtc?.sync || state.collab.rtc.presence.some(x =&gt; x.user === 'master')"
                   src="https://cdn.donmai.us/original/3e/e1/__original_drawn_by_chibikki__3ee13fb32a1d6c5931c82da671288632.gif"
@@ -2803,12 +2807,12 @@
               </div>
             </div>
             <div
-              class="Designer-leftPadder flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
+              class="Designer-leftPadder flex-1 bg-[#060a0fc0] backdrop-blur-[2px] hidden md:block"
               wf-if="document.querySelector('.Designer-activeFrame')"
             ></div>
 
             <div
-              class="grow-0 shrink-1"
+              class="shrink-1 bg-[#060a0fc0] backdrop-blur-[2px] grow-1 md:grow-0"
               wf-onattach="post('designer.hookFrameWidth', _1)"
               wf-class="{{!state.designer.current?.ready &amp;&amp; 'hidden'}}"
             >
@@ -2829,7 +2833,7 @@
             </div>
 
             <div
-              class="Designer-rightPadder flex shrink-0 flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
+              class="Designer-rightPadder shrink-0 flex-1 bg-[#060a0fc0] backdrop-blur-[2px] hidden md:flex"
               wf-if="document.querySelector('.Designer-activeFrame')"
             >
               <div class="Designer-rightPadderPole flex items-center px-1">
@@ -2921,13 +2925,13 @@
           hidden=""
         >
           <div
-            class="text-sm px-4 py-3 text-blue-400"
+            class="text-sm px-4 text-blue-400 py-2 md:py-3"
             wf-if="state.collab.rtc.presence.length &lt;= 1"
           >
             Awaiting collaborators...
           </div>
           <div
-            class="text-sm px-4 py-3 text-green-400"
+            class="text-sm px-4 text-green-400 py-2 md:py-3"
             wf-if="state.collab.rtc.presence.length &gt; 1"
           >
             Currently collaborating with {{state.collab.rtc.presence.length - 1}} peers.

@@ -2,7 +2,7 @@ import { lookup as mimeLookup } from 'https://esm.sh/mrmime';
 
 let actions = {
   undo: {
-    shortcut: 'Ctrl-z',
+    shortcut: ['Ctrl-z', 'z'],
     disabled: () => [!state.designer.open && `Designer closed.`],
     parameters: {
       type: 'object',
@@ -20,7 +20,7 @@ let actions = {
   },
 
   redo: {
-    shortcut: 'Ctrl-y',
+    shortcut: ['Ctrl-y', 'y'],
     disabled: () => [!state.designer.open && `Designer closed.`],
     parameters: {
       type: 'object',
@@ -54,6 +54,7 @@ let actions = {
       if (!s.length) frame.lastCursors[cur] = frame.cursors[cur];
       frame.cursors[cur] = s;
       d.update();
+      if (state.collab.uid === cur) await post('designer.toggleMobileKeyboard');
       if (state.collab.uid === cur && s.length) {
         let first = frame.map.get(s[0]);
         let rect = first.getBoundingClientRect();
@@ -961,11 +962,34 @@ let actions = {
     handler: async ({ cur = 'master', cls } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'addCssClasses', cur, cls });
       let frame = state.designer.current;
-      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (typeof cls === 'string') cls = cls.trim();
+      let parts = [];
+      let re = /{{[\s\S]*?}}|[^\s]+/g;
+      let match;
+      while ((match = re.exec(cls))) parts.push(match[0]);
+      let exprs = parts.filter(c => c.startsWith('{{') && c.endsWith('}}'));
+      let normal = parts.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
       await post('designer.pushHistory', 'master', async apply => {
-        if (apply) for (let x of targets) for (let y of cls) x.classList.add(y);
-        else for (let x of targets) for (let y of cls) x.classList.remove(y);
+        if (apply) {
+          for (let el of targets) {
+            for (let y of normal) el.classList.add(y);
+            if (exprs.length) {
+              let existing = el.getAttribute('wf-class') || '';
+              let joined = existing.trim() ? existing.trimEnd() + ' ' + exprs.join(' ') : exprs.join(' ');
+              el.setAttribute('wf-class', joined);
+            }
+          }
+        } else {
+          for (let el of targets) {
+            for (let y of normal) el.classList.remove(y);
+            if (exprs.length && el.hasAttribute('wf-class')) {
+              let current = el.getAttribute('wf-class');
+              for (let e of exprs) current = current.replace(e, '');
+              el.setAttribute('wf-class', current.trim());
+            }
+          }
+        }
         await post('collab.sync');
       });
     },
@@ -987,11 +1011,27 @@ let actions = {
     handler: async ({ cur = 'master', cls } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'removeCssClasses', cur, cls });
       let frame = state.designer.current;
-      cls = new Set(Array.isArray(cls) ? cls : cls.split(/\s+/));
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (typeof cls === 'string') cls = cls.trim();
+      let parts = [];
+      let re = /{{[\s\S]*?}}|[^\s]+/g;
+      let match;
+      while ((match = re.exec(cls))) parts.push(match[0]);
+      let exprs = parts.filter(c => c.startsWith('{{') && c.endsWith('}}'));
+      let normal = parts.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) for (let x of targets) for (let y of cls) x.classList.remove(y);
-        else for (let x of targets) for (let y of cls) x.classList.add(y);
+        if (apply) {
+          for (let el of targets) {
+            for (let y of normal) el.classList.remove(y);
+            if (exprs.length && el.hasAttribute('wf-class')) {
+              let current = el.getAttribute('wf-class');
+              for (let e of exprs) current = current.replace(e, '');
+              el.setAttribute('wf-class', current.trim());
+            }
+          }
+        } else {
+          for (let el of targets) for (let y of normal) el.classList.add(y);
+        }
         await post('collab.sync');
       });
     },
@@ -1016,7 +1056,14 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceCssClasses', cur, old: old instanceof RegExp ? `wfregexp:${old}` : old, cls });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
-      let clsSet = new Set(Array.isArray(cls) ? cls : cls?.split(/\s+/) || []);
+      if (typeof cls === 'string') cls = cls.trim();
+      let parts = [];
+      let re = /{{[\s\S]*?}}|[^\s]+/g;
+      let match;
+      while ((match = re.exec(cls))) parts.push(match[0]);
+      let exprs = parts.filter(c => c.startsWith('{{') && c.endsWith('}}'));
+      let normal = parts.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
+      let clsSet = new Set(normal);
       let removedByElement = null;
       await post('designer.pushHistory', cur, async apply => {
         if (apply) {
@@ -1024,12 +1071,21 @@ let actions = {
           for (let el of targets) {
             let removed = [];
             if (old instanceof RegExp) {
-              for (let c of [...el.classList]) if (old.test(c)) { el.classList.remove(c); removed.push(c); }
+              for (let c of [...el.classList]) if (old.test(c)) { el.classList.remove(c); removed.push(c) }
             } else {
               let oldSet = new Set(Array.isArray(old) ? old : old?.split(/\s+/) || []);
               for (let c of oldSet) if (el.classList.contains(c)) { el.classList.remove(c); removed.push(c) }
             }
             for (let c of clsSet) el.classList.add(c);
+            if (exprs.length && el.hasAttribute('wf-class')) {
+              let current = el.getAttribute('wf-class');
+              for (let e of exprs) {
+                if (old && typeof old === 'string') current = current.replace(old, e);
+                else current += ' ' + e;
+              }
+              el.setAttribute('wf-class', current.trim());
+            }
+
             removedByElement.set(el, removed);
           }
         } else {
@@ -1810,5 +1866,23 @@ let actions = {
     },
   },
 };
+
+function patchWfClass(el, { add = [], remove = [], replace = null }) {
+  let attr = el.getAttribute('wf-class');
+  if (!attr) return;
+  let pieces = [...attr.matchAll(/{{[\s\S]*?}}/g)].map(m => m[0]);
+  let newPieces = [];
+  for (let p of pieces) {
+    let expr = p;
+    for (let c of remove) expr = expr.replaceAll(new RegExp(`['"\`]${c}['"\`]`, 'g'), "''");
+    if (replace?.old && replace?.cls) for (let oldC of replace.old) for (let newC of replace.cls) expr = expr.replaceAll(new RegExp(`['"\`]${oldC}['"\`]`, 'g'), `'${newC}'`);
+    if (add.length && !/['"]/.test(expr)) {
+      let additions = add.map(c => `'${c}'`).join(' + " " + ');
+      expr = `(${expr}) + " " + (${additions})`;
+    }
+    newPieces.push(expr);
+  }
+  el.setAttribute('wf-class', newPieces.join(' '));
+}
 
 export default actions;

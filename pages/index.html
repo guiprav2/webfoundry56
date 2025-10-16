@@ -16,11 +16,11 @@
   </head>
   <body
     style="display: none"
-    class="min-h-screen overflow-hidden bg-[#060a0f]"
+    class="overflow-hidden bg-[#060a0f] h-screen"
     wf-class="{{replaces bg-[#060a0f]: !state.settings.opt?.wallpaper &amp;&amp; 'bg-[#060a0f]'}}"
   >
     <div
-      class="App flex relative h-screen w-screen overflow-hidden"
+      class="App flex relative w-screen overflow-hidden h-[100dvh]"
       wf-onattach="post('app.init')"
     >
       <style>
@@ -30,16 +30,17 @@
       </style>
 
       <div
-        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0 text-xl bg-[#060a0fc0] backdrop-blur-[4px]"
+        class="IconsSidebar flex flex-col border-r border-black/50 select-none text-neutral-100 overflow-auto *:shrink-0 bg-[#060a0fc0] backdrop-blur-[4px] md:text-xl"
         wf-class="{{replaces text-xl: !state.app.demo &amp;&amp; 'text-xl'}}"
+        style=""
       >
         <button
-          class="outline-none border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
+          class="outline-none border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 gfont-[Pacifico] IconsSidebar-wfBtn"
           wf-if="!loadman.busy()"
         >
           wf</button
         ><button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 gfont-[Pacifico] relative flex justify-center IconsSidebar-spinner items-center"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 gfont-[Pacifico] relative flex justify-center IconsSidebar-spinner items-center"
           wf-if="loadman.busy()"
           hidden=""
         >
@@ -51,48 +52,48 @@
         </button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-projectsBtn nf-fa-sitemap"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 IconsSidebar-projectsBtn nf-fa-sitemap"
           wf-class="{{state.app.panel === 'projects' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'projects')"
         ></button>
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-filesBtn nf-fa-folder"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 IconsSidebar-filesBtn nf-fa-folder"
           wf-class="{{state.app.panel === 'files' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'files')"
           wf-if="state.projects.current &amp;&amp; !loadman.ops['files.load']?.length"
         ></button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-stylesBtn nf-fa-paint_brush"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 IconsSidebar-stylesBtn nf-fa-paint_brush"
           wf-class="{{state.app.panel === 'styles' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'styles')"
           wf-if="state.designer.open &amp;&amp; !state.designer.current?.preview"
         ></button>
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 nf-oct-command_palette IconsSidebar-shellBtn"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 nf-oct-command_palette IconsSidebar-shellBtn"
           wf-class="{{state.shell.open &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('shell.toggle')"
           wf-if="/^connected|auth_fail$/.test(state.companion.client?.status) || state.shell.list.length"
         ></button>
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-playBtn nf-fa-play"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 IconsSidebar-playBtn nf-fa-play"
           wf-if="state.designer.open &amp;&amp; !state.designer.current?.preview"
           wf-onclick="post('designer.togglePreview')"
         ></button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 nf-fa-pause IconsSidebar-pauseBtn"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 nf-fa-pause IconsSidebar-pauseBtn"
           wf-if="state.designer.open &amp;&amp; state.designer.current?.preview"
           wf-onclick="post('designer.togglePreview')"
         ></button>
 
         <button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 nf-md-dots_vertical_circle IconsSidebar-settingsBtn"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 nf-md-dots_vertical_circle IconsSidebar-settingsBtn"
           wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', 'settings')"
         ></button
         ><button
-          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-16 h-16 IconsSidebar-closeBtn nf-oct-x"
+          class="outline-none nf border-b border-black/50 transition-all hover:bg-black/70 w-12 md:w-16 h-12 md:h-16 IconsSidebar-closeBtn nf-oct-x"
           wf-class="{{state.app.panel === 'settings' &amp;&amp; 'bg-black/70'}}"
           wf-onclick="post('app.selectPanel', null)"
           wf-if="state.app.panel"
@@ -101,7 +102,7 @@
 
       <div class="flex-1 flex flex-col min-w-0 basis-0">
         <div
-          class="text-neutral-100 text-center py-3.5 border-b border-black/50 bg-[#060a0fc0] backdrop-blur-[4px]"
+          class="text-neutral-100 text-center border-b border-black/50 bg-[#060a0fc0] backdrop-blur-[4px] md:py-3.5 py-2"
           wf-if="state.projects.current"
         >
           {{state.projects.current?.split?.(':')?.[0]}}
@@ -109,7 +110,7 @@
 
         <div
           wf-if="state.designer.open &amp;&amp; !state.designer.current.preview &amp;&amp; state.settings.opt.toolbar &amp;&amp; !state.app.demo"
-          class="bg-[#060a0fc0] backdrop-blur-[4px] z-10"
+          class="bg-[#060a0fc0] backdrop-blur-[4px] z-10 hidden md:block"
         >
           <div
             class="text-neutral-100 border-b border-black/50 flex px-4 items-center py-3 gap-4"
@@ -2583,9 +2584,9 @@
           <div class="hidden">HELLO</div>
         </div>
 
-        <div class="flex flex-1 min-w-0 basis-0 overflow-auto">
+        <div class="flex flex-1 min-w-0 basis-0 md:overflow-auto">
           <div
-            class="ProjectsPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            class="ProjectsPanel flex flex-col text-neutral-100 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'projects'"
           >
@@ -2635,7 +2636,7 @@
             </div>
           </div>
           <div
-            class="FilesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            class="FilesPanel flex flex-col text-neutral-100 border-r border-black/50 select-none shrink-0 bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'files'"
           >
@@ -2702,7 +2703,7 @@
             </div>
           </div>
           <div
-            class="StylesPanel flex flex-col text-neutral-100 w-96 border-r border-black/50 shrink-0 bg-[#091017c0] backdrop-blur-[4px]"
+            class="StylesPanel flex flex-col text-neutral-100 border-r border-black/50 shrink-0 bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'styles'"
           >
@@ -2745,6 +2746,7 @@
                     wf-onattach="_1.value = x, _1.select()"
                     wf-onkeydown="post('styles.replaceKeyDown', event)"
                     wf-onblur="post('styles.replaceBlur', event)"
+                    autocapitalize="off"
                   />
                 </div>
                 <div class="flex">
@@ -2767,13 +2769,14 @@
                   class="StylesPanel-addStyleInput outline-none w-full placeholder:text-inherit bg-transparent"
                   placeholder="add class"
                   wf-onkeyup="post('styles.addKeyUp', event)"
+                  autocapitalize="off"
                 />
               </div>
             </div>
           </div>
 
           <div
-            class="MorePanel flex flex-col text-neutral-100 w-96 border-r border-black/50 p-6 space-y-4 select-none shrink-0 overflow-auto bg-[#091017c0] backdrop-blur-[4px]"
+            class="MorePanel flex flex-col text-neutral-100 border-r border-black/50 p-6 space-y-4 select-none shrink-0 overflow-auto bg-[#091017c0] backdrop-blur-[4px] w-full md:w-96"
             wf-class="{{replaces w-96: state.app.demo ? 'w-64' : 'w-96'}}"
             wf-if="state.app.panel === 'settings'"
           >
@@ -2836,7 +2839,7 @@
                     ></div>
                   </div> </label
                 ><label
-                  class="w-full text-left px-3 py-2 flex justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer"
+                  class="w-full text-left px-3 py-2 justify-between items-center rounded hover:bg-black/50 outline-none cursor-pointer hidden md:flex"
                   wf-if="!state.app.demo"
                 >
                   <div class="shrink-0">Hide toolbar</div>
@@ -3114,12 +3117,12 @@
               </div>
             </div>
             <div
-              class="Designer-leftPadder flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
+              class="Designer-leftPadder flex-1 bg-[#060a0fc0] backdrop-blur-[2px] hidden md:block"
               wf-if="document.querySelector('.Designer-activeFrame') &amp;&amp; !state.app.demo"
             ></div>
 
             <div
-              class="grow-0 shrink-1"
+              class="shrink-1 bg-[#060a0fc0] backdrop-blur-[2px] grow-1 md:grow-0"
               wf-onattach="post('designer.hookFrameWidth', _1)"
               wf-class="{{!state.designer.current?.ready &amp;&amp; 'hidden'}} {{state.app.demo &amp;&amp; 'w-full!'}}"
             >
@@ -3140,7 +3143,7 @@
             </div>
 
             <div
-              class="Designer-rightPadder flex shrink-0 flex-1 bg-[#060a0fc0] backdrop-blur-[2px]"
+              class="Designer-rightPadder shrink-0 flex-1 bg-[#060a0fc0] backdrop-blur-[2px] hidden md:flex"
               wf-if="document.querySelector('.Designer-activeFrame') &amp;&amp; !state.app.demo"
             >
               <div class="Designer-rightPadderPole flex items-center px-1">
@@ -3247,37 +3250,16 @@
           hidden=""
         >
           <div
-            class="text-sm px-4 py-3 text-blue-400"
+            class="text-sm px-4 text-blue-400 py-2 md:py-3"
             wf-if="state.collab.rtc.presence.length &lt;= 1"
           >
             Awaiting collaborators...
           </div>
           <div
-            class="text-sm px-4 py-3 text-green-400"
+            class="text-sm text-green-400 px-4 py-2 md:py-3"
             wf-if="state.collab.rtc.presence.length &gt; 1"
           >
             Currently collaborating with {{state.collab.rtc.presence.length - 1}} peers.
-          </div>
-        </div>
-        <div
-          class="text-sm px-4 py-3 flex gap-2 text-red-500"
-          wf-if="state.app.autoassist?.clipboard?.length"
-          hidden=""
-        >
-          <div>Assistant clipboard:</div>
-          <div
-            class="flex gap-1 items-center"
-            wf-map="x of state.app.autoassist.clipboard"
-          >
-            <button
-              class="hover:underline outline-none"
-              wf-onclick="post('app.autoassistCopy', x)"
-            >
-              {{x.name}} {{x.copied}}</button
-            ><button
-              class="nf nf-oct-x relative top-0.5 outline-none"
-              wf-onclick="post('app.autoassistRmClip', x)"
-            ></button>
           </div>
         </div>
       </div>

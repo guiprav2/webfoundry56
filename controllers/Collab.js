@@ -150,6 +150,7 @@ export default class Collab {
           !visible && first.scrollIntoView({ block: rect.height <= innerHeight ? 'center' : 'nearest', inline: rect.width <= innerWidth ? 'center' : 'nearest' });
         }
         state.designer.current.cursors = ev.cursors;
+        await post('designer.toggleMobileKeyboard');
       }
       state.designer.clipboards = ev.clipboards;
       state.event.bus.emit('collab:apply:ready');

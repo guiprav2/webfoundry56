@@ -15,6 +15,15 @@ export default class App {
         setInterval(register, 1000);
         register();
       }
+      this.state.mobile = (() => {
+        if (typeof navigator === 'undefined') return false;
+        if (navigator.userAgentData?.mobile) return true;
+        let ua = navigator.userAgent || '';
+        let hasCoarsePointer = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+        let hasTouchPoints = (navigator.maxTouchPoints || navigator.msMaxTouchPoints || 0) > 1;
+        let mobileRe = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i;
+        return mobileRe.test(ua) || hasCoarsePointer || hasTouchPoints;
+      })();
       await post('event.init');
       await post('broadcast.init');
       await post('collab.init');
@@ -31,6 +40,7 @@ export default class App {
       await post('app.brandCanvasMonitor');
       (!this.state.demo && state.collab.uid === 'master') && await post('app.selectPanel', 'projects');
       state.event.bus.on('designer:togglePreview:ready', async ({ preview }) => preview && this.state.panel === 'styles' && await post('app.selectPanel', null));
+      state.event.bus.on('files:select:ready', async ({ path }) => this.state.mobile && path && await post('app.selectPanel', null));
     },
 
     selectPanel: x => {

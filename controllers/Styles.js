@@ -3,14 +3,22 @@ import actions from '../other/actions.js';
 export default class Styles {
   state = {
     get list() {
-      let ss = state.designer.current.cursors?.[state.collab.uid] || [];
-      let ssclasses = ss?.map?.(x => [...(state.designer.current.map.get(x)?.classList || [])]) || [];
+      let ss = state.designer.current.cursors[state.collab.uid] || [];
+      let map = state.designer.current.map;
+      let ssclasses = ss.map(x => [...(map.get(x)?.classList || [])]);
       let classes;
-      for (let ssc of ssclasses) classes = classes ? classes.intersection(new Set(ssc)) : new Set(ssc);
-      classes = [...classes || []];
-      let fws = 'tw:bs:bu'.split(':');
-      return [...fws.filter(x => classes.includes(x)), ...classes.filter(x => !fws.includes(x))];
-    },
+      for (let ssc of ssclasses) classes = classes ? new Set([...classes].filter(c => ssc.includes(c))) : new Set(ssc);
+      let wfclasses = [];
+      for (let x of ss) {
+        let el = map.get(x);
+        if (!el) continue;
+        let attr = el.getAttribute('wf-class');
+        if (!attr) continue;
+        let pieces = [...attr.matchAll(/{{[\s\S]*?}}/g)].map(m => m[0]);
+        wfclasses.push(...pieces);
+      }
+      return [...(classes || []), ...wfclasses];
+    }
   };
 
   actions = {
