@@ -8,6 +8,7 @@ This guide explains how **projects inside Webfoundry** are structured and how to
 
 * Always use `let`, never `const`.
 * Ignore webfoundry/{scripts,templates}.json, they're fully managed by Webfoundry.
+* Never put long JavaScript or script tags in HTML, always put them in a controller and call using wf-onattach or other event handler attributes.
 
 ---
 
@@ -90,11 +91,11 @@ Webfoundry templates support **declarative bindings**:
 ### Special Lifecycle Events
 
 ```html
-<div wf-onattach="console.log('attached')" wf-ondetach="console.log('detached')"></div>
+<div wf-onattach="console.log('attached', _1)" wf-ondetach="console.log('detached', _1)"></div>
 ```
 
-* `wf-onattach`: runs when element is attached to DOM.
-* `wf-ondetach`: runs when element is removed from DOM.
+* `wf-onattach`: runs when element is attached to DOM, \_1 is the element.
+* `wf-ondetach`: runs when element is removed from DOM, \_1 is the element.
 * Use for initialization/cleanup logic.
 
 ---
