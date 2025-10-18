@@ -271,6 +271,7 @@ export default class CodeEditor {
       if (!document.getElementById('CodeEditorStyles')) {
         document.head.append(d.el('style', { id: 'CodeEditorStyles' }, `
           .CodeMirror { height: 100%; background-color: #04060960 !important }
+          dialog .CodeMirror-scroll { min-height: calc(var(--spacing) * 96); max-height: 80vh }
           .CodeMirror-gutters { background-color: #060a0f60 !important; }
           .CodeMirror-activeline-background { background-color: #0009 !important; }
           .CodeMirror-activeline .CodeMirror-gutter-elt { background-color: #0009 !important; }

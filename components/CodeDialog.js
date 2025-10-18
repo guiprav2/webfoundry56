@@ -16,7 +16,7 @@ class CodeDialog {
       `));
     }
     let wrapper = this.root.querySelector('.CodeDialog-editorWrapper');
-    let el = d.el('div', { class: 'flex flex-col flex-1' });
+    let el = d.el('div', { class: 'flex-1' });
     wrapper.innerHTML = '';
     wrapper.append(el);
     let value = this.props.initialValue;
@@ -35,7 +35,6 @@ class CodeDialog {
     this.editorHandle = { editor, destroy, setKeyMap, setTheme, setMode };
     editor.setValue(value || '');
     editor.getDoc?.().clearHistory?.();
-    editor.getWrapperElement?.().classList?.add?.('flex-1');
     editor.focus();
     this.root.addEventListener('close', () => {
       this.editorHandle?.destroy?.();

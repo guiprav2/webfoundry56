@@ -117,13 +117,13 @@
   </head>
   <body class="flex justify-center items-center min-h-screen">
     <dialog
-      class="outline-none rounded-lg shadow-xl text-neutral-100 bg-[#091017] w-64 p-3 pt-2 min-w-[70vw]"
+      class="outline-none rounded-lg shadow-xl text-neutral-100 bg-[#091017] w-64 p-3 pt-2 w-[70vw]"
       open=""
       wf-onattach="this.onAttach()"
     >
-      <form method="dialog" wf-onsubmit="this.onSubmit(event)">
+      <form method="dialog" wf-onsubmit="this.onSubmit(event)" class="flex flex-col">
         <div>{{this.props.title}}</div>
-        <div class="CodeDialog-editorWrapper mt-2 min-h-96 flex flex-col"></div>
+        <div class="CodeDialog-editorWrapper mt-2 min-h-96 flex flex-col flex-1"></div>
         <div class="flex justify-end gap-1.5 mt-3">
           <button
             value="cancel"
