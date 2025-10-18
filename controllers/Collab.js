@@ -29,7 +29,7 @@ export default class Collab {
         bus.on('shell:toggle:ready', () => setTimeout(async () => await post('collab.sync'), 1000));
         bus.on('shell:select:ready', async () => await post('collab.sync'));
         bus.on('shell:message:label', async () => await post('collab.sync'));
-        bus.on('shell:message:stream', async ({ session, payload }) => this.state.rtc.send({ type: 'shell:stream', session, payload }));
+        bus.on('shell:message:stream', async ({ session, payload }) => this.state.rtc?.send?.({ type: 'shell:stream', session, payload }));
         bus.on('shell:close:ready', async () => await post('collab.sync'));
       } else {
         let room = location.hash.slice(1);
