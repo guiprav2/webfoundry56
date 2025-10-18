@@ -214,14 +214,14 @@ export default class Files {
       });
     },
 
-    reflect: async () => {
+    reflect: debounce(async () => {
       let project = state.projects.current;
       let files = await rfiles.list(project);
       let templ = {};
       for (let x of files.filter(x => x.endsWith('.html'))) templ[x] = await (await rfiles.load(project, x)).text();
       await rfiles.save(project, 'webfoundry/templates.json', new Blob([JSON.stringify(templ)], { type: 'application/json' }));
       await rfiles.save(project, 'webfoundry/scripts.json', new Blob([JSON.stringify(files.filter(x => x.endsWith('.js')))], { type: 'application/json' }));
-    },
+    }, 1000),
 
     push: async () => await loadman.run('files.push', async () => {
       let { bus } = state.event;
