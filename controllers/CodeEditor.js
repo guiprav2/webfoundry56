@@ -272,7 +272,8 @@ export default class CodeEditor {
         document.head.append(d.el('style', { id: 'CodeEditorStyles' }, `
           .CodeMirror { height: 100%; background-color: #04060960 !important }
           dialog .CodeMirror-scroll { min-height: calc(var(--spacing) * 96); max-height: 80vh }
-          .CodeMirror-gutters { background-color: #060a0f60 !important; }
+          .CodeMirror-gutters { background-color: transparent !important; }
+          .CodeMirror-gutter { background-color: #060a0fb0 !important; }
           .CodeMirror-activeline-background { background-color: #0009 !important; }
           .CodeMirror-activeline .CodeMirror-gutter-elt { background-color: #0009 !important; }
           .CodeMirror-code { position: absolute; top: 0 }
@@ -349,7 +350,10 @@ export default class CodeEditor {
       d.updateSync();
       let wrapper = document.querySelector('#CodeEditor');
       if (!wrapper) return;
-      let el = d.el('div', { class: 'w-full h-full' });
+      let el = d.el('div', {
+        class: 'flex-1',
+        style: { width: () => `${innerWidth - wrapper.getBoundingClientRect().left}px`, height: () => `${innerHeight - wrapper.getBoundingClientRect().top}px` },
+      });
       wrapper.replaceChildren(el);
       let tabSize = state.settings.opt.codeTabSize || 2;
       let fontSize = state.settings.opt.codeFontSize || '16px';
