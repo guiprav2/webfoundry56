@@ -116,7 +116,7 @@ export default class Designer {
         if (!state.projects.current) return; // ???
         let name = state.projects.current.split(':')[0];
         if (!path.startsWith(`${name}/`)) return;
-        //state.designer.open && state.files.current === path.slice(`${name}/`.length) && await post('designer.repatch');
+        this.state.open && state.files.current === path.slice(`${name}/`.length) && await post('designer.repatch');
       });
       bus.on('files:rm', async ({ path }) => {
         let name = state.projects.current.split(':')[0];
@@ -186,9 +186,9 @@ export default class Designer {
       let { bus } = state.event;
       if (err) { frame.reject(err); bus.emit('designer:frame:error', { frame, err }); return }
       if (!frame.preview) {
-        frame.mutobs = new MutationObserver(async () => {
+        frame.mutobs = new MutationObserver(async muts => {
           await post('designer.maptrack', frame);
-          await post('designer.save', frame);
+          if (!frame.nosave) { console.log(...muts); await post('designer.save', frame) }
         });
         frame.mutobs.observe(frame.html, { attributes: true, subtree: true, childList: true, characterData: true });
         await post('designer.maptrack', frame);
@@ -380,6 +380,8 @@ export default class Designer {
       body.style.display = 'none';
       let betterscroll = true;
       let html = `<!doctype html><html>${defaultHead({ title: frame.head.querySelector('title')?.textContent })}${body.outerHTML}</html>`;
+      clearTimeout(frame.saveTimeout);
+      frame.saveTimeout = setTimeout(() => frame.saveTimeout = null, 1000);
       await rfiles.save(project, frame.path, new Blob([html], { type: 'text/html' }));
       let phtml = (await prettier(html, { parser: 'html' })).replace(/\{\{[\s\S]*?\}\}/g, m => m .replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\{\{\s*/g, '{{').replace(/\s*\}\}/g, '}}'));
       if (phtml === html) return;
@@ -432,8 +434,9 @@ export default class Designer {
     },
 
     repatch: async () => {
+      return;
       let frame = this.state.current;
-      if (!this.state.open || !frame) return;
+      if (!this.state.open || !frame || frame.saveTimeout) return;
       let project = state.projects.current;
       let path = state.files.current;
       try {
@@ -441,10 +444,10 @@ export default class Designer {
         let text = await blob.text();
         let doc = new DOMParser().parseFromString(text, 'text/html');
         let { mutobs } = frame;
-        mutobs?.disconnect?.();
+        frame.nosave = true;
         morph(frame.body, doc.body);
         frame.body.style.display = '';
-        mutobs?.observe?.(frame.html, { attributes: true, subtree: true, childList: true, characterData: true });
+        frame.nosave = false;
         state.event.bus.emit('designer:repatch:ready', { project, path });
       } catch (err) {
         console.error(err);
