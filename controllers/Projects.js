@@ -60,6 +60,7 @@ export default class Projects {
         await rprojects.config(project, opt);
         await Promise.all(['controllers', 'components', 'media', 'pages'].map(async x => await rfiles.save(project, `${x}/.keep`, new Blob([''], { type: 'text/plain' }))));
         await Promise.all([
+          'AGENTS.md',
           'index.html',
           'webfoundry/wf.config.js',
           'webfoundry/app.js',

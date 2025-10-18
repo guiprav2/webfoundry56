@@ -4,13 +4,20 @@ This guide explains how **projects inside Webfoundry** are structured and how to
 
 ---
 
+## 📌 General Guidelines
+
+* Always use `let`, never `const`.
+* Ignore webfoundry/{scripts,templates}.json, they're fully managed by Webfoundry.
+
+---
+
 ## 📂 Project Structure
 
 ```
 project/
  ├─ controllers/   # Controller classes (state + actions)
  ├─ pages/         # HTML files (edited in Webfoundry’s visual editor or directly)
- ├─ images/        # Project images (optional, add more dirs as needed)
+ ├─ media/         # Project media (optional, add subdirs if desired)
  └─ AGENTS.md      # This file
 ```
 
