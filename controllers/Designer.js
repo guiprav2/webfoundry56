@@ -188,7 +188,7 @@ export default class Designer {
       if (!frame.preview) {
         frame.mutobs = new MutationObserver(async muts => {
           await post('designer.maptrack', frame);
-          if (!frame.nosave) { console.log(...muts); await post('designer.save', frame) }
+          !frame.nosave && await post('designer.save', frame);
         });
         frame.mutobs.observe(frame.html, { attributes: true, subtree: true, childList: true, characterData: true });
         await post('designer.maptrack', frame);
@@ -380,6 +380,8 @@ export default class Designer {
       body.style.display = 'none';
       let betterscroll = true;
       let html = `<!doctype html><html>${defaultHead({ title: frame.head.querySelector('title')?.textContent })}${body.outerHTML}</html>`;
+      if (frame.lastSavedHtml === html) return;
+      frame.lastSavedHtml = html;
       clearTimeout(frame.saveTimeout);
       frame.saveTimeout = setTimeout(() => frame.saveTimeout = null, 1000);
       await rfiles.save(project, frame.path, new Blob([html], { type: 'text/html' }));
@@ -434,7 +436,6 @@ export default class Designer {
     },
 
     repatch: async () => {
-      return;
       let frame = this.state.current;
       if (!this.state.open || !frame || frame.saveTimeout) return;
       let project = state.projects.current;
