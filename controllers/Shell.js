@@ -8,7 +8,9 @@ export default class Shell {
     init: () => {
       let { bus } = state.event;
       document.head.append(d.el('link', { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/xterm/css/xterm.css' }));
+      document.head.append(d.el('style', `.xterm-selection { display: none }`));
       document.body.classList.add('w-screen', 'overflow-hidden');
+      if (state.collab.uid !== 'master') return;
       bus.on('shell:toggle:ready', async ({ open }) => {
         if (!open || this.state.list.length) return;
         await post('shell.spawn');
@@ -32,13 +34,13 @@ export default class Shell {
         let [name, uuid] = state.projects.current?.split?.(':') || [];
         let tab = {
           project: state.projects.current,
-          term: new Terminal({ cursorBlink: true, fontFamily: 'monospace', fontSize: 14, theme: { background: '#000000', foreground: '#ffffff' } }),
+          term: new Terminal({ cursorBlink: true, fontFamily: 'monospace', fontSize: 14, theme: { background: '#00000000', foreground: '#ffffff' } }),
+          msgbuf: [],
         };
-        let fitAddon = new FitAddon();
-        tab.term.loadAddon(fitAddon);
-        tab.autofit = fitAddon;
+        tab.autofit = new FitAddon();
+        tab.term.loadAddon(tab.autofit);
         tab.session = await post('companion.rpc', 'shell:spawn', { subdir: name, cols: tab.term.cols, rows: tab.term.rows });
-        tab.term.onData(async x => await post('companion.send', { type: 'shell', session: tab.session, payload: b64(x) }));
+        tab.term.onData(async x => state.collab.uid === 'master' && await post('companion.send', { type: 'shell', session: tab.session, payload: b64(x) }));
         this.state.list.push(tab);
         this.state.current = tab.session;
         bus.emit('shell:spawn:ready', { tab });
@@ -50,12 +52,14 @@ export default class Shell {
       let tab = this.state.list.find(x => x.session === session);
       bus.emit('shell:attach:start', { tab });
       tab.term.open(wrapper);
-      tab.autofit.fit();
-      tab.resizeObserver = new ResizeObserver(async () => {
+      if (state.collab.uid === 'master') {
         tab.autofit.fit();
-        await post('companion.rpc', 'shell:resize', { session, cols: tab.term.cols, rows: tab.term.rows });
-      });
-      tab.resizeObserver.observe(wrapper);
+        tab.resizeObserver = new ResizeObserver(async () => {
+          tab.autofit.fit();
+          await post('companion.rpc', 'shell:resize', { session, cols: tab.term.cols, rows: tab.term.rows });
+        });
+        tab.resizeObserver.observe(wrapper);
+      }
       state.event.bus.emit('shell:attach:ready', { tab });
     }),
 
@@ -63,8 +67,12 @@ export default class Shell {
       let tab = this.state.list.find(x => x.session === session);
       if (!tab) return; // pinball
       switch (data.subtype) {
-        case 'label': tab.label = data.label; break;
-        case 'stream': tab.term.write(unb64(data.payload)); break;
+        case 'label': tab.label = data.label; state.event.bus.emit('shell:message:label', { session: tab.session, label: tab.label }); break;
+        case 'stream':
+          state.event.bus.emit('shell:message:stream', { session: tab.session, payload: data.payload });
+          tab.msgbuf.push(data.payload);
+          tab.term.write(unb64(data.payload));
+          break;
         default: throw new Error(`Unknown shell message subtype: ${data.subtype}`);
       }
     },

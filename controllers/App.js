@@ -31,8 +31,8 @@ export default class App {
       if (!location.pathname.startsWith('/collab.html')) {
         await post('projects.init');
         await post('companion.init');
-        await post('shell.init');
       }
+      await post('shell.init');
       await post('files.init');
       await post('codeEditor.init');
       await post('styles.init');

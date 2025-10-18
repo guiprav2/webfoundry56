@@ -2875,9 +2875,9 @@
           </div>
         </div>
         <div
-          class="flex"
+          class="flex pointer-events-none"
           id="DockedShellWrapper"
-          wf-class="{{!state.shell.open &amp;&amp; 'hidden'}}"
+          wf-class="{{(!state.shell.open || state.collab.sessionEnded) &amp;&amp; 'hidden'}}"
           wf-if="state.shell.open &amp;&amp; !state.shell.expand"
           hidden=""
         >
@@ -2892,23 +2892,12 @@
                 wf-class="{{replaces hover:bg-black/70: state.shell.current === x.session &amp;&amp; 'bg-[#0071b2] hover:bg-[#008ad9]'}}"
                 wf-onclick="post('shell.select', x.session)"
                 ><div>{{x.label || 'unknown'}}</div>
-
-                <button
-                  class="nf nf-oct-x relative top-[2px] outline-none ShellWrapper-tabCloseBtn"
-                  wf-onclick="event.stopPropagation(), post('shell.close', x.session)"
-                ></button>
               </a>
-
-              <button
-                class="nf nf-fa-plus w-8 text-xs outline-none min-h-7 ShellWrapper-createTabBtn"
-                wf-onclick="post('shell.spawn')"
-                wf-if="state.shell.list.length"
-              ></button>
             </div>
             <div
               class="p-3 bg-black flex flex-col overflow-hidden flex-1 Shell"
               wf-map="x of state.shell.list"
-              wf-class="{{state.shell.current !== x.session &amp;&amp; 'hidden'}}"
+              wf-class="{{state.shell.current !== x.session &amp;&amp; 'hidden'}} {{replaces bg-black: !state.settings.opt.wallpaper &amp;&amp; 'bg-black'}}"
             >
               <div
                 wf-onattach="post('shell.attach', x.session, _1)"

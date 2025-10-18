@@ -4,6 +4,8 @@ import actions from '../other/actions.js';
 import diff from 'https://esm.sh/fast-diff';
 import morphdom from 'https://esm.sh/morphdom';
 import rfiles from '../repos/rfiles.js';
+import { FitAddon } from 'https://esm.sh/xterm-addon-fit';
+import { Terminal } from 'https://esm.sh/xterm';
 
 export default class Collab {
   state = {
@@ -24,6 +26,11 @@ export default class Collab {
         bus.on('designer:save:ready', async () => await post('collab.sync', 'delta'));
         bus.on('designer:resize:ready', async () => await post('collab.sync'));
         bus.on('designer:togglePreview:ready', async ({ preview }) => await post('collab.sync', !preview && 'full'));
+        bus.on('shell:toggle:ready', () => setTimeout(async () => await post('collab.sync'), 1000));
+        bus.on('shell:select:ready', async () => await post('collab.sync'));
+        bus.on('shell:message:label', async () => await post('collab.sync'));
+        bus.on('shell:message:stream', async ({ session, payload }) => this.state.rtc.send({ type: 'shell:stream', session, payload }));
+        bus.on('shell:close:ready', async () => await post('collab.sync'));
       } else {
         let room = location.hash.slice(1);
         if (!room) { location.href = '/'; return }
@@ -37,6 +44,7 @@ export default class Collab {
         });
         this.state.rtc.events.on('presence:update', async () => state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence }));
         this.state.rtc.events.on('presence:join', async () => state.event.bus.emit('collab:presence:update', { presence: this.state.rtc.presence }));
+        this.state.rtc.events.on('shell:stream', async ({ session, payload }) => state.shell.list.find(x => x.session === session)?.term?.write?.(simpleunb64(payload)));
         bus.on('designer:resize:ready', async () => await post('collab.resizeSync'));
       }
     },
@@ -115,6 +123,17 @@ export default class Collab {
         delta,
         cursors: state.designer.current?.cursors || {},
         clipboards: state.designer.clipboards,
+        shell: {
+          open: state.shell.open,
+          list: state.shell.list.map(x => ({
+            session: x.session,
+            label: x.label,
+            cols: x.term.cols,
+            rows: x.term.rows,
+            msgbuf: kind === 'full' && x.msgbuf,
+            active: state.shell.current === x.session,
+          })),
+        },
       });
     },
 
@@ -153,6 +172,20 @@ export default class Collab {
         await post('designer.toggleMobileKeyboard');
       }
       state.designer.clipboards = ev.clipboards;
+      if (ev.shell) {
+        state.shell.open = ev.shell.open;
+        while (state.shell.list.length > ev.shell.list.length) state.shell.list.pop();
+        for (let [i, x] of ev.shell.list.entries()) {
+          let y = state.shell.list[i];
+          if (!y) state.shell.list.push(y = x);
+          else { y.label = x.label; y.active = x.active }
+          if (y.active) state.shell.current = y.session;
+          if (y.term) continue;
+          y.term = new Terminal({ cursorBlink: true, fontFamily: 'monospace', fontSize: 14, theme: { background: '#00000000', foreground: '#ffffff' } });
+          y.term.resize(y.cols, y.rows);
+          for (let z of y.msgbuf || []) y.term.write(simpleunb64(z));
+        }
+      }
       state.event.bus.emit('collab:apply:ready');
     },
 
@@ -236,3 +269,5 @@ function unb64(base64, type = '') {
   for (let i = 0; i < chars.length; i++) nums[i] = chars.charCodeAt(i);
   return new Blob([new Uint8Array(nums)], { type });
 }
+
+let simpleunb64 = str => new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0)));

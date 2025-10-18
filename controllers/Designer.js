@@ -383,7 +383,7 @@ export default class Designer {
       if (frame.lastSavedHtml === html) return;
       frame.lastSavedHtml = html;
       clearTimeout(frame.saveTimeout);
-      frame.saveTimeout = setTimeout(() => frame.saveTimeout = null, 1000);
+      frame.saveTimeout = setTimeout(() => frame.saveTimeout = null, 5000);
       await rfiles.save(project, frame.path, new Blob([html], { type: 'text/html' }));
       let phtml = (await prettier(html, { parser: 'html' })).replace(/\{\{[\s\S]*?\}\}/g, m => m .replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\{\{\s*/g, '{{').replace(/\s*\}\}/g, '}}'));
       if (phtml === html) return;

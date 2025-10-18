@@ -3233,7 +3233,7 @@
             <div
               class="p-3 bg-black flex flex-col overflow-hidden flex-1 Shell"
               wf-map="x of state.shell.list"
-              wf-class="{{state.shell.current !== x.session &amp;&amp; 'hidden'}}"
+              wf-class="{{state.shell.current !== x.session &amp;&amp; 'hidden'}} {{replaces bg-black: !state.settings.opt.wallpaper &amp;&amp; 'bg-black'}}"
             >
               <div
                 wf-onattach="post('shell.attach', x.session, _1)"
