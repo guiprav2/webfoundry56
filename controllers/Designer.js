@@ -437,7 +437,7 @@ export default class Designer {
 
     repatch: async () => {
       let frame = this.state.current;
-      if (!this.state.open || !frame || frame.saveTimeout) return;
+      if (!this.state.open || !frame || frame.preview || frame.saveTimeout) return;
       let project = state.projects.current;
       let path = state.files.current;
       try {
