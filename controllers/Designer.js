@@ -1,7 +1,7 @@
 import BiMap from '../other/bimap.js';
 import Boo from 'https://esm.sh/@camilaprav/boo@1.0.6';
 import actions from '../other/actions.js';
-import htmlsnap from 'https://esm.sh/@camilaprav/htmlsnap@0.0.13';
+import htmlsnap from 'https://esm.sh/@camilaprav/htmlsnap@0.0.14';
 import morph from 'https://esm.sh/nanomorph';
 import prettier from '../other/prettier.js';
 import rfiles from '../repos/rfiles.js';
@@ -49,7 +49,10 @@ export default class Designer {
       let frame = this.list.find(x => x.path === path);
       let [name, uuid] = state.projects.current.split(':');
       if (frame.preview) path = path.slice('pages/'.length);
-      return `/${frame.preview ? 'preview' : 'files'}/${sessionStorage.webfoundryTabId}/${name}:${uuid}/${path}`;
+      let fullpath = `/${frame.preview ? 'preview' : 'files'}/${sessionStorage.webfoundryTabId}/${name}:${uuid}/${path}`;
+      return state.settings.opt.isolate
+        ? `${location.protocol}//${(name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}.${location.hostname}:8846${fullpath}`
+        : fullpath;
     },
 
     get current() { return this.list.find(x => x.path === state.files.current) },
@@ -128,8 +131,32 @@ export default class Designer {
           d.update();
         }
       });
+      addEventListener('message', async ev => {
+        let url = new URL(ev.origin);
+        let parts = url.hostname.split('.');
+        let domain = parts.slice(1).join('.');
+        let name = parts[0];
+        if (domain !== location.hostname || !state.projects.current.startsWith(`${name}:`)) return; // FIXME: Also check path.
+        switch (ev.data.type) {
+          case 'htmlsnap': {
+            let doc = this.state.current.doc = new DOMParser().parseFromString(ev.data.snap, 'text/html');
+            this.state.current.map = htmlsnap(doc.documentElement, { idtrack: true, map: this.state.current.map })[1];
+            await post('designer.sync');
+            break;
+          }
+          case 'action': console.log(ev.data.key, ev.data); await actions[ev.data.key].handler(ev.data); break;
+        }
+      });
       addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev, true), true);
-      await post('designer.trackCursors');
+      //await post('designer.trackCursors');
+    },
+
+    sync: () => {
+      this.state.current.el.contentWindow.postMessage({
+        type: 'state',
+        collab: { uid: state.collab.uid },
+        cursors: this.state.current.cursors,
+      }, '*'); // FIXME: Origin.
     },
 
     reset: async () => { this.state.list = []; await post('designer.toggleMobileKeyboard') },
@@ -142,7 +169,6 @@ export default class Designer {
       let p = Promise.withResolvers();
       this.state.list.push({
         path,
-        get doc() { return this.el?.contentDocument },
         get html() { return this.doc?.documentElement },
         get head() { return this.doc?.head },
         get body() { return this.doc?.body },
@@ -185,25 +211,29 @@ export default class Designer {
       if (!frame.el) return; // ???
       let { bus } = state.event;
       if (err) { frame.reject(err); bus.emit('designer:frame:error', { frame, err }); return }
+      /*
       if (!frame.preview) {
-        frame.mutobs = new MutationObserver(async muts => {
+        if (frame.html) {
+          frame.mutobs = new MutationObserver(async muts => {
+            await post('designer.maptrack', frame);
+            !frame.nosave && await post('designer.save', frame);
+          });
+          frame.mutobs.observe(frame.html, { attributes: true, subtree: true, childList: true, characterData: true });
           await post('designer.maptrack', frame);
-          !frame.nosave && await post('designer.save', frame);
-        });
-        frame.mutobs.observe(frame.html, { attributes: true, subtree: true, childList: true, characterData: true });
-        await post('designer.maptrack', frame);
-        frame.html.addEventListener('mousedown', async ev => await post('designer.mousedown', ev), true);
-        frame.html.addEventListener('click', ev => ev.preventDefault(), true);
-        frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
-        frame.html.addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev), true);
+          frame.html.addEventListener('mousedown', async ev => await post('designer.mousedown', ev), true);
+          frame.html.addEventListener('click', ev => ev.preventDefault(), true);
+          frame.html.addEventListener('dblclick', async ev => await post('designer.dblclick', ev), true);
+          frame.html.addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev), true);
+        }
       }
+      */
       if (!frame.heightHooked) { d.el(frame.el, { style: { height: () => this.state.frameHeight } }); frame.heightHooked = true }
-      frame.ready = true;
+      frame.ready = !!frame.html || frame.preview || state.settings.opt.isolate;
       frame.resolve();
       bus.emit('designer:frame:ready', { frame });
     },
 
-    maptrack: async frame => [frame.snap, frame.map] = htmlsnap(frame.html, { idtrack: true, map: frame.map }),
+    //maptrack: async frame => [frame.snap, frame.map] = htmlsnap(frame.html, { idtrack: true, map: frame.map }),
 
     trackCursors: async () => {
       requestAnimationFrame(async () => await post('designer.trackCursors'));

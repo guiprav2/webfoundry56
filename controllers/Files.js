@@ -26,21 +26,48 @@ export default class Files {
   actions = {
     init: () => {
       let { bus } = state.event;
+      let allowedOrigin = origin => {
+        try {
+          let url = new URL(origin);
+          let host = url.hostname;
+          let base = location.hostname;
+          return host === base || host.endsWith(`.${base}`);
+        } catch {
+          return false;
+        }
+      };
+
+      let respond = async ({ project, path }, callback) => {
+        try {
+          path = decodeURIComponent(path);
+          if (!project?.includes?.(':')) return callback({ type: 'fetch:res', project, path, status: 400, error: 'Bad project' });
+          let data = state.collab.uid === 'master'
+            ? await rfiles.load(project, path)
+            : await ungzblob(unb64(await post('collab.rpc', 'fetch', { project, path })), mimeLookup(path));
+          if (!data) return callback({ type: 'fetch:res', project, path, status: 404, error: 'Not found' });
+          callback({ type: 'fetch:res', project, path, status: 200, data });
+        } catch (err) {
+          console.error(err);
+          callback({ type: 'fetch:res', project, path, status: 500, error: err.message });
+        }
+      };
+
       navigator.serviceWorker.addEventListener('message', async event => {
         let { type, project, path } = event.data || {};
         if (type !== 'fetch') return;
-        let port = event.ports[0];
-        try {
-          let notFound = () => port.postMessage({ status: 404, data: new Blob(['Not found'], { type: 'text/plain' }) });
-          path = decodeURIComponent(path);
-          if (!project.includes(':')) return notFound(); // sometimes caused by ../
-          let data = state.collab.uid === 'master' ? await rfiles.load(project, path) : await ungzblob(unb64(await post('collab.rpc', 'fetch', { project, path })), mimeLookup(path));
-          if (!data) return notFound();
-          port.postMessage({ status: 200, data });
-        } catch (err) {
-          console.error(err);
-          port.postMessage({ status: 500, error: err.message });
-        }
+        console.log('wf fetch:', project, path);
+        let port = event.ports?.[0];
+        if (!port) return;
+        await respond({ project, path }, payload => port.postMessage(payload));
+      });
+
+      window.addEventListener('message', async event => {
+        let { type, project, path } = event.data || {};
+        if (type !== 'fetch') return;
+        if (!allowedOrigin(event.origin)) return;
+        if (!event.source || typeof event.source.postMessage !== 'function') return;
+        console.log('wf fetch:', project, path);
+        await respond({ project, path }, payload => event.source.postMessage(payload, event.origin));
       });
       if (state.collab.uid !== 'master') return;
       bus.on('projects:select:ready', async ({ project }) => await loadman.run('files.projectSelect', async () => {

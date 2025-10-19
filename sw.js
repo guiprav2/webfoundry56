@@ -14,9 +14,10 @@ self.addEventListener('message', async ev => {
   if (data.type !== 'webfoundry-register-tab') return;
   await storeTab(data.tabId, ev.source.id);
 });
-self.addEventListener('fetch', event => {
-  let url = new URL(event.request.url);
+self.addEventListener('fetch', async ev => {
+  let url = new URL(ev.request.url);
   let pathname = url.pathname;
+  if (url.port && pathname.endsWith('.html')) return;
   let prefix = null;
   if (pathname.startsWith('/files/')) prefix = '/files/';
   else if (pathname.startsWith('/preview/')) prefix = '/preview/';
@@ -26,7 +27,7 @@ self.addEventListener('fetch', event => {
   let project = parts.shift();
   let isPreview = prefix === '/preview/';
   let path = isPreview && pathname.endsWith('.html') ? 'index.html' : parts.join('/');
-  event.respondWith(new Promise(async (resolve, reject) => {
+  ev.respondWith(new Promise(async (resolve, reject) => {
     let channel = new MessageChannel();
     let timeout = setTimeout(() => reject(new Error('Request timeout')), 30000);
     channel.port1.onmessage = e => {
@@ -36,7 +37,7 @@ self.addEventListener('fetch', event => {
       resolve(new Response(data, { status }));
     };
     let client = await self.clients.get(await getTab(tabId));
-    if (!client) { return resolve(new Response('Client not registered', { status: 503 })) }
+    if (!client) return fetch(ev.request);
     client.postMessage({ type: 'fetch', project, path }, [channel.port2]);
   }).catch(err => new Response(err.message, { status: 503 })));
 });

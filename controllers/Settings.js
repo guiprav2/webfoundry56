@@ -15,6 +15,7 @@ export default class Settings {
           toolbar: true,
           companion: false,
           companionKey: `wf-${crypto.randomUUID()}`,
+          isolate: true,
         };
         await post('settings.save');
       }
