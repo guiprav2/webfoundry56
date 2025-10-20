@@ -144,7 +144,7 @@ export default class Designer {
             await post('designer.sync');
             break;
           }
-          case 'action': console.log(ev.data.key, ev.data); await actions[ev.data.key].handler(ev.data); break;
+          case 'action': await actions[ev.data.key].handler(ev.data); break;
         }
       });
       addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev, true), true);

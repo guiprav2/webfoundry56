@@ -563,10 +563,10 @@ let actions = {
       let pos = 'afterend';
       let cursors = [...frame.cursors[cur] || []];
       if (!cursors.length) return;
-      let clones = [];
+      let cloneIds = [];
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          clones = await ifeval(async ({ args }) => {
+        if (apply && !cloneIds.length) {
+          cloneIds = await ifeval(async ({ args }) => {
             let template = document.createElement('template');
             template.innerHTML = args.html;
             let frags = [...template.content.children];
@@ -575,20 +575,20 @@ let actions = {
             let items = reversed ? [...args.cursors].reverse() : args.cursors;
             let added = [];
             for (let i = 0; i < items.length; i++) {
-              let ref = items[i];
-              let x = state.map.get(ref);
               let f = frags[i % frags.length].cloneNode(true);
               f.removeAttribute('data-htmlsnap');
-              x.insertAdjacentElement(args.pos, f);
+              state.map.get(items[i]).insertAdjacentElement(args.pos, f);
               added.push(f);
             }
             await new Promise(pres => setTimeout(pres));
             return added.map(x => state.map.getKey(x));
           }, { html, cursors, pos });
-          await actions.changeSelection.handler({ cur, s: clones });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
+        } else if (apply) {
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(args.cursors[0])?.insertAdjacentElement?.(args.pos, state.map.get(id)) }, { cloneIds, cursors, pos });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
         } else {
-          if (!clones.length) return;
-          await ifeval(({ args }) => { for (let id of args.clones) state.map.get(id).remove() }, { clones });
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(id)?.remove?.() }, { cloneIds });
           await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
         }
       });
@@ -604,45 +604,26 @@ let actions = {
     ],
     parameters: {
       type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
-        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
-      },
+      properties: { cur: { type: 'string', description: `Target cursor for paste (defaults to master)` }, i: { type: 'number', description: `How many copies to paste (defaults to 1)` } },
     },
     handler: async ({ cur = 'master', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pastePrevSibling', cur, i });
-      let frame = state.designer.current;
-      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
-      if (!html) return;
-      let pos = 'beforebegin';
-      let cursors = [...frame.cursors[cur] || []];
-      if (!cursors.length) return;
-      let clones = [];
+      let frame = state.designer.current; let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard'); if (!html) return;
+      let pos = 'beforebegin'; let cursors = [...frame.cursors[cur] || []]; if (!cursors.length) return; let cloneIds = [];
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          clones = await ifeval(async ({ args }) => {
-            let template = document.createElement('template');
-            template.innerHTML = args.html;
-            let frags = [...template.content.children];
-            if (!frags.length) return [];
-            let reversed = args.pos === 'afterbegin';
-            let items = reversed ? [...args.cursors].reverse() : args.cursors;
-            let added = [];
-            for (let i = 0; i < items.length; i++) {
-              let ref = items[i];
-              let x = state.map.get(ref);
-              let f = frags[i % frags.length].cloneNode(true);
-              f.removeAttribute('data-htmlsnap');
-              x.insertAdjacentElement(args.pos, f);
-              added.push(f);
-            }
-            await new Promise(pres => setTimeout(pres));
-            return added.map(x => state.map.getKey(x));
+        if (apply && !cloneIds.length) {
+          cloneIds = await ifeval(async ({ args }) => {
+            let template = document.createElement('template'); template.innerHTML = args.html; let frags = [...template.content.children]; if (!frags.length) return [];
+            let reversed = args.pos === 'afterbegin'; let items = reversed ? [...args.cursors].reverse() : args.cursors; let added = [];
+            for (let i = 0; i < items.length; i++) { let f = frags[i % frags.length].cloneNode(true); f.removeAttribute('data-htmlsnap'); state.map.get(items[i]).insertAdjacentElement(args.pos, f); added.push(f); }
+            await new Promise(pres => setTimeout(pres)); return added.map(x => state.map.getKey(x));
           }, { html, cursors, pos });
-          await actions.changeSelection.handler({ cur, s: clones });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
+        } else if (apply) {
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(args.cursors[0])?.insertAdjacentElement?.(args.pos, state.map.get(id)) }, { cloneIds, cursors, pos });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
         } else {
-          if (!clones.length) return;
-          await ifeval(({ args }) => { for (let id of args.clones) state.map.get(id).remove() }, { clones });
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(id)?.remove?.() }, { cloneIds });
           await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
         }
       });
@@ -658,64 +639,26 @@ let actions = {
     ],
     parameters: {
       type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
-        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
-      },
+      properties: { cur: { type: 'string', description: `Target cursor for paste (defaults to master)` }, i: { type: 'number', description: `How many copies to paste (defaults to 1)` } },
     },
     handler: async ({ cur = 'master', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteLastChild', cur, i });
-      let pos = 'beforeend';
-      let frame = state.designer.current;
-      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
-      if (!html) return;
-      let template = document.createElement('template');
-      template.innerHTML = html;
-      let fragments = [...template.content.children];
-      if (!fragments.length) return;
-      let cursors = frame.cursors[cur];
-      let clones = [];
-      let reversed = pos === 'afterbegin';
-      if (cursors.length === 1) {
-        let id = cursors[0];
-        let x = frame.map.get(id);
-        if (!x) return;
-        let items = reversed ? [...fragments].reverse() : fragments;
-        for (let i = 0; i < items.length; i++) {
-          let y = items[i].cloneNode(true);
-          y.removeAttribute('data-htmlsnap');
-          x.insertAdjacentElement(pos, y);
-          clones.push(y);
-        }
-      } else {
-        let items = reversed ? [...cursors].reverse() : cursors;
-        for (let i = 0; i < items.length; i++) {
-          let id = items[i];
-          let x = frame.map.get(id);
-          if (!x) continue;
-          let frag = fragments[i % fragments.length];
-          let y = frag.cloneNode(true);
-          y.removeAttribute('data-htmlsnap');
-          x.insertAdjacentElement(pos, y);
-          clones.push(y);
-        }
-      }
-      await new Promise(res => setTimeout(res));
+      let frame = state.designer.current; let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard'); if (!html) return;
+      let pos = 'beforeend'; let cursors = [...frame.cursors[cur] || []]; if (!cursors.length) return; let cloneIds = [];
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let n = 0; n < clones.length; n++) {
-            let y = clones[n];
-            if (!y.isConnected) {
-              let ref = cursors[n % cursors.length];
-              let x = frame.map.get(ref);
-              if (x) x.insertAdjacentElement(pos, y);
-            }
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: clones.map(x => frame.map.getKey(x)) });
+        if (apply && !cloneIds.length) {
+          cloneIds = await ifeval(async ({ args }) => {
+            let template = document.createElement('template'); template.innerHTML = args.html; let frags = [...template.content.children]; if (!frags.length) return [];
+            let reversed = args.pos === 'afterbegin'; let items = reversed ? [...args.cursors].reverse() : args.cursors; let added = [];
+            for (let i = 0; i < items.length; i++) { let f = frags[i % frags.length].cloneNode(true); f.removeAttribute('data-htmlsnap'); state.map.get(items[i]).insertAdjacentElement(args.pos, f); added.push(f); }
+            await new Promise(pres => setTimeout(pres)); return added.map(x => state.map.getKey(x));
+          }, { html, cursors, pos });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
+        } else if (apply) {
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(args.cursors[0])?.insertAdjacentElement?.(args.pos, state.map.get(id)) }, { cloneIds, cursors, pos });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
         } else {
-          for (let n = 0; n < clones.length; n++) clones[n].remove();
-          await new Promise(pres => setTimeout(pres));
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(id)?.remove?.() }, { cloneIds });
           await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
         }
       });
@@ -731,64 +674,26 @@ let actions = {
     ],
     parameters: {
       type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Target cursor for paste (defaults to master)` },
-        i: { type: 'number', description: `How many copies to paste (defaults to 1)` },
-      },
+      properties: { cur: { type: 'string', description: `Target cursor for paste (defaults to master)` }, i: { type: 'number', description: `How many copies to paste (defaults to 1)` } },
     },
     handler: async ({ cur = 'master', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'pasteFirstChild', cur, i });
-      let pos = 'afterbegin';
-      let frame = state.designer.current;
-      let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard');
-      if (!html) return;
-      let template = document.createElement('template');
-      template.innerHTML = html;
-      let fragments = [...template.content.children];
-      if (!fragments.length) return;
-      let cursors = frame.cursors[cur];
-      let clones = [];
-      let reversed = pos === 'afterbegin';
-      if (cursors.length === 1) {
-        let id = cursors[0];
-        let x = frame.map.get(id);
-        if (!x) return;
-        let items = reversed ? [...fragments].reverse() : fragments;
-        for (let i = 0; i < items.length; i++) {
-          let y = items[i].cloneNode(true);
-          y.removeAttribute('data-htmlsnap');
-          x.insertAdjacentElement(pos, y);
-          clones.push(y);
-        }
-      } else {
-        let items = reversed ? [...cursors].reverse() : cursors;
-        for (let i = 0; i < items.length; i++) {
-          let id = items[i];
-          let x = frame.map.get(id);
-          if (!x) continue;
-          let frag = fragments[i % fragments.length];
-          let y = frag.cloneNode(true);
-          y.removeAttribute('data-htmlsnap');
-          x.insertAdjacentElement(pos, y);
-          clones.push(y);
-        }
-      }
-      await new Promise(res => setTimeout(res));
+      let frame = state.designer.current; let html = state.designer.clipboards[cur] || localStorage.getItem('webfoundry:clipboard'); if (!html) return;
+      let pos = 'afterbegin'; let cursors = [...frame.cursors[cur] || []]; if (!cursors.length) return; let cloneIds = [];
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let n = 0; n < clones.length; n++) {
-            let y = clones[n];
-            if (!y.isConnected) {
-              let ref = cursors[n % cursors.length];
-              let x = frame.map.get(ref);
-              if (x) x.insertAdjacentElement(pos, y);
-            }
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: clones.map(x => frame.map.getKey(x)) });
+        if (apply && !cloneIds.length) {
+          cloneIds = await ifeval(async ({ args }) => {
+            let template = document.createElement('template'); template.innerHTML = args.html; let frags = [...template.content.children]; if (!frags.length) return [];
+            let reversed = args.pos === 'afterbegin'; let items = reversed ? [...args.cursors].reverse() : args.cursors; let added = [];
+            for (let i = 0; i < items.length; i++) { let f = frags[i % frags.length].cloneNode(true); f.removeAttribute('data-htmlsnap'); state.map.get(items[i]).insertAdjacentElement(args.pos, f); added.push(f); }
+            await new Promise(pres => setTimeout(pres)); return added.map(x => state.map.getKey(x));
+          }, { html, cursors, pos });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
+        } else if (apply) {
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(args.cursors[0])?.insertAdjacentElement?.(args.pos, state.map.get(id)) }, { cloneIds, cursors, pos });
+          await actions.changeSelection.handler({ cur, s: cloneIds });
         } else {
-          for (let n = 0; n < clones.length; n++) clones[n].remove();
-          await new Promise(pres => setTimeout(pres));
+          await ifeval(({ args }) => { for (let id of args.cloneIds) state.map.get(id)?.remove?.() }, { cloneIds });
           await actions.changeSelection.handler({ cur, s: cursors.map(x => frame.map.get(x)).filter(Boolean).map(x => frame.map.getKey(x)) });
         }
       });

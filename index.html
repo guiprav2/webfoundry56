@@ -48,11 +48,9 @@
           let tabId = parts[1];
           navigator.serviceWorker.addEventListener('message', async event => {
             let { type, project, path } = event.data || {};
-            console.log(type, project, path);
             if (type !== 'fetch') return;
             let port = event.ports?.[0];
             if (!port) return;
-            console.log('bridge fetch:', project, path);
             let handler = ev => {
               let data = ev.data || {};
               if (data.type !== 'fetch:res' || data.project !== project || data.path !== path) return;

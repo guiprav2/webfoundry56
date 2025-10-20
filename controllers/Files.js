@@ -55,7 +55,6 @@ export default class Files {
       navigator.serviceWorker.addEventListener('message', async event => {
         let { type, project, path } = event.data || {};
         if (type !== 'fetch') return;
-        console.log('wf fetch:', project, path);
         let port = event.ports?.[0];
         if (!port) return;
         await respond({ project, path }, payload => port.postMessage(payload));
@@ -66,7 +65,6 @@ export default class Files {
         if (type !== 'fetch') return;
         if (!allowedOrigin(event.origin)) return;
         if (!event.source || typeof event.source.postMessage !== 'function') return;
-        console.log('wf fetch:', project, path);
         await respond({ project, path }, payload => event.source.postMessage(payload, event.origin));
       });
       if (state.collab.uid !== 'master') return;
