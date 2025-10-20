@@ -144,10 +144,11 @@ export default class Designer {
             await post('designer.sync');
             break;
           }
+          case 'keydown': await post('designer.keydown', ev.data); break;
           case 'action': await actions[ev.data.key].handler(ev.data); break;
         }
       });
-      addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev, true), true);
+      addEventListener(state.app.mobile ? 'input' : 'keydown', async ev => await post('designer.keydown', ev), true);
       //await post('designer.trackCursors');
     },
 
@@ -288,13 +289,12 @@ export default class Designer {
       ev.target.select();
     },
 
-    keydown: async (ev, external) => {
-      // FIXME: Slave support
-      let activeEl = external ? document.activeElement : this.state.current?.doc?.activeElement;
+    keydown: async ev => {
+      let activeEl = document.activeElement;
       let activeTag = activeEl?.tagName || '';
       let isLockInput = activeEl?.id === 'DesignerMobileKeyboardLock';
       if (!isLockInput && /^input|textarea|button$/i.test(activeTag)) {
-        if (ev.key === 'Escape' && !ev.target.closest('.CodeMirror')) ev.target.blur();
+        if (ev.key === 'Escape' && !ev.target?.closest?.('.CodeMirror')) ev.target.blur();
         return;
       }
       let key = ev.key || ev.data;
@@ -303,7 +303,7 @@ export default class Designer {
       if (key === 'Control') key = 'Ctrl';
       let [k, cmd] = [...Object.entries(actions)].find(kv => arrayify(kv[1].shortcut).includes(key)) || [];
       if (!cmd || cmd?.disabled?.({ cur: state.collab.uid })?.filter?.(Boolean)?.length) return;
-      ev.preventDefault();
+      ev?.preventDefault?.();
       await cmd.handler({ cur: state.collab.uid });
     },
 

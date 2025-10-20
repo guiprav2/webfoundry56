@@ -218,45 +218,52 @@ let actions = {
 
   createNextSibling: {
     shortcut: 'a',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
-        i: { type: 'string', description: `How many to create (defaults to 1)` },
+        i: { type: 'number', description: `How many to create (defaults to 1)` },
       },
     },
     handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createNextSibling', cur, tag, i });
-      let pos = 'afterend';
       let frame = state.designer.current;
       if (frame.cursors[cur].length !== 1) return;
-      let created = [];
-      let parents = [];
-      while (i-- > 0) {
-        let s = frame.map.get(frame.cursors[cur][0]);
-        let p = s.parentElement;
-        let j = [...p.childNodes].indexOf(s);
-        let k = 1;
-        let pv;
-        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
-        let x = d.el(tag);
-        created.push(x);
-        parents.push(s);
-      }
+      let ref = frame.map.get(frame.cursors[cur][0]);
+      if (!ref || ref.tagName === 'BODY') return;
+      let refKey = frame.map.getKey(ref);
+      let createdKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        if (apply && !createdKeys.length) {
+          createdKeys = await ifeval(async ({ args }) => {
+            let ref = state.map.get(args.refKey);
+            if (!ref) return [];
+            let made = [];
+            for (let n = 0; n < args.count; n++) {
+              let el = document.createElement(args.tag);
+              ref.insertAdjacentElement('afterend', el);
+              made.push(el);
+            }
+            await new Promise(pres => setTimeout(pres));
+            return made.map(x => state.map.getKey(x));
+          }, { refKey, tag, count: i });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            let ref = state.map.get(args.refKey);
+            if (!ref) return;
+            for (let id of args.createdKeys) {
+              let el = state.map.get(id);
+              if (el) ref.insertAdjacentElement('afterend', el);
+            }
+          }, { refKey, createdKeys });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
         } else {
-          for (let i = 0; i < created.length; i++) created[i].remove();
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+          await ifeval(({ args }) => { for (let id of args.createdKeys) state.map.get(id)?.remove(); }, { createdKeys });
+          await actions.changeSelection.handler({ cur, s: [refKey] });
         }
       });
     },
@@ -264,45 +271,52 @@ let actions = {
 
   createPrevSibling: {
     shortcut: 'A',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
-        i: { type: 'string', description: `How many to create (defaults to 1)` },
+        i: { type: 'number', description: `How many to create (defaults to 1)` },
       },
     },
     handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createPrevSibling', cur, tag, i });
-      let pos = 'beforebegin';
       let frame = state.designer.current;
       if (frame.cursors[cur].length !== 1) return;
-      let created = [];
-      let parents = [];
-      while (i-- > 0) {
-        let s = frame.map.get(frame.cursors[cur][0]);
-        let p = s.parentElement;
-        let j = [...p.childNodes].indexOf(s);
-        let k = 1;
-        let pv;
-        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
-        let x = d.el(tag);
-        created.push(x);
-        parents.push(s);
-      }
+      let ref = frame.map.get(frame.cursors[cur][0]);
+      if (!ref || ref.tagName === 'BODY') return;
+      let refKey = frame.map.getKey(ref);
+      let createdKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        if (apply && !createdKeys.length) {
+          createdKeys = await ifeval(async ({ args }) => {
+            let ref = state.map.get(args.refKey);
+            if (!ref) return [];
+            let made = [];
+            for (let n = 0; n < args.count; n++) {
+              let el = document.createElement(args.tag);
+              ref.insertAdjacentElement('beforebegin', el);
+              made.push(el);
+            }
+            await new Promise(pres => setTimeout(pres));
+            return made.map(x => state.map.getKey(x));
+          }, { refKey, tag, count: i });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            let ref = state.map.get(args.refKey);
+            if (!ref) return;
+            for (let id of args.createdKeys) {
+              let el = state.map.get(id);
+              if (el) ref.insertAdjacentElement('beforebegin', el);
+            }
+          }, { refKey, createdKeys });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
         } else {
-          for (let i = 0; i < created.length; i++) created[i].remove();
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+          await ifeval(({ args }) => { for (let id of args.createdKeys) state.map.get(id)?.remove(); }, { createdKeys });
+          await actions.changeSelection.handler({ cur, s: [refKey] });
         }
       });
     },
@@ -310,45 +324,52 @@ let actions = {
 
   createLastChild: {
     shortcut: 'i',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
-        i: { type: 'string', description: `How many to create (defaults to 1)` },
+        i: { type: 'number', description: `How many to create (defaults to 1)` },
       },
     },
     handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createLastChild', cur, tag, i });
-      let pos = 'beforeend';
       let frame = state.designer.current;
       if (frame.cursors[cur].length !== 1) return;
-      let created = [];
-      let parents = [];
-      while (i-- > 0) {
-        let s = frame.map.get(frame.cursors[cur][0]);
-        let p = s.parentElement;
-        let j = [...p.childNodes].indexOf(s);
-        let k = 1;
-        let pv;
-        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
-        let x = d.el(tag);
-        created.push(x);
-        parents.push(s);
-      }
+      let parent = frame.map.get(frame.cursors[cur][0]);
+      if (!parent) return;
+      let parentKey = frame.map.getKey(parent);
+      let createdKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        if (apply && !createdKeys.length) {
+          createdKeys = await ifeval(async ({ args }) => {
+            let parent = state.map.get(args.parentKey);
+            if (!parent) return [];
+            let made = [];
+            for (let n = 0; n < args.count; n++) {
+              let el = document.createElement(args.tag);
+              parent.insertAdjacentElement('beforeend', el);
+              made.push(el);
+            }
+            await new Promise(pres => setTimeout(pres));
+            return made.map(x => state.map.getKey(x));
+          }, { parentKey, tag, count: i });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            let parent = state.map.get(args.parentKey);
+            if (!parent) return;
+            for (let id of args.createdKeys) {
+              let el = state.map.get(id);
+              if (el) parent.insertAdjacentElement('beforeend', el);
+            }
+          }, { parentKey, createdKeys });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
         } else {
-          for (let i = 0; i < created.length; i++) created[i].remove();
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+          await ifeval(({ args }) => { for (let id of args.createdKeys) state.map.get(id)?.remove(); }, { createdKeys });
+          await actions.changeSelection.handler({ cur, s: [parentKey] });
         }
       });
     },
@@ -356,45 +377,52 @@ let actions = {
 
   createFirstChild: {
     shortcut: 'I',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: {
       type: 'object',
       properties: {
         cur: { type: 'string', description: `Relative to whose cursor (defaults to master)` },
         tag: { type: 'string', description: `Tag name to create (defaults to div)` },
-        i: { type: 'string', description: `How many to create (defaults to 1)` },
+        i: { type: 'number', description: `How many to create (defaults to 1)` },
       },
     },
     handler: async ({ cur = 'master', tag = 'div', i = 1 } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'createFirstChild', cur, tag, i });
-      let pos = 'afterbegin';
       let frame = state.designer.current;
       if (frame.cursors[cur].length !== 1) return;
-      let created = [];
-      let parents = [];
-      while (i-- > 0) {
-        let s = frame.map.get(frame.cursors[cur][0]);
-        let p = s.parentElement;
-        let j = [...p.childNodes].indexOf(s);
-        let k = 1;
-        let pv;
-        if (s.tagName === 'BODY' && (pos === 'beforebegin' || pos === 'afterend')) continue;
-        let x = d.el(tag);
-        created.push(x);
-        parents.push(s);
-      }
+      let parent = frame.map.get(frame.cursors[cur][0]);
+      if (!parent) return;
+      let parentKey = frame.map.getKey(parent);
+      let createdKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let i = 0; i < created.length; i++) parents[i].insertAdjacentElement(pos, created[i]);
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: created.map(x => frame.map.getKey(x)) });
+        if (apply && !createdKeys.length) {
+          createdKeys = await ifeval(async ({ args }) => {
+            let parent = state.map.get(args.parentKey);
+            if (!parent) return [];
+            let made = [];
+            for (let n = 0; n < args.count; n++) {
+              let el = document.createElement(args.tag);
+              parent.insertAdjacentElement('afterbegin', el);
+              made.push(el);
+            }
+            await new Promise(pres => setTimeout(pres));
+            return made.map(x => state.map.getKey(x));
+          }, { parentKey, tag, count: i });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            let parent = state.map.get(args.parentKey);
+            if (!parent) return;
+            for (let id of args.createdKeys) {
+              let el = state.map.get(id);
+              if (el) parent.insertAdjacentElement('afterbegin', el);
+            }
+          }, { parentKey, createdKeys });
+          await actions.changeSelection.handler({ cur, s: createdKeys });
         } else {
-          for (let i = 0; i < created.length; i++) created[i].remove();
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: [frame.cursors[cur][0]] });
+          await ifeval(({ args }) => { for (let id of args.createdKeys) state.map.get(id)?.remove(); }, { createdKeys });
+          await actions.changeSelection.handler({ cur, s: [parentKey] });
         }
       });
     },
@@ -402,10 +430,7 @@ let actions = {
 
   changeElementTag: {
     shortcut: 'e',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: {
       type: 'object',
       properties: {
@@ -417,47 +442,67 @@ let actions = {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
+
       if (!tag) {
         let [btn, val] = await showModal('PromptDialog', { title: 'Change tag', label: 'Tag name', initialValue: targets[0].tagName.toLowerCase() });
         if (btn !== 'ok' || !val.trim()) return;
         tag = val.trim();
       }
+
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeElementTag', cur, tag });
-      let parents = targets.map(x => x.parentElement);
+
+      let targetKeys = targets.map(x => frame.map.getKey(x));
+      let parentKeys = targets.map(x => frame.map.getKey(x.parentElement));
       let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
-      let oldEls = targets.map(x => x);
-      let newEls = targets.map(el => {
-        if (el.tagName.toLowerCase() === tag) return el;
-        let clone = document.createElement(tag);
-        for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
-        clone.innerHTML = el.innerHTML;
-        return clone;
-      });
+      let newKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let n = 0; n < oldEls.length; n++) {
-            let p = parents[n];
-            let i = idxs[n];
-            let oldEl = oldEls[n];
-            let newEl = newEls[n];
-            if (oldEl !== newEl && p.children[i] === oldEl) {
-              p.replaceChild(newEl, oldEl);
+        if (apply && !newKeys.length) {
+          newKeys = await ifeval(async ({ args }) => {
+            let created = [];
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!el || !p) continue;
+              if (el.tagName.toLowerCase() === args.tag) {
+                created.push(state.map.getKey(el));
+                continue;
+              }
+              let clone = document.createElement(args.tag);
+              for (let a of el.attributes) clone.setAttribute(a.name, a.value);
+              clone.innerHTML = el.innerHTML;
+              if (p.children[i] === el) p.replaceChild(clone, el);
+              created.push(clone);
             }
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: newEls.map(x => frame.map.getKey(x)) });
+            await new Promise(pres => setTimeout(pres));
+            return created.map(x => state.map.getKey(x));
+          }, { targets: targetKeys, parents: parentKeys, idxs, tag });
+          await actions.changeSelection.handler({ cur, s: newKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              let clone = state.map.get(args.newKeys[n]);
+              if (!el || !p || !clone) continue;
+              if (p.children[i] === el && el.tagName.toLowerCase() !== clone.tagName.toLowerCase()) p.replaceChild(clone, el);
+            }
+          }, { targets: targetKeys, parents: parentKeys, idxs, newKeys });
+          await actions.changeSelection.handler({ cur, s: newKeys });
         } else {
-          for (let n = 0; n < oldEls.length; n++) {
-            let p = parents[n];
-            let i = idxs[n];
-            let oldEl = oldEls[n];
-            let newEl = newEls[n];
-            if (oldEl !== newEl && p.children[i] === newEl) {
-              p.replaceChild(oldEl, newEl);
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              let clone = state.map.get(args.newKeys[n]);
+              if (!el || !p || !clone) continue;
+              if (p.children[i] === clone && clone.tagName.toLowerCase() !== el.tagName.toLowerCase()) p.replaceChild(el, clone);
             }
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: oldEls.map(x => frame.map.getKey(x)) });
+          }, { targets: targetKeys, parents: parentKeys, idxs, newKeys });
+          await actions.changeSelection.handler({ cur, s: targetKeys });
         }
       });
     },
@@ -503,38 +548,69 @@ let actions = {
       },
     },
     handler: async ({ cur = 'master', i = 1 } = {}) => {
-      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'deleteSelected', cur });
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'deleteSelected', cur, i });
       let frame = state.designer.current;
       await actions.copySelected.handler({ cur });
       while (i-- > 0) {
-        let ss = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => x !== frame.root && x !== frame.body && x !== frame.head);
+        let cursors = frame.cursors[cur];
+        let ss = cursors.map(x => frame.map.get(x)).filter(x => x && x !== frame.root && x !== frame.body && x !== frame.head);
         if (!ss.length) return;
-        let select = new Set();
-        let removed = [];
-        let ps = ss.map(x => x.parentElement);
+        let removedKeys = ss.map(x => frame.map.getKey(x));
+        let parentKeys = ss.map(x => frame.map.getKey(x.parentElement));
         let idxs = ss.map(x => [...x.parentElement.children].indexOf(x));
-        for (let s of ss) {
-          let p = s.parentElement;
-          let i = [...p.children].indexOf(s);
-          s.remove();
-          removed.push(s);
-          select.add(ss.length === 1 ? p.children[i] || p.children[i - 1] || p : p.children[i - 1]);
-        }
-        select = [...select].filter(Boolean).filter(x => !removed.includes(x));
-        if (!select.length) select.push(...ps);
+        let selectKeys = [];
         await post('designer.pushHistory', cur, async apply => {
-          if (apply) {
-            for (let s of removed) s.remove();
-            await new Promise(pres => setTimeout(pres));
-            await actions.changeSelection.handler({ cur, s: select.map(x => frame.map.getKey(x)) });
+          if (apply && !selectKeys.length) {
+            let result = await ifeval(async ({ args }) => {
+              let select = new Set();
+              let removed = [];
+              for (let n = 0; n < args.removed.length; n++) {
+                let el = state.map.get(args.removed[n]);
+                let p = state.map.get(args.parents[n]);
+                let idx = args.idxs[n];
+                if (!el || !p) continue;
+                removed.push(state.map.getKey(el));
+                el.remove();
+                let next = p.children[idx] || p.children[idx - 1];
+                if (next && !args.removed.includes(state.map.getKey(next))) select.add(next);
+                else select.add(p);
+              }
+              await new Promise(pres => setTimeout(pres));
+              return { removed, select: [...select].map(x => state.map.getKey(x)) };
+            }, { removed: removedKeys, parents: parentKeys, idxs });
+            removedKeys = result.removed;
+            selectKeys = result.select;
+            await actions.changeSelection.handler({ cur, s: selectKeys });
+          } else if (apply) {
+            let result = await ifeval(async ({ args }) => {
+              let select = new Set();
+              for (let n = 0; n < args.removed.length; n++) {
+                let el = state.map.get(args.removed[n]);
+                let p = state.map.get(args.parents[n]);
+                let idx = args.idxs[n];
+                if (!el || !p) continue;
+                el.remove();
+                let next = p.children[idx] || p.children[idx - 1];
+                if (next && !args.removed.includes(state.map.getKey(next))) select.add(next);
+                else select.add(p);
+              }
+              await new Promise(pres => setTimeout(pres));
+              return [...select].map(x => state.map.getKey(x));
+            }, { removed: removedKeys, parents: parentKeys, idxs });
+            selectKeys = result;
+            await actions.changeSelection.handler({ cur, s: selectKeys });
           } else {
-            for (let n = 0; n < removed.length; n++) {
-              let p = ps[n];
-              let i = idxs[n];
-              if (p.children[i]) p.insertBefore(removed[n], p.children[i]); else p.appendChild(removed[n]);
-            }
-            await new Promise(pres => setTimeout(pres));
-            await actions.changeSelection.handler({ cur, s: removed.map(x => frame.map.getKey(x)) });
+            await ifeval(({ args }) => {
+              for (let n = 0; n < args.removed.length; n++) {
+                let el = state.map.get(args.removed[n]);
+                let p = state.map.get(args.parents[n]);
+                let idx = args.idxs[n];
+                if (!p || !el) continue;
+                if (p.children[idx]) p.insertBefore(el, p.children[idx]);
+                else p.appendChild(el);
+              }
+            }, { removed: removedKeys, parents: parentKeys, idxs });
+            await actions.changeSelection.handler({ cur, s: removedKeys });
           }
         });
       }
@@ -719,41 +795,67 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'wrap', cur, tag, i });
       let frame = state.designer.current;
       let els = frame.cursors[cur].map(id => frame.map.get(id)).filter(Boolean);
-      let parents = els.map(x => x.parentElement);
+      if (!els.length) return;
+      let wrapIds = [];
+      let parentIds = els.map(x => frame.map.getKey(x.parentElement));
       let idxs = els.map(x => [...x.parentElement.children].indexOf(x));
-      let wrapperChains = els.map(() => []);
-      for (let n = 0; n < els.length; n++) {
-        let chain = [];
-        for (let j = 0; j < i; j++) chain.push(document.createElement(tag));
-        wrapperChains[n] = chain;
-      }
+      let elIds = els.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let n = 0; n < els.length; n++) {
-            let node = els[n];
-            let p = parents[n];
-            let before = p.children[idxs[n]];
-            let chain = wrapperChains[n];
-            let outer = chain[0];
-            let inner = chain.at(-1);
-            p.insertBefore(outer, before);
-            for (let k = 1; k < chain.length; k++) chain[k - 1].appendChild(chain[k]);
-            inner.appendChild(node);
-          }
-          await new Promise(pres => setTimeout(pres));
-          let selection = wrapperChains.map(c => c[0]);
-          await actions.changeSelection.handler({ cur, s: selection.map(x => frame.map.getKey(x)) });
+        if (apply && !wrapIds.length) {
+          wrapIds = await ifeval(async ({ args }) => {
+            let wrapped = [];
+            for (let n = 0; n < args.els.length; n++) {
+              let el = state.map.get(args.els[n]);
+              let p = state.map.get(args.parents[n]);
+              if (!el || !p) continue;
+              let before = p.children[args.idxs[n]];
+              let outer = document.createElement(args.tag);
+              let last = outer;
+              for (let j = 1; j < args.i; j++) { let inner = document.createElement(args.tag); last.appendChild(inner); last = inner }
+              p.insertBefore(outer, before);
+              last.appendChild(el);
+              wrapped.push(outer);
+            }
+            await new Promise(pres => setTimeout(pres));
+            return wrapped.map(x => state.map.getKey(x));
+          }, { els: elIds, parents: parentIds, idxs, tag, i });
+          await actions.changeSelection.handler({ cur, s: wrapIds });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.wrapIds.length; n++) {
+              let w = state.map.get(args.wrapIds[n]);
+              let p = state.map.get(args.parents[n]);
+              let before = p.children[args.idxs[n]];
+              if (!w || !p) continue;
+              if (before) p.insertBefore(w, before); else p.appendChild(w);
+              let inner = w;
+              while (inner.firstElementChild && inner.firstElementChild.children.length === 1) inner = inner.firstElementChild;
+              let el = state.map.get(args.els[n]);
+              if (el) inner.appendChild(el);
+            }
+          }, { wrapIds, parents: parentIds, idxs, els: elIds });
+          await actions.changeSelection.handler({ cur, s: wrapIds });
         } else {
-          for (let n = els.length - 1; n >= 0; n--) {
-            let node = els[n];
-            let p = parents[n];
-            let chain = wrapperChains[n];
-            let outer = chain[0];
-            let inner = chain.at(-1);
-            if (outer.parentElement === p) { p.insertBefore(node, outer); outer.remove() }
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: els.map(x => frame.map.getKey(x)) });
+          let unwrapped = await ifeval(async ({ args }) => {
+            let result = [];
+            for (let n = args.wrapIds.length - 1; n >= 0; n--) {
+              let w = state.map.get(args.wrapIds[n]);
+              let p = state.map.get(args.parents[n]);
+              if (!w || !p) continue;
+              let before = p.children[args.idxs[n]];
+              let inner = w.firstElementChild;
+              if (inner) { p.insertBefore(inner, before); result.push(state.map.getKey(inner)) }
+              else {
+                let children = [...w.childNodes];
+                let anyElements = false;
+                for (let c of children) { p.insertBefore(c, before); c.nodeType === 1 && result.push(state.map.getKey(c)); anyElements = true }
+                if (!anyElements) result.push(state.map.getKey(p));
+              }
+              w.remove();
+            }
+            return result;
+          }, { wrapIds, parents: parentIds, idxs });
+          await actions.changeSelection.handler({ cur, s: unwrapped });
         }
       });
     },
@@ -777,129 +879,145 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'unwrap', cur, i });
       let frame = state.designer.current;
       let wrappers = frame.cursors[cur].map(id => frame.map.get(id)).filter(Boolean);
-      let parents = wrappers.map(x => x.parentElement);
+      if (!wrappers.length) return;
+      let wrapIds = wrappers.map(x => frame.map.getKey(x));
+      let parentIds = wrappers.map(x => frame.map.getKey(x.parentElement));
       let idxs = wrappers.map(x => [...x.parentElement.children].indexOf(x));
-      let childLists = wrappers.map(x => [...x.childNodes]);
       await post('designer.pushHistory', cur, async apply => {
         if (apply) {
-          for (let n = wrappers.length - 1; n >= 0; n--) {
-            let wrapper = wrappers[n];
-            let p = parents[n];
-            let before = p.children[idxs[n]];
-            for (let j = 0; j < i; j++) {
-              if (!wrapper || !wrapper.parentElement) break;
-              let children = [...wrapper.childNodes];
+          await ifeval(async ({ args }) => {
+            window.__unwrappedChildren ??= new Map(); // FIXME
+            for (let n = args.wrapIds.length - 1; n >= 0; n--) {
+              let w = state.map.get(args.wrapIds[n]);
+              let p = state.map.get(args.parents[n]);
+              if (!w || !p) continue;
+              let before = p.children[args.idxs[n]];
+              let children = [...w.childNodes];
+              window.__unwrappedChildren.set(args.wrapIds[n], children);
               for (let c of children) p.insertBefore(c, before);
-              wrapper.remove();
-              wrapper = p.children[idxs[n]];
+              w.remove();
             }
-          }
-          await new Promise(pres => setTimeout(pres));
-          let promoted = [];
-          for (let list of childLists) promoted.push(...list.filter(x => x.parentElement));
-          await actions.changeSelection.handler({ cur, s: promoted.map(x => frame.map.getKey(x)) });
+          }, { wrapIds, parents: parentIds, idxs });
+          let promoted = await ifeval(({ args }) => {
+            let result = [];
+            for (let id of args.wrapIds) {
+              let kids = window.__unwrappedChildren?.get(id) || [];
+              for (let c of kids) if (c.nodeType === 1 && c.isConnected) result.push(state.map.getKey(c));
+            }
+            return result.length ? result : args.parents;
+          }, { wrapIds, parents: parentIds });
+          await actions.changeSelection.handler({ cur, s: promoted });
         } else {
-          for (let n = 0; n < wrappers.length; n++) {
-            let wrapper = wrappers[n];
-            let p = parents[n];
-            let i = idxs[n];
-            let before = p.children[i];
-            if (!before) p.appendChild(wrapper); else p.insertBefore(wrapper, before);
-            for (let c of childLists[n]) wrapper.appendChild(c);
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: wrappers.map(x => frame.map.getKey(x)) });
+          await ifeval(({ args }) => {
+            let map = window.__unwrappedChildren;
+            if (!map) return;
+            for (let n = 0; n < args.wrapIds.length; n++) {
+              let w = state.map.get(args.wrapIds[n]);
+              let p = state.map.get(args.parents[n]);
+              if (!w || !p) continue;
+              let before = p.children[args.idxs[n]];
+              if (before) p.insertBefore(w, before); else p.appendChild(w);
+              let kids = map.get(args.wrapIds[n]);
+              if (kids?.length) for (let c of kids) w.appendChild(c);
+            }
+          }, { wrapIds, parents: parentIds, idxs });
+          await actions.changeSelection.handler({ cur, s: wrapIds });
         }
       });
     },
   },
 
   addCssClasses: {
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: {
       type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose selection to use (defaults to master)` },
-        cls: { type: 'array', items: { type: 'string' } },
-      },
+      properties: { cur: { type: 'string', description: `Whose selection to use (defaults to master)` }, cls: { type: 'array', items: { type: 'string' } } },
       required: ['cls'],
     },
     handler: async ({ cur = 'master', cls } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'addCssClasses', cur, cls });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
       if (typeof cls === 'string') cls = cls.trim();
-      let parts = [];
-      let re = /{{[\s\S]*?}}|[^\s]+/g;
-      let match;
-      while ((match = re.exec(cls))) parts.push(match[0]);
-      let exprs = parts.filter(c => c.startsWith('{{') && c.endsWith('}}'));
-      let normal = parts.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
-      await post('designer.pushHistory', 'master', async apply => {
-        if (apply) {
-          for (let el of targets) {
-            for (let y of normal) el.classList.add(y);
-            if (exprs.length) {
-              let existing = el.getAttribute('wf-class') || '';
-              let joined = existing.trim() ? existing.trimEnd() + ' ' + exprs.join(' ') : exprs.join(' ');
-              el.setAttribute('wf-class', joined);
+      let tokens = []; let re = /{{(?:[^{}]|{{[^}]*}})*}}|[^\s]+/g; let m;
+      while (m = re.exec(cls)) tokens.push(m[0]);
+      let exprs = tokens.filter(c => c.startsWith('{{') && c.endsWith('}}'));
+      let normal = tokens.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
+      let targetIds = targets.map(x => frame.map.getKey(x));
+      await post('designer.pushHistory', cur, async apply => {
+        await ifeval(({ args }) => {
+          self.__wfExprChanges ??= new Map();
+          for (let id of args.targets) {
+            let el = state.map.get(id);
+            if (!el) continue;
+            let attr = el.getAttribute('wf-class') || '';
+            let existing = attr.length ? attr.split(/}}\s+(?={{)/).map(s => s.trim()).filter(Boolean) : [];
+            if (args.apply) {
+              for (let y of args.normal) el.classList.add(y);
+              if (args.exprs.length) {
+                let added = new Set();
+                for (let e of args.exprs) if (!existing.includes(e)) added.add(e);
+                let joined = existing.concat([...added]).join(' ');
+                el.setAttribute('wf-class', joined.trim());
+                self.__wfExprChanges.set(id, { added, removed: new Set() });
+              }
+            } else {
+              for (let y of args.normal) el.classList.remove(y);
+              if (args.exprs.length && el.hasAttribute('wf-class')) {
+                let current = el.getAttribute('wf-class') || '';
+                let parts = current.split(/}}\s+(?={{)/).map(s => s.trim()).filter(Boolean);
+                let change = self.__wfExprChanges.get(id);
+                let toRemove = change ? [...change.added] : args.exprs;
+                let next = parts.filter(e => !toRemove.includes(e));
+                el.setAttribute('wf-class', next.join(' '));
+                if (change) change.removed = new Set(toRemove);
+              }
             }
           }
-        } else {
-          for (let el of targets) {
-            for (let y of normal) el.classList.remove(y);
-            if (exprs.length && el.hasAttribute('wf-class')) {
-              let current = el.getAttribute('wf-class');
-              for (let e of exprs) current = current.replace(e, '');
-              el.setAttribute('wf-class', current.trim());
-            }
-          }
-        }
+        }, { targets: targetIds, normal, exprs, apply });
         await post('collab.sync');
       });
     },
   },
 
   removeCssClasses: {
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose selection to use (defaults to master)` },
-        cls: { type: 'array', items: { type: 'string' } },
-      },
-      required: ['cls'],
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string', description: `Whose selection to use (defaults to master)` }, cls: { type: 'array', items: { type: 'string' } } }, required: ['cls'] },
     handler: async ({ cur = 'master', cls } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'removeCssClasses', cur, cls });
-      let frame = state.designer.current;
-      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      let frame = state.designer.current; let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean); if (!targets.length) return;
       if (typeof cls === 'string') cls = cls.trim();
-      let parts = [];
-      let re = /{{[\s\S]*?}}|[^\s]+/g;
-      let match;
-      while ((match = re.exec(cls))) parts.push(match[0]);
-      let exprs = parts.filter(c => c.startsWith('{{') && c.endsWith('}}'));
-      let normal = parts.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
+      let tokens = []; let re = /{{(?:[^{}]|{{[^}]*}})*}}|[^\s]+/g; let m; while (m = re.exec(cls)) tokens.push(m[0]);
+      let exprs = tokens.filter(c => c.startsWith('{{') && c.endsWith('}}')); let normal = tokens.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
+      let targetIds = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let el of targets) {
-            for (let y of normal) el.classList.remove(y);
-            if (exprs.length && el.hasAttribute('wf-class')) {
-              let current = el.getAttribute('wf-class');
-              for (let e of exprs) current = current.replace(e, '');
-              el.setAttribute('wf-class', current.trim());
+        await ifeval(({ args }) => {
+          self.__wfExprChanges ??= new Map();
+          for (let id of args.targets) {
+            let el = state.map.get(id); if (!el) continue;
+            if (args.apply) {
+              for (let y of args.normal) el.classList.remove(y);
+              if (args.exprs.length && el.hasAttribute('wf-class')) {
+                let current = el.getAttribute('wf-class') || '';
+                let parts = current.split(/}}\s+(?={{)/).map(s => s.trim()).filter(Boolean);
+                let removed = new Set(), remaining = [];
+                for (let p of parts) if (args.exprs.includes(p)) removed.add(p); else remaining.push(p);
+                el.setAttribute('wf-class', remaining.join(' '));
+                self.__wfExprChanges.set(id, { added: new Set(), removed });
+              }
+            } else {
+              for (let y of args.normal) el.classList.add(y);
+              if (args.exprs.length) {
+                let change = self.__wfExprChanges.get(id);
+                let readd = change ? [...change.removed] : args.exprs;
+                let existing = (el.getAttribute('wf-class') || '').split(/}}\s+(?={{)/).map(s => s.trim()).filter(Boolean);
+                let joined = existing.concat(readd).join(' ');
+                el.setAttribute('wf-class', joined.trim());
+              }
             }
           }
-        } else {
-          for (let el of targets) for (let y of normal) el.classList.add(y);
-        }
+        }, { targets: targetIds, normal, exprs, apply });
         await post('collab.sync');
       });
     },
@@ -924,43 +1042,62 @@ let actions = {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceCssClasses', cur, old: old instanceof RegExp ? `wfregexp:${old}` : old, cls });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
       if (typeof cls === 'string') cls = cls.trim();
-      let parts = [];
-      let re = /{{[\s\S]*?}}|[^\s]+/g;
-      let match;
-      while ((match = re.exec(cls))) parts.push(match[0]);
-      let exprs = parts.filter(c => c.startsWith('{{') && c.endsWith('}}'));
-      let normal = parts.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
+      let tokens = [];
+      let re = /{{(?:[^{}]|{{[^}]*}})*}}|[^\s]+/g;
+      let m;
+      while (m = re.exec(cls)) tokens.push(m[0]);
+      let exprs = tokens.filter(c => c.startsWith('{{') && c.endsWith('}}'));
+      let normal = tokens.filter(c => !(c.startsWith('{{') && c.endsWith('}}')));
       let clsSet = new Set(normal);
-      let removedByElement = null;
+      let targetIds = targets.map(x => frame.map.getKey(x));
+      let removedBy = {};
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          removedByElement = new Map();
-          for (let el of targets) {
-            let removed = [];
-            if (old instanceof RegExp) {
-              for (let c of [...el.classList]) if (old.test(c)) { el.classList.remove(c); removed.push(c) }
-            } else {
-              let oldSet = new Set(Array.isArray(old) ? old : old?.split(/\s+/) || []);
-              for (let c of oldSet) if (el.classList.contains(c)) { el.classList.remove(c); removed.push(c) }
-            }
-            for (let c of clsSet) el.classList.add(c);
-            if (exprs.length && el.hasAttribute('wf-class')) {
-              let current = el.getAttribute('wf-class');
-              for (let e of exprs) {
-                if (old && typeof old === 'string') current = current.replace(old, e);
-                else current += ' ' + e;
+        if (apply && !Object.keys(removedBy).length) {
+          removedBy = await ifeval(async ({ args }) => {
+            let out = {};
+            for (let id of args.targets) {
+              let el = state.map.get(id);
+              if (!el) continue;
+              let removed = [];
+              if (args.old?.startsWith?.('wfregexp:')) {
+                let re = new RegExp(args.old.slice('wfregexp:'.length + 1, -1));
+                for (let c of [...el.classList]) if (re.test(c)) { el.classList.remove(c); removed.push(c) }
               }
-              el.setAttribute('wf-class', current.trim());
+              else if (args.old) {
+                let olds = Array.isArray(args.old) ? args.old : args.old.split(/\s+/);
+                for (let c of olds) if (el.classList.contains(c)) { el.classList.remove(c); removed.push(c) }
+              }
+              for (let c of args.cls) el.classList.add(c);
+              if (args.exprs.length) {
+                let current = el.getAttribute('wf-class') || '';
+                let parts = current.split(/}}\s+(?={{)/).map(s => s.trim()).filter(Boolean);
+                let added = new Set();
+                for (let e of args.exprs) if (!parts.includes(e)) added.add(e);
+                el.setAttribute('wf-class', parts.concat([...added]).join(' '));
+              }
+              out[id] = removed;
             }
-
-            removedByElement.set(el, removed);
-          }
+            return out;
+          }, { targets: targetIds, old: typeof old === 'string' ? old : (old instanceof RegExp ? `wfregexp:${old}` : ''), cls: [...clsSet], exprs });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            for (let id of Object.keys(args.removedBy)) {
+              let el = state.map.get(id);
+              if (!el) continue;
+              for (let c of args.removedBy[id] || []) el.classList.remove(c);
+              for (let c of args.cls) el.classList.add(c);
+            }
+          }, { cls: [...clsSet], removedBy });
         } else {
-          for (let el of targets) {
-            for (let c of clsSet) el.classList.remove(c);
-            for (let c of removedByElement?.get(el) || []) el.classList.add(c);
-          }
+          await ifeval(({ args }) => {
+            for (let id of Object.keys(args.removedBy)) {
+              let el = state.map.get(id); if (!el) continue;
+              for (let c of args.cls) el.classList.remove(c);
+              for (let c of args.removedBy[id] || []) el.classList.add(c);
+            }
+          }, { cls: [...clsSet], removedBy });
         }
         await post('collab.sync');
       });
@@ -983,22 +1120,19 @@ let actions = {
     },
     handler: async ({ cur = 'master', html = null } = {}) => {
       let frame = state.designer.current;
-      let replaced = [];
-      let parents = [];
-      let idxs = [];
-      for (let el of frame.cursors[cur]) {
-        el = frame.map.get(el);
-        let p = el.parentElement;
-        let i = [...p.children].indexOf(el);
-        replaced.push(el);
-        parents.push(p);
-        idxs.push(i);
-      }
+      let cursors = frame.cursors[cur];
+      if (!cursors?.length) return;
+
+      let replaced = cursors.map(id => frame.map.get(id)).filter(Boolean);
+      let parents = replaced.map(x => x.parentElement);
+      let idxs = replaced.map(x => [...x.parentElement.children].indexOf(x));
+
       let order = replaced.map((el, n) => ({ el, p: parents[n], i: idxs[n], n }));
       order.sort((a, b) => {
         if (a.p === b.p) return a.i - b.i;
         return a.p.compareDocumentPosition(b.p) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
       });
+
       if (html == null) {
         let combined = order.map(o => {
           let clone = o.el.cloneNode(true);
@@ -1010,77 +1144,83 @@ let actions = {
         if (btn !== 'ok') return;
         html = val;
       }
+
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeHtml', cur, html });
-      let added = [];
+
+      let addedKeys = [];
+      let replacedKeys = replaced.map(x => frame.map.getKey(x));
+      let parentKeys = parents.map(x => frame.map.getKey(x));
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          let isBodyEdit = /^\s*<body[\s>]/i.test(html);
-          let template = document.createElement('template');
-          template.innerHTML = html;
-          let newEls = [...template.content.children];
-          let newSelect = [];
-          added = [];
-          let lastParent = parents.at(-1);
-          let lastIndex = idxs.at(-1);
-          for (let n = 0; n < replaced.length; n++) {
-            let p = parents[n];
-            let i = idxs[n];
-            let newEl = newEls[order.findIndex(o => o.n === n)];
-            let oldEl = p.children[i];
-            if (!oldEl) continue;
-            if (newEl) {
-              if (oldEl.tagName === 'BODY') {
-                if (isBodyEdit && newEl.tagName === 'BODY') {
-                  for (let attr of [...newEl.attributes]) oldEl.setAttribute(attr.name, attr.value);
-                  for (let attr of [...oldEl.attributes]) if (!newEl.hasAttribute(attr.name)) oldEl.removeAttribute(attr.name);
-                  while (oldEl.firstChild) oldEl.removeChild(oldEl.firstChild);
-                  for (let child of [...newEl.childNodes]) oldEl.appendChild(child.cloneNode(true));
-                } else {
-                  while (oldEl.firstChild) oldEl.removeChild(oldEl.firstChild);
-                  for (let child of [...template.content.childNodes]) oldEl.appendChild(child.cloneNode(true));
-                }
-                newSelect.push(oldEl);
-              } else if (['HTML','HEAD'].includes(oldEl.tagName)) {
-                for (let attr of [...newEl.attributes]) oldEl.setAttribute(attr.name, attr.value);
-                for (let attr of [...oldEl.attributes]) if (!newEl.hasAttribute(attr.name)) oldEl.removeAttribute(attr.name);
-                newSelect.push(oldEl);
+        if (apply && !addedKeys.length) {
+          addedKeys = await ifeval(async ({ args }) => {
+            let template = document.createElement('template');
+            template.innerHTML = args.html;
+            let newEls = [...template.content.children];
+            let added = [];
+
+            for (let n = 0; n < args.replaced.length; n++) {
+              let el = state.map.get(args.replaced[n]);
+              let p = state.map.get(args.parents[n]);
+              let idx = args.idxs[n];
+              if (!el || !p) continue;
+
+              let newEl = newEls[n];
+              if (!newEl) { el.remove(); continue; }
+
+              if (['BODY','HTML','HEAD'].includes(el.tagName)) {
+                for (let attr of [...newEl.attributes]) el.setAttribute(attr.name, attr.value);
+                for (let attr of [...el.attributes]) if (!newEl.hasAttribute(attr.name)) el.removeAttribute(attr.name);
+                while (el.firstChild) el.removeChild(el.firstChild);
+                for (let child of [...newEl.childNodes]) el.appendChild(child.cloneNode(true));
               } else {
-                oldEl.replaceWith(newEl);
-                newSelect.push(newEl);
+                p.replaceChild(newEl, el);
+                added.push(newEl);
               }
-            } else {
-              oldEl.remove();
             }
-          }
-          if (newEls.length > replaced.length) {
-            let after = lastParent.children[lastIndex];
-            let rest = newEls.slice(replaced.length);
-            for (let el of rest) {
-              if (after?.nextSibling) after.parentElement.insertBefore(el, after.nextSibling);
-              else after?.parentElement.appendChild(el);
-              newSelect.push(el);
-              added.push(el);
-              after = el;
+
+            await new Promise(pres => setTimeout(pres));
+            return added.map(x => state.map.getKey(x));
+          }, { html, replaced: replacedKeys, parents: parentKeys, idxs });
+          await actions.changeSelection.handler({ cur, s: addedKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.replaced.length; n++) {
+              let p = state.map.get(args.parents[n]);
+              let idx = args.idxs[n];
+              let newEl = state.map.get(args.added[n]);
+              if (!p || !newEl) continue;
+              let current = p.children[idx];
+              if (current && current !== newEl) current.replaceWith(newEl);
+              else if (!newEl.isConnected) {
+                let prev = p.children[idx - 1];
+                if (prev) prev.after(newEl);
+                else p.insertBefore(newEl, p.firstChild);
+              }
             }
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: newSelect.map(x => frame.map.getKey(x)) });
+          }, { replaced: replacedKeys, parents: parentKeys, idxs, added: addedKeys });
+          await actions.changeSelection.handler({ cur, s: addedKeys });
         } else {
-          let newSelect = [];
-          for (let el of added) el.remove();
-          for (let n = 0; n < replaced.length; n++) {
-            let p = parents[n];
-            let i = idxs[n];
-            let current = p.children[i];
-            if (current) current.replaceWith(replaced[n]);
-            else {
-              if (p.children[i - 1]) p.children[i - 1].after(replaced[n]);
-              else p.insertBefore(replaced[n], p.firstChild);
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.added.length; n++) {
+              let newEl = state.map.get(args.added[n]);
+              if (newEl) newEl.remove();
             }
-            newSelect.push(replaced[n]);
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: newSelect.map(x => frame.map.getKey(x)) });
+            for (let n = 0; n < args.replaced.length; n++) {
+              let p = state.map.get(args.parents[n]);
+              let el = state.map.get(args.replaced[n]);
+              let idx = args.idxs[n];
+              if (!p || !el) continue;
+              let current = p.children[idx];
+              if (current) current.replaceWith(el);
+              else {
+                let prev = p.children[idx - 1];
+                if (prev) prev.after(el);
+                else p.insertBefore(el, p.firstChild);
+              }
+            }
+          }, { replaced: replacedKeys, parents: parentKeys, idxs, added: addedKeys });
+          await actions.changeSelection.handler({ cur, s: replacedKeys });
         }
       });
     },
@@ -1089,20 +1229,12 @@ let actions = {
   changeInnerHtml: {
     description: `Changes the inner HTML of selected elements (prompts if not provided)`,
     shortcut: 'M',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
-        html: { type: 'string' },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, html: { type: 'string' } } },
     handler: async ({ cur = 'master', html = null } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
       let prev = targets.map(x => x.innerHTML);
       if (html == null) {
         let [btn, val] = await showModal('CodeDialog', { title: 'Change HTML (inner)', initialValue: prev.join('\n') });
@@ -1110,26 +1242,24 @@ let actions = {
         html = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeInnerHtml', cur, html });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) targets[n].innerHTML = apply ? html : prev[n];
-        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            el.innerHTML = args.apply ? args.html : args.prev[n];
+          }
+        }, { targets: targetKeys, html, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
       });
     },
   },
 
   changeInputPlaceholder: {
     shortcut: 'Ctrl-p',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose selected elements to change (defaults to master)` },
-        placeholder: { type: 'string', description: `Placeholder text (default prompts user)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, placeholder: { type: 'string' } } },
     handler: async ({ cur = 'master', placeholder = null } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => /^HTML(InputElement|TextAreaElement)$/.test(x.constructor.name));
@@ -1141,11 +1271,16 @@ let actions = {
         placeholder = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeInputPlaceholder', cur, placeholder });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let nv = apply ? placeholder : prev[n];
-          nv ? targets[n].setAttribute('placeholder', nv) : targets[n].removeAttribute('placeholder');
-        }
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.placeholder : args.prev[n];
+            nv ? el.setAttribute('placeholder', nv) : el.removeAttribute('placeholder');
+          }
+        }, { targets: targetKeys, placeholder, prev, apply });
       });
     },
   },
@@ -1153,20 +1288,12 @@ let actions = {
   changeFormMethod: {
     description: `Changes a form element's method attribute`,
     shortcut: 'Ctrl-M',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `whose selected elements to change (defaults to master)` },
-        method: { type: 'string', description: `Method to use (default prompts user)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, method: { type: 'string' } } },
     handler: async ({ cur = 'master', method } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => x?.tagName === 'FORM');
+      if (!targets.length) return;
       let prev = targets.map(x => x.getAttribute('method'));
       if (method == null) {
         let [btn, val] = await showModal('PromptDialog', { title: 'Change form method', label: 'Method', initialValue: prev[0] });
@@ -1174,11 +1301,16 @@ let actions = {
         method = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeFormMethod', cur, method });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let nv = apply ? method : prev[n];
-          nv ? targets[n].setAttribute('method', nv) : targets[n].removeAttribute('method');
-        }
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.method : args.prev[n];
+            nv ? el.setAttribute('method', nv) : el.removeAttribute('method');
+          }
+        }, { targets: targetKeys, method, prev, apply });
       });
     },
   },
@@ -1186,23 +1318,22 @@ let actions = {
   toggleHidden: {
     description: `Toggles visibility of selected elements (via hidden attribute)`,
     shortcut: 'x',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose selected elements to toggle (defaults to master)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master' } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'toggleHidden', cur });
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
       let prev = targets.map(x => x.hidden);
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) targets[n].hidden = apply ? !prev[n] : prev[n];
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.hidden = args.apply ? !args.prev[n] : args.prev[n];
+          }
+        }, { targets: targetKeys, prev, apply });
       });
     },
   },
@@ -1210,20 +1341,12 @@ let actions = {
   replaceTextContent: {
     description: `If no text is provided, a single-line input modal is shown`,
     shortcut: 't',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to move (defaults to master)` },
-        text: { type: 'string', description: `Replacement text (defaults to a modal to prompt the user)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, text: { type: 'string' } } },
     handler: async ({ cur = 'master', text } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
       let prev = targets.map(x => x.textContent);
       if (text == null) {
         let [btn, val] = await showModal('PromptDialog', { title: 'Replace text', label: 'Text', initialValue: prev[0] });
@@ -1231,8 +1354,14 @@ let actions = {
         text = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceTextContent', cur, text });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) targets[n].textContent = apply ? text : prev[n];
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.textContent = args.apply ? args.text : args.prev[n];
+          }
+        }, { targets: targetKeys, text, prev, apply });
       });
     },
   },
@@ -1240,20 +1369,12 @@ let actions = {
   replaceMultilineTextContent: {
     description: `Replaces the selected element's content with multiline input; prompts textarea if no text is provided`,
     shortcut: 'T',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-        text: { type: 'string', description: `Replacement text (defaults to multiline textarea prompt)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, text: { type: 'string' } } },
     handler: async ({ cur = 'master', text } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
       let prev = targets.map(x => x.textContent);
       if (text == null) {
         let [btn, val] = await showModal('PromptDialog', { title: 'Replace text (multiline)', label: 'Text', initialValue: prev.join('\n'), multiline: true });
@@ -1261,28 +1382,26 @@ let actions = {
         text = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'replaceMultilineTextContent', cur, text });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) targets[n].textContent = apply ? text : prev[n];
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.textContent = args.apply ? args.text : args.prev[n];
+          }
+        }, { targets: targetKeys, text, prev, apply });
       });
     },
   },
 
   changeLinkUrl: {
     shortcut: 'H',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-        url: { type: 'string', description: `Link URL (default prompts user)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, url: { type: 'string' } } },
     handler: async ({ cur = 'master', url } = {}) => {
       let frame = state.designer.current;
-      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean).filter(x => x.tagName === 'A');
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(x => x.tagName === 'A');
+      if (!targets.length) return;
       let prev = targets.map(x => x.getAttribute('href'));
       if (url == null) {
         let [btn, val] = await showModal('PromptDialog', { title: 'Change link URL', label: 'URL', initialValue: prev[0] });
@@ -1290,85 +1409,102 @@ let actions = {
         url = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeLinkUrl', cur, url });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let nv = apply ? url : prev[n];
-          nv ? targets[n].setAttribute('href', nv) : targets[n].removeAttribute('href');
-        }
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.url : args.prev[n];
+            nv ? el.setAttribute('href', nv) : el.removeAttribute('href');
+          }
+        }, { targets: targetKeys, url, prev, apply });
       });
     },
   },
 
   changeMediaSrc: {
     shortcut: 's',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-        url: { type: 'string', description: `Link URL (default prompts user)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, url: { type: 'string' } } },
     handler: async ({ cur = 'master', url } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       let prevSrcs = targets.map(x => x.getAttribute('src'));
-      let prevTags = targets.map(x => x.tagName.toLowerCase());
       if (url == null) {
         let [btn, val] = await showModal('PromptDialog', { title: 'Change media source', label: 'URL', initialValue: prevSrcs[0] });
         if (btn !== 'ok') return;
         url = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeMediaSrc', cur, url });
+
       let mime = mimeLookup(url);
       let newTag = mime?.startsWith?.('audio/') ? 'audio' : mime?.startsWith?.('video/') ? 'video' : 'img';
-      let parents = targets.map(x => x.parentElement);
+      let targetKeys = targets.map(x => frame.map.getKey(x));
+      let parentKeys = targets.map(x => frame.map.getKey(x.parentElement));
       let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
-      let oldEls = targets.map(x => x);
-      let newEls = targets.map((el, n) => {
-        let tag = newTag && newTag !== el.tagName.toLowerCase() ? newTag : el.tagName.toLowerCase();
-        if (tag === el.tagName.toLowerCase()) return el;
-        let clone = document.createElement(tag);
-        for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
-        clone.className = el.className;
-        clone.innerHTML = el.innerHTML;
-        return clone;
-      });
+      let newKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let n = 0; n < oldEls.length; n++) {
-            let el = oldEls[n];
-            let p = parents[n];
-            let i = idxs[n];
-            let repl = newEls[n];
-            if (repl !== el) {
-              if (p.children[i] === el) p.replaceChild(repl, el);
-              else p.insertBefore(repl, p.children[i]);
+        if (apply && !newKeys.length) {
+          newKeys = await ifeval(async ({ args }) => {
+            let result = [];
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!el || !p) continue;
+              let tag = args.newTag && args.newTag !== el.tagName.toLowerCase() ? args.newTag : el.tagName.toLowerCase();
+              if (tag === el.tagName.toLowerCase()) {
+                el.setAttribute('src', args.url);
+                result.push(state.map.getKey(el));
+                continue;
+              }
+              let clone = document.createElement(tag);
+              for (let a of el.attributes) clone.setAttribute(a.name, a.value);
+              clone.className = el.className;
+              clone.innerHTML = el.innerHTML;
+              clone.setAttribute('src', args.url);
+              if (p.children[i] === el) p.replaceChild(clone, el);
+              else p.insertBefore(clone, p.children[i] || null);
+              result.push(clone);
             }
-            let nv = url;
-            nv ? repl.setAttribute('src', nv) : repl.removeAttribute('src');
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: newEls.map(x => frame.map.getKey(x)) });
+            await new Promise(pres => setTimeout(pres));
+            return result.map(x => state.map.getKey(x));
+          }, { targets: targetKeys, parents: parentKeys, idxs, url, newTag });
+          await actions.changeSelection.handler({ cur, s: newKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let clone = state.map.get(args.newKeys[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!p) continue;
+              if (clone && el && el.tagName.toLowerCase() !== clone.tagName.toLowerCase()) {
+                if (p.children[i] === el) p.replaceChild(clone, el);
+              }
+              (clone || el)?.setAttribute('src', args.url);
+            }
+          }, { targets: targetKeys, parents: parentKeys, idxs, newKeys, url });
+          await actions.changeSelection.handler({ cur, s: newKeys });
         } else {
-          for (let n = 0; n < oldEls.length; n++) {
-            let el = oldEls[n];
-            let p = parents[n];
-            let i = idxs[n];
-            let repl = newEls[n];
-            if (repl !== el) {
-              if (p.children[i] === repl) p.replaceChild(el, repl);
-              else p.insertBefore(el, p.children[i]);
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let clone = state.map.get(args.newKeys[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!p) continue;
+              if (clone && el && clone.tagName.toLowerCase() !== el.tagName.toLowerCase()) {
+                if (p.children[i] === clone) p.replaceChild(el, clone);
+              }
+              let prev = args.prevSrcs[n];
+              if (prev) el.setAttribute('src', prev); else el.removeAttribute('src');
             }
-            let pv = prevSrcs[n];
-            pv ? el.setAttribute('src', pv) : el.removeAttribute('src');
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: oldEls.map(x => frame.map.getKey(x)) });
+          }, { targets: targetKeys, parents: parentKeys, idxs, newKeys, prevSrcs });
+          await actions.changeSelection.handler({ cur, s: targetKeys });
         }
       });
     },
@@ -1377,69 +1513,83 @@ let actions = {
   // TODO: Test if possible to create a "list gallery media" function and reply using the success object in a usable way.
   changeMediaSrcFromGallery: {
     shortcut: 'S',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master' } = {}) => {
       let frame = state.designer.current;
       let [btn, url] = await showModal('MediaGalleryDialog');
-      if (btn !== 'ok') return;
-      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeMediaSrc', cur, url });
+      if (btn !== 'ok' || !url) return;
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeMediaSrcFromGallery', cur, url });
+
       let mime = mimeLookup(url);
       let newTag = mime?.startsWith?.('audio/') ? 'audio' : mime?.startsWith?.('video/') ? 'video' : 'img';
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
-      let parents = targets.map(x => x.parentElement);
-      let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
       let prevSrcs = targets.map(x => x.getAttribute('src'));
-      let prevTags = targets.map(x => x.tagName.toLowerCase());
-      let oldEls = targets.map(x => x);
-      let newEls = targets.map((el, n) => {
-        let tag = newTag && newTag !== el.tagName.toLowerCase() ? newTag : el.tagName.toLowerCase();
-        if (tag === el.tagName.toLowerCase()) return el;
-        let clone = document.createElement(tag);
-        for (let attr of el.attributes) clone.setAttribute(attr.name, attr.value);
-        clone.className = el.className;
-        clone.innerHTML = el.innerHTML;
-        return clone;
-      });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
+      let parentKeys = targets.map(x => frame.map.getKey(x.parentElement));
+      let idxs = targets.map(x => [...x.parentElement.children].indexOf(x));
+      let newKeys = [];
+
       await post('designer.pushHistory', cur, async apply => {
-        if (apply) {
-          for (let n = 0; n < oldEls.length; n++) {
-            let el = oldEls[n];
-            let p = parents[n];
-            let i = idxs[n];
-            let repl = newEls[n];
-            if (repl !== el) {
-              if (p.children[i] === el) p.replaceChild(repl, el);
-              else p.insertBefore(repl, p.children[i]);
+        if (apply && !newKeys.length) {
+          newKeys = await ifeval(async ({ args }) => {
+            let result = [];
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!el || !p) continue;
+              let tag = args.newTag && args.newTag !== el.tagName.toLowerCase() ? args.newTag : el.tagName.toLowerCase();
+              if (tag === el.tagName.toLowerCase()) {
+                el.setAttribute('src', args.url);
+                result.push(state.map.getKey(el));
+                continue;
+              }
+              let clone = document.createElement(tag);
+              for (let a of el.attributes) clone.setAttribute(a.name, a.value);
+              clone.className = el.className;
+              clone.innerHTML = el.innerHTML;
+              clone.setAttribute('src', args.url);
+              if (p.children[i] === el) p.replaceChild(clone, el);
+              else p.insertBefore(clone, p.children[i] || null);
+              result.push(clone);
             }
-            url ? repl.setAttribute('src', url) : repl.removeAttribute('src');
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: newEls.map(x => frame.map.getKey(x)) });
+            await new Promise(pres => setTimeout(pres));
+            return result.map(x => state.map.getKey(x));
+          }, { targets: targetKeys, parents: parentKeys, idxs, url, newTag });
+          await actions.changeSelection.handler({ cur, s: newKeys });
+        } else if (apply) {
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let clone = state.map.get(args.newKeys[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!p) continue;
+              if (clone && el && el.tagName.toLowerCase() !== clone.tagName.toLowerCase()) {
+                if (p.children[i] === el) p.replaceChild(clone, el);
+              }
+              (clone || el)?.setAttribute('src', args.url);
+            }
+          }, { targets: targetKeys, parents: parentKeys, idxs, newKeys, url });
+          await actions.changeSelection.handler({ cur, s: newKeys });
         } else {
-          for (let n = 0; n < oldEls.length; n++) {
-            let el = oldEls[n];
-            let p = parents[n];
-            let i = idxs[n];
-            let repl = newEls[n];
-            if (repl !== el) {
-              if (p.children[i] === repl) p.replaceChild(el, repl);
-              else p.insertBefore(el, p.children[i]);
+          await ifeval(({ args }) => {
+            for (let n = 0; n < args.targets.length; n++) {
+              let el = state.map.get(args.targets[n]);
+              let clone = state.map.get(args.newKeys[n]);
+              let p = state.map.get(args.parents[n]);
+              let i = args.idxs[n];
+              if (!p) continue;
+              if (clone && el && clone.tagName.toLowerCase() !== el.tagName.toLowerCase()) {
+                if (p.children[i] === clone) p.replaceChild(el, clone);
+              }
+              let prev = args.prevSrcs[n];
+              if (prev) el.setAttribute('src', prev); else el.removeAttribute('src');
             }
-            let pv = prevSrcs[n];
-            pv ? el.setAttribute('src', pv) : el.removeAttribute('src');
-          }
-          await new Promise(pres => setTimeout(pres));
-          await actions.changeSelection.handler({ cur, s: oldEls.map(x => frame.map.getKey(x)) });
+          }, { targets: targetKeys, parents: parentKeys, idxs, newKeys, prevSrcs });
+          await actions.changeSelection.handler({ cur, s: targetKeys });
         }
       });
     },
@@ -1447,65 +1597,55 @@ let actions = {
 
   changeBackgroundUrl: {
     shortcut: 'b',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-        url: { type: 'string', description: `Link URL (default prompts user)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, url: { type: 'string' } } },
     handler: async ({ cur = 'master', url = null } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       let prev = targets.map(x => x.style.backgroundImage);
       if (url == null) {
-        let [btn, val] = await showModal('PromptDialog', { title: 'Change background image', label: 'Image URL', initialValue: prev[0]?.replace(/^url\("|"\)$/g, '') });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Change background image', label: 'Image URL', initialValue: prev[0]?.replace(/^url\(["']?|["']?\)$/g, '') });
         if (btn !== 'ok') return;
         url = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeBackgroundUrl', cur, url });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       let newBg = url ? `url("${url}")` : '';
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let x = targets[n];
-          x.style.backgroundImage = apply ? newBg : prev[n];
-        }
-        await new Promise(pres => setTimeout(pres));
-        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.style.backgroundImage = args.apply ? args.newBg : args.prev[n];
+          }
+        }, { targets: targetKeys, newBg, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
       });
     },
   },
 
   changeBackgroundFromGallery: {
     shortcut: 'B',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master' } = {}) => {
       let frame = state.designer.current;
       let [btn, url] = await showModal('MediaGalleryDialog');
-      if (btn !== 'ok') return;
-      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeBackgroundUrl', cur, url });
+      if (btn !== 'ok' || !url) return;
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeBackgroundFromGallery', cur, url });
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       let prev = targets.map(x => x.style.backgroundImage);
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       let newBg = url ? `url("${url}")` : '';
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) { let x = targets[n]; x.style.backgroundImage = apply ? newBg : prev[n] }
-        await new Promise(pres => setTimeout(pres));
-        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.style.backgroundImage = args.apply ? args.newBg : args.prev[n];
+          }
+        }, { targets: targetKeys, newBg, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
       });
     },
   },
@@ -1513,42 +1653,32 @@ let actions = {
   setIfExpression: {
     description: `Sets conditional expression for displaying elements (prompts if not provided)`,
     shortcut: 'Ctrl-i',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string' },
-        expr: { type: 'string' },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, expr: { type: 'string' } } },
     handler: async ({ cur = 'master', expr = null } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (expr == null) {
         let initial = targets[0].getAttribute('wf-if');
-        let [btn, val] = await showModal('PromptDialog', {
-          title: 'Set if expression',
-          placeholder: 'Expression',
-          initialValue: initial,
-        });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Set if expression', placeholder: 'Expression', initialValue: initial });
         if (btn !== 'ok') return;
         expr = val.trim();
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setIfExpression', cur, expr });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       let prev = targets.map(x => x.getAttribute('wf-if'));
       let newVal = expr;
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let el = targets[n];
-          let nv = apply ? newVal : prev[n];
-          nv ? el.setAttribute('wf-if', nv) : el.removeAttribute('wf-if');
-        }
-        await new Promise(pres => setTimeout(pres));
-        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.newVal : args.prev[n];
+            nv ? el.setAttribute('wf-if', nv) : el.removeAttribute('wf-if');
+          }
+        }, { targets: targetKeys, newVal, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
       });
     },
   },
@@ -1556,58 +1686,40 @@ let actions = {
   setMapExpression: {
     description: `Sets map expression for repeating elements (prompts if not provided)`,
     shortcut: 'Ctrl-m',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string' },
-        expr: { type: 'string', description: `Format: x of xs` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, expr: { type: 'string' } } },
     handler: async ({ cur = 'master', expr = null } = {}) => {
       let frame = state.designer.current;
       let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!targets.length) return;
       if (expr == null) {
         let initial = targets[0].getAttribute('wf-map');
-        let [btn, val] = await showModal('PromptDialog', {
-          title: 'Set map expression',
-          placeholder: 'Expression (item of expr)',
-          initialValue: initial,
-        });
+        let [btn, val] = await showModal('PromptDialog', { title: 'Set map expression', placeholder: 'Expression (item of expr)', initialValue: initial });
         if (btn !== 'ok') return;
         expr = val.trim();
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setMapExpression', cur, expr });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       let prev = targets.map(x => x.getAttribute('wf-map'));
       let newVal = expr;
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let el = targets[n];
-          let nv = apply ? newVal : prev[n];
-          nv ? el.setAttribute('wf-map', nv) : el.removeAttribute('wf-map');
-        }
-        await new Promise(pres => setTimeout(pres));
-        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.newVal : args.prev[n];
+            nv ? el.setAttribute('wf-map', nv) : el.removeAttribute('wf-map');
+          }
+        }, { targets: targetKeys, newVal, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
       });
     },
   },
 
   setEventHandlers: {
     shortcut: 'Ctrl-o',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master', handlers } = {}) => {
       let frame = state.designer.current;
       let el = frame.map.get(frame.cursors[cur][0]);
@@ -1620,30 +1732,25 @@ let actions = {
         handlers = val;
       }
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setEventHandlers', cur, handlers });
-      let newHandlers = Array.isArray(handlers) ? handlers.filter(h => h && h.name && h.expr) : [];
-      let prev = Array.isArray(prevHandlers) ? prevHandlers : [];
-      let next = newHandlers.length ? newHandlers : prev;
+      let targetKey = frame.map.getKey(el);
+      let prev = prevHandlers;
+      let next = Array.isArray(handlers) ? handlers.filter(h => h && h.name && h.expr) : [];
       await post('designer.pushHistory', cur, async apply => {
-        let list = apply ? next : prev;
-        for (let attr of [...el.attributes]) if (attr.name.startsWith('wf-on')) el.removeAttribute(attr.name);
-        for (let h of list) if (h.name && h.expr) el.setAttribute(`wf-on${h.name}`, h.expr);
+        await ifeval(({ args }) => {
+          let el = state.map.get(args.target);
+          if (!el) return;
+          for (let attr of [...el.attributes]) if (attr.name.startsWith('wf-on')) el.removeAttribute(attr.name);
+          let list = args.apply ? args.next : args.prev;
+          for (let h of list) if (h.name && h.expr) el.setAttribute(`wf-on${h.name}`, h.expr);
+        }, { target: targetKey, prev, next, apply });
       });
     },
   },
 
   setDisabledExpression: {
     shortcut: 'Ctrl-D',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-        expr: { type: 'string', description: `Expression to bind to the disabled attribute (optional, prompts if not provided)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' }, expr: { type: 'string' } } },
     handler: async ({ cur = 'master', expr = null } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'setDisabledExpression', cur, expr });
       let frame = state.designer.current;
@@ -1655,72 +1762,71 @@ let actions = {
         if (btn !== 'ok') return;
         expr = val.trim();
       }
+      let targetKeys = targets.map(x => frame.map.getKey(x));
       let prev = targets.map(x => x.getAttribute('wf-disabled'));
       let newVal = expr;
       await post('designer.pushHistory', cur, async apply => {
-        for (let n = 0; n < targets.length; n++) {
-          let el = targets[n];
-          let nv = apply ? newVal : prev[n];
-          nv ? el.setAttribute('wf-disabled', nv) : el.removeAttribute('wf-disabled');
-        }
-        await new Promise(pres => setTimeout(pres));
-        await actions.changeSelection.handler({ cur, s: targets.map(x => frame.map.getKey(x)) });
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.newVal : args.prev[n];
+            nv ? el.setAttribute('wf-disabled', nv) : el.removeAttribute('wf-disabled');
+          }
+        }, { targets: targetKeys, newVal, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
       });
     },
   },
 
   normalizeStylesUnion: {
-    description: `Makes all selected elements have the union of their classes (confirm union is what the user wants before calling)`,
+    description: `Makes all selected elements have the union of their classes`,
     shortcut: 'Alt-u',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && (state.designer.current.cursors[cur]?.length || 0) < 2 && `At least 2 elements must be selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && (state.designer.current.cursors[cur]?.length || 0) < 2 && `At least 2 elements must be selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master' } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'normalizeStylesUnion', cur });
       let frame = state.designer.current;
       let all = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!all.length) return;
+      let targetKeys = all.map(x => frame.map.getKey(x));
       let prev = all.map(x => x.className);
       let union = new Set();
       for (let el of all) for (let c of el.classList) union.add(c);
       let merged = [...union].join(' ').trim();
       await post('designer.pushHistory', cur, async apply => {
-        for (let i = 0; i < all.length; i++) all[i].className = apply ? merged : prev[i];
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.className = args.apply ? args.merged : args.prev[n];
+          }
+        }, { targets: targetKeys, merged, prev, apply });
       });
     },
   },
 
   normalizeStylesIntersect: {
-    description: `Makes all selected elements have the intersection of their classes (confirm intersection is what the user wants before calling)`,
+    description: `Makes all selected elements have the intersection of their classes`,
     shortcut: 'Alt-U',
-    disabled: ({ cur = 'master' }) => [
-      !state.designer.open && `Designer closed.`,
-      state.designer.open && (state.designer.current.cursors[cur]?.length || 0) < 2 && `At least 2 elements must be selected.`,
-    ],
-    parameters: {
-      type: 'object',
-      properties: {
-        cur: { type: 'string', description: `Whose cursor to use (defaults to master)` },
-      },
-    },
+    disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && (state.designer.current.cursors[cur]?.length || 0) < 2 && `At least 2 elements must be selected.`],
+    parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master' } = {}) => {
       if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'normalizeStylesIntersect', cur });
       let frame = state.designer.current;
       let all = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
       if (!all.length) return;
+      let targetKeys = all.map(x => frame.map.getKey(x));
       let prev = all.map(x => x.className);
       let intersection = new Set(all[0].classList);
       for (let i = 1; i < all.length; i++) for (let c of [...intersection]) if (!all[i].classList.contains(c)) intersection.delete(c);
       let merged = [...intersection].join(' ').trim();
       await post('designer.pushHistory', cur, async apply => {
-        for (let i = 0; i < all.length; i++) all[i].className = apply ? merged : prev[i];
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (el) el.className = args.apply ? args.merged : args.prev[n];
+          }
+        }, { targets: targetKeys, merged, prev, apply });
       });
     },
   },
