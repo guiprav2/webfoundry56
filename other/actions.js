@@ -428,6 +428,50 @@ let actions = {
     },
   },
 
+  changeElementId: {
+    shortcut: 'g',
+    disabled: ({ cur = 'master' }) => [
+      !state.designer.open && `Designer closed.`,
+      state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`,
+    ],
+    parameters: {
+      type: 'object',
+      properties: {
+        cur: { type: 'string', description: `Whose selection to change ID (defaults to master)` },
+        id: { type: 'string', description: `New element ID (default prompts user)` },
+      },
+    },
+    handler: async ({ cur = 'master', id = null } = {}) => {
+      let frame = state.designer.current;
+      let targets = frame.cursors[cur].map(x => frame.map.get(x)).filter(Boolean);
+      if (!targets.length) return;
+      if (id == null) {
+        let [btn, val] = await showModal('PromptDialog', {
+          title: 'Change element ID',
+          label: 'New ID',
+          initialValue: targets[0].id || '',
+        });
+        if (btn !== 'ok') return;
+        id = val.trim();
+      }
+      if (state.collab.uid !== 'master') return state.collab.rtc.send({ type: 'cmd', k: 'changeElementId', cur, id });
+      let targetKeys = targets.map(x => frame.map.getKey(x));
+      let prev = targets.map(x => x.getAttribute('id'));
+      await post('designer.pushHistory', cur, async apply => {
+        await ifeval(({ args }) => {
+          for (let n = 0; n < args.targets.length; n++) {
+            let el = state.map.get(args.targets[n]);
+            if (!el) continue;
+            let nv = args.apply ? args.newId : args.prev[n];
+            if (nv) el.setAttribute('id', nv);
+            else el.removeAttribute('id');
+          }
+        }, { targets: targetKeys, newId: id, prev, apply });
+        await actions.changeSelection.handler({ cur, s: targetKeys });
+      });
+    },
+  },
+
   changeElementTag: {
     shortcut: 'e',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
@@ -1257,7 +1301,7 @@ let actions = {
   },
 
   changeInputPlaceholder: {
-    shortcut: 'Ctrl-p',
+    shortcut: 'w',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: { type: 'object', properties: { cur: { type: 'string' }, placeholder: { type: 'string' } } },
     handler: async ({ cur = 'master', placeholder = null } = {}) => {
@@ -1287,7 +1331,7 @@ let actions = {
 
   changeFormMethod: {
     description: `Changes a form element's method attribute`,
-    shortcut: 'Ctrl-M',
+    shortcut: 'N',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: { type: 'object', properties: { cur: { type: 'string' }, method: { type: 'string' } } },
     handler: async ({ cur = 'master', method } = {}) => {
@@ -1652,7 +1696,7 @@ let actions = {
 
   setIfExpression: {
     description: `Sets conditional expression for displaying elements (prompts if not provided)`,
-    shortcut: 'Ctrl-i',
+    shortcut: 'C',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: { type: 'object', properties: { cur: { type: 'string' }, expr: { type: 'string' } } },
     handler: async ({ cur = 'master', expr = null } = {}) => {
@@ -1685,7 +1729,7 @@ let actions = {
 
   setMapExpression: {
     description: `Sets map expression for repeating elements (prompts if not provided)`,
-    shortcut: 'Ctrl-m',
+    shortcut: 'n',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: { type: 'object', properties: { cur: { type: 'string' }, expr: { type: 'string' } } },
     handler: async ({ cur = 'master', expr = null } = {}) => {
@@ -1717,7 +1761,7 @@ let actions = {
   },
 
   setEventHandlers: {
-    shortcut: 'Ctrl-o',
+    shortcut: 'E',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && state.designer.current.cursors[cur]?.length !== 1 && `A single element must be selected.`],
     parameters: { type: 'object', properties: { cur: { type: 'string' } } },
     handler: async ({ cur = 'master', handlers } = {}) => {
@@ -1748,7 +1792,7 @@ let actions = {
   },
 
   setDisabledExpression: {
-    shortcut: 'Ctrl-D',
+    shortcut: 'D',
     disabled: ({ cur = 'master' }) => [!state.designer.open && `Designer closed.`, state.designer.open && !state.designer.current.cursors[cur]?.length && `No elements selected.`],
     parameters: { type: 'object', properties: { cur: { type: 'string' }, expr: { type: 'string' } } },
     handler: async ({ cur = 'master', expr = null } = {}) => {
