@@ -72,10 +72,10 @@
               let data = ev.data || {};
               if (data.type !== 'fetch:res' || data.project !== project || data.path !== path) return;
               removeEventListener('message', handler);
-              await import(`${rootPrefix}/webfoundry/ifdesigner.js`);
               document.open();
               document.write(await data.data.text());
               document.close();
+              await import(`${rootPrefix}/webfoundry/ifdesigner.js`);
             };
             addEventListener('message', handler);
             parent.postMessage({ type: 'fetch', project, path }, wforigin);
